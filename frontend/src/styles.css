@@ -15,30 +15,63 @@ form {
   gap: 0.5rem;
 }
 
-textarea {
+textarea,
+input {
   font: inherit;
-  padding: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  color: inherit;
+  background: Canvas;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 0.5rem;
+}
+
+textarea:focus-visible,
+input:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: 1px;
 }
 
 button {
   align-self: flex-end;
   font: inherit;
-  padding: 0.4rem 1rem;
+  font-weight: 600;
+  padding: 0.45rem 1.1rem;
+  color: white;
+  background: #1565c0;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #0d47a1;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   list-style: none;
   padding: 0;
 }
 
 li {
-  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-  padding: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, currentColor 4%, Canvas);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
 }
 
 li p {
   margin: 0.25rem 0 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 time {
@@ -50,9 +83,9 @@ time {
   color: #c62828;
 }
 
-input {
-  font: inherit;
-  padding: 0.5rem;
+h1 {
+  margin: 0.5rem 0;
+  font-size: 1.75rem;
 }
 
 header {
@@ -80,7 +113,12 @@ header {
   background: rgb(0 0 0 / 0.4);
 }
 
-.ideas-header {
+.ideas-h1 {
+  margin: 0.5rem 0;
+  font-size: 1.75rem;
+}
+
+header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -118,6 +156,8 @@ header {
   gap: 0.25rem;
   padding: 0;
   border: none;
+  background: none;
+  box-shadow: none;
 }
 
 .bubble {
@@ -192,6 +232,7 @@ header {
 .icon-button {
   background: none;
   border: none;
+  font-weight: normal;
   color: inherit;
   opacity: 0.5;
   padding: 0.25rem;
@@ -202,8 +243,9 @@ header {
   margin: 0.25rem 0 0 auto;
 }
 
-.icon-button:hover,
+.icon-button:hover:not(:disabled),
 .icon-button:focus-visible {
+  background: none;
   opacity: 1;
 }
 
@@ -228,7 +270,12 @@ header {
   margin: 0;
 }
 
-.tour-header {
+.tour-h1 {
+  margin: 0.5rem 0;
+  font-size: 1.75rem;
+}
+
+header {
   display: flex;
   align-items: center;
   justify-content: space-between;
