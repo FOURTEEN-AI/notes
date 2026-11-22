@@ -52,6 +52,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: >-
+            --model claude-sonnet-5-5
             --max-turns 60
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr create:*),Bash(gh issue view:*)"
           prompt: |
@@ -73,6 +74,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: >-
+            --model claude-sonnet-5-5
             --max-turns 40
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*)"
           prompt: |

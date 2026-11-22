@@ -57,7 +57,7 @@ A GitHub issue with the label `agent` is taken to a pull request by `.github/wor
 review on an `agent/*` branch goes back to the coding agent, at most 3 rounds. `ci.yml` deploys a
 preview app `notes-fourteen-it-pr-<n>` per pull request (own database `pr_<n>` in the existing
 Postgres, same login as production); `preview-cleanup.yml` removes both when the pull request is
-closed.
+closed. Both agents run on `claude-sonnet-5-5`, set with `--model` in `claude_args`.
 
 One-time setup:
 
