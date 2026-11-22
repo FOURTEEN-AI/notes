@@ -11,8 +11,8 @@ project are in [docs/plan.md](docs/plan.md). Read it before you start.
 - Deploy: every push to `main` is built, tested and deployed by `.github/workflows/ci.yml`.
 - Add only what the current step needs. No tool, layer or abstraction "for later".
 - English for code, docs and commit messages. Conventional Commits. Commit directly to `main` in a
-  local session. Agents in GitHub Actions never push to `main`: they work on a branch
-  `agent/issue-<n>` and open a pull request.
+  local session (admins are exempt from the branch protection). Agents in GitHub Actions never
+  push to `main`: they work on a branch `agent/issue-<n>` and open a pull request.
 - GitHub org FOURTEEN-AI: use `GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh …`. Never print the token.
 
 ## Skills

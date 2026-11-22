@@ -77,6 +77,7 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_NAME --repo FOURTEEN-AI
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_PASSWORD --repo FOURTEEN-AI/notes
 
 # Last, once the checks `build` and `review` have run on a pull request: protect main.
+# "enforce_admins": false keeps direct pushes to main open for admins (local sessions).
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
 {
   "required_status_checks": {"strict": false, "contexts": ["build", "review"]},

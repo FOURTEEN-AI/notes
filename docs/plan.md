@@ -65,8 +65,9 @@ agent reviews it. The human sees no code, only the demo, and merges. Proven with
   the change brings tests that cover its behaviour. It is a required check.
 - A failed review goes back to the coding agent as a comment; the agent pushes a fix and the
   review runs again, at most 3 rounds, then the pull request waits for the human.
-- Branch protection on `main`: pull request, green CI and green review required. Direct pushes
-  are no longer possible.
+- Branch protection on `main`: pull request, green CI and green review required. Admins are
+  exempt, so a local session can still commit directly to `main`; agents and everyone else go
+  through a pull request.
 - Preview app per pull request on Fly (`notes-fourteen-it-pr-<n>`), with its own schema in the
   existing Postgres and the same login as production. Removed when the pull request is closed.
 - Build and test run without secrets. Only a separate deploy job gets the Fly org token
