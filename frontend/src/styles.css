@@ -97,3 +97,18 @@ input {
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+.icon-button {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.5;
+  padding: 0.25rem;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  opacity: 1;
+}
