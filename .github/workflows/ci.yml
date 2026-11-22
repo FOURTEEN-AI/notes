@@ -77,7 +77,16 @@ jobs:
               SPRING_SECURITY_USER_NAME="${{ secrets.APP_LOGIN_NAME }}" \
               SPRING_SECURITY_USER_PASSWORD="${{ secrets.APP_LOGIN_PASSWORD }}"
           fi
-      - run: flyctl deploy --app "$APP" --remote-only --ha=false
+      # The token for the preview bar (comment and merge). Set on every run, so that it reaches
+      # previews created before it existed and follows a rotated token.
+      - name: Pass the GitHub token
+        run: flyctl secrets set --app "$APP" --stage GITHUB_TOKEN="$GITHUB_APP_TOKEN"
+        env:
+          GITHUB_APP_TOKEN: ${{ secrets.APP_GITHUB_TOKEN }}
+      # PULL_REQUEST turns on the preview bar for exactly this pull request.
+      - run: >-
+          flyctl deploy --app "$APP" --remote-only --ha=false
+          --env PULL_REQUEST=${{ github.event.number }}
       - name: Link the preview in the pull request
         run: |
           gh pr comment "${{ github.event.number }}" --edit-last --create-if-none \
