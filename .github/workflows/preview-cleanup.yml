@@ -1,0 +1,24 @@
+name: Preview cleanup
+
+# Removes the preview app and its database when a pull request is closed.
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    concurrency: preview-${{ github.event.number }}
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
+      APP: notes-fourteen-it-pr-${{ github.event.number }}
+      DB: pr_${{ github.event.number }}
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Destroy the preview app
+        run: flyctl apps destroy "$APP" --yes || true
+      - name: Drop the preview database and user
+        run: |
+          flyctl ssh console --app notes-fourteen-it-db --command \
+            "sh -c 'psql postgres://postgres:\$OPERATOR_PASSWORD@localhost:5432/postgres -c \"drop database if exists $DB with (force)\" -c \"drop role if exists $DB\"'"

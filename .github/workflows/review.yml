@@ -1,0 +1,69 @@
+name: Review
+
+# A second agent reviews every pull request with fresh context. Its verdict is the required
+# check "review". When it fails on an agent branch, the coding agent is asked to fix the
+# findings, at most 3 rounds.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: review-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: >-
+            --max-turns 30
+            --allowedTools "Read,Glob,Grep,Write,Bash(git diff:*),Bash(git log:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"
+          prompt: |
+            You are the reviewer of pull request #${{ github.event.number }} in ${{ github.repository }}.
+            Nobody else reads the code of this pull request, so you are the gate. You did not
+            write the change. Read CLAUDE.md and docs/plan.md, then the diff
+            (`gh pr diff ${{ github.event.number }}`) and the code around it.
+
+            Fail the review for any of these, and only for these:
+            - The change does not do what the pull request or its issue says, or does more.
+            - A bug, a security problem, or data loss.
+            - Behaviour that is added or changed without a test that covers it.
+            - A broken rule from CLAUDE.md, anything outside the scope of the current step in
+              docs/plan.md, or a change under `.github/` that the pull request does not need.
+            Style preferences are not findings.
+
+            Post exactly one comment with `gh pr comment ${{ github.event.number }} --body ...`.
+            It starts with the line `## Review round`, followed by PASS or FAIL and, for FAIL,
+            a numbered list of findings. Each finding names the file and says what is wrong and
+            what is expected, so that another agent can fix it without asking.
+            Then write the single word PASS or FAIL to `${{ runner.temp }}/verdict`.
+      - name: Verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+          BRANCH: ${{ github.head_ref }}
+          VERDICT_FILE: ${{ runner.temp }}/verdict
+        run: |
+          verdict=$(cat "$VERDICT_FILE" 2>/dev/null || echo FAIL)
+          [ "$verdict" = PASS ] && exit 0
+
+          rounds=$(gh pr view "$PR" --json comments \
+            --jq '[.comments[] | select(.body | startswith("## Review round"))] | length')
+          if [[ "$BRANCH" == agent/* && "$rounds" -ge 1 && "$rounds" -lt 3 ]]; then
+            gh workflow run agent.yml -f pr="$PR"
+          elif [[ "$BRANCH" == agent/* && "$rounds" -ge 3 ]]; then
+            gh pr comment "$PR" --body "The review failed in $rounds rounds. Waiting for the human."
+          fi
+          exit 1

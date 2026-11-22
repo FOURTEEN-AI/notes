@@ -25,7 +25,6 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: ./gradlew build
       - uses: actions/upload-artifact@v4
-        if: github.event_name == 'push'
         with:
           name: notes-jar
           path: build/libs/notes.jar
@@ -45,3 +44,41 @@ jobs:
       - run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # A preview app per pull request. Only this job gets the Fly org token, and it only handles the
+  # jar built above, never the code of the pull request itself.
+  preview:
+    needs: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency: preview-${{ github.event.number }}
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
+      APP: notes-fourteen-it-pr-${{ github.event.number }}
+      DB: pr_${{ github.event.number }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes-jar
+          path: build/libs
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Create the app and its database
+        run: |
+          if ! flyctl status --app "$APP" > /dev/null 2>&1; then
+            flyctl apps create "$APP" --org "${{ vars.FLY_ORG }}"
+            # Own database and user in the existing Postgres cluster; sets DATABASE_URL.
+            flyctl postgres attach notes-fourteen-it-db --app "$APP" \
+              --database-name "$DB" --database-user "$DB"
+            flyctl secrets set --app "$APP" --stage \
+              SPRING_SECURITY_USER_NAME="${{ secrets.APP_LOGIN_NAME }}" \
+              SPRING_SECURITY_USER_PASSWORD="${{ secrets.APP_LOGIN_PASSWORD }}"
+          fi
+      - run: flyctl deploy --app "$APP" --remote-only --ha=false
+      - name: Link the preview in the pull request
+        run: gh pr comment "${{ github.event.number }}" --edit-last --create-if-none --body "Preview: https://$APP.fly.dev"
+        env:
+          GH_TOKEN: ${{ github.token }}

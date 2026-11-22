@@ -50,6 +50,41 @@ fly certs add notes.fourteen-it.de --app notes-fourteen-it
 fly certs check notes.fourteen-it.de --app notes-fourteen-it
 ```
 
+## Agents
+
+A GitHub issue with the label `agent` is taken to a pull request by `.github/workflows/agent.yml`.
+`.github/workflows/review.yml` reviews every pull request; its check `review` must pass. A failed
+review on an `agent/*` branch goes back to the coding agent, at most 3 rounds. `ci.yml` deploys a
+preview app `notes-fourteen-it-pr-<n>` per pull request (own database `pr_<n>` in the existing
+Postgres, same login as production); `preview-cleanup.yml` removes both when the pull request is
+closed.
+
+One-time setup:
+
+```sh
+# Claude GitHub App on the repository, so that the agent's pushes start CI, and the secret
+# CLAUDE_CODE_OAUTH_TOKEN (paid by the Claude subscription). Run in the devcontainer:
+claude    # then /install-github-app
+
+# Fly org token for the preview jobs. Production keeps its own, narrower FLY_API_TOKEN.
+fly tokens create org | GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set FLY_ORG_TOKEN --repo FOURTEEN-AI/notes
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh variable set FLY_ORG --repo FOURTEEN-AI/notes --body <org-slug>
+
+# The login of production, once more, for the previews (Fly secrets cannot be read back).
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_NAME --repo FOURTEEN-AI/notes
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_PASSWORD --repo FOURTEEN-AI/notes
+
+# Last, once the checks `build` and `review` have run on a pull request: protect main.
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
+{
+  "required_status_checks": {"strict": false, "contexts": ["build", "review"]},
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+EOF
+```
+
 ## Configuration
 
 | Name | Where | Purpose |
@@ -57,3 +92,6 @@ fly certs check notes.fourteen-it.de --app notes-fourteen-it
 | `DATABASE_URL` | Fly secret (set by `fly postgres attach`) | PostgreSQL connection |
 | `SPRING_SECURITY_USER_NAME`, `SPRING_SECURITY_USER_PASSWORD` | Fly secrets | the one login |
 | `FLY_API_TOKEN` | GitHub Actions secret | deploy from CI |
+| `FLY_ORG_TOKEN`, variable `FLY_ORG` | GitHub Actions secret and variable | preview apps |
+| `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD` | GitHub Actions secrets | login of the preview apps |
+| `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions secret | coding and review agent |
