@@ -39,7 +39,7 @@ class NoteController {
         if (note.text() == null || note.text().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "text must not be blank");
         }
-        if (note.text().length() >= 10000) {
+        if (note.text().length() > 10000) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "text is too long");
         }
         return jdbc.sql("insert into note (text) values (:text) returning id, text, created_at")

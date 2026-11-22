@@ -63,6 +63,22 @@ class NotesApiTest {
     }
 
     @Test
+    void note_of_10000_characters_is_accepted_and_10001_is_rejected() throws Exception {
+        mvc.perform(
+                        post("/api/notes")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"text\":\"" + "a".repeat(10000) + "\"}"))
+                .andExpect(status().isCreated());
+        mvc.perform(
+                        post("/api/notes")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"text\":\"" + "a".repeat(10001) + "\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void form_post_is_rejected() throws Exception {
         mvc.perform(
                         post("/api/notes")
