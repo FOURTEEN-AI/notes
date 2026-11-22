@@ -91,7 +91,7 @@ limit, hence the 3 rounds.
 - [x] Every pull request has a preview app, removed when the pull request closes
 - [x] "Delete notes" is merged after a demo and live in production
 
-## Step 3: from idea to merge without GitHub (next)
+## Step 3: from idea to merge without GitHub (done)
 
 **Result:** the human runs the whole loop from the app. A feature idea is submitted in production,
 its progress is visible there, and the new feature is demoed, commented on and merged in its
@@ -137,11 +137,11 @@ login, and let them comment and merge through production.
 **Done when**
 
 - [x] An idea submitted in production becomes an issue and the coding agent starts
-- [ ] The list in production shows each idea's status and links to its preview
-- [ ] A comment from the preview bar makes the coding agent push a fix
-- [ ] The merge button is only enabled with green `build` and `review`, and merges from the
+- [x] The list in production shows each idea's status and links to its preview
+- [x] A comment from the preview bar makes the coding agent push a fix
+- [x] The merge button is only enabled with green `build` and `review`, and merges from the
   preview
-- [ ] A feature went from idea to production without opening GitHub
+- [x] A feature went from idea to production without opening GitHub
 
 ## Candidates for later steps
 
