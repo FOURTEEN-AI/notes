@@ -1,5 +1,10 @@
 package de.fourteen.notes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -10,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * The bar of a preview app: the pull request that this app was deployed from (env PULL_REQUEST,
@@ -30,24 +37,37 @@ class PreviewController {
             String deployedSha,
             CheckState build,
             CheckState review,
-            boolean mergeable) {}
+            boolean mergeable,
+            List<DemoStep> demo) {}
+
+    /**
+     * A step of the guided demo: what to do, what should happen, and optionally the element to
+     * highlight. The coding agent writes them as a ```demo block in the pull request description.
+     */
+    record DemoStep(@JsonProperty("do") String action, String expect, String selector) {}
 
     record Feedback(String text) {}
 
     // The coding agent starts on comments with this marker (agent.yml).
     static final String FEEDBACK_MARKER = "## Human feedback";
 
+    private static final Pattern DEMO_BLOCK =
+            Pattern.compile("^```demo[ \\t]*\\R(.*?)^```", Pattern.DOTALL | Pattern.MULTILINE);
+
     private final GitHub github;
     private final Integer pullRequest;
     private final String deployedSha;
+    private final JsonMapper json;
 
     PreviewController(
             GitHub github,
+            JsonMapper json,
             @Value("${pull-request:#{null}}") Integer pullRequest,
             @Value("${pull-request-sha:#{null}}") String deployedSha) {
         this.github = github;
         this.pullRequest = pullRequest;
         this.deployedSha = deployedSha;
+        this.json = json;
     }
 
     @GetMapping
@@ -61,7 +81,23 @@ class PreviewController {
                 deployedSha,
                 checks.build(),
                 checks.review(),
-                "open".equals(pr.state()) && checks.green());
+                "open".equals(pr.state()) && checks.green(),
+                demo(pr.body()));
+    }
+
+    /** The steps of the ```demo block. Without a valid block there is no tour, not an error. */
+    private List<DemoStep> demo(String body) {
+        Matcher block = DEMO_BLOCK.matcher(body);
+        if (!block.find()) {
+            return List.of();
+        }
+        try {
+            return Arrays.stream(json.readValue(block.group(1), DemoStep[].class))
+                    .filter(step -> step != null && step.action() != null && !step.action().isBlank())
+                    .toList();
+        } catch (JacksonException e) {
+            return List.of();
+        }
     }
 
     @PostMapping(path = "/feedback", consumes = MediaType.APPLICATION_JSON_VALUE)

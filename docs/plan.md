@@ -143,6 +143,41 @@ login, and let them comment and merge through production.
   preview
 - [x] A feature went from idea to production without opening GitHub
 
+## Step 4: a guided demo in the preview
+
+**Result:** a preview app walks the human through its change step by step. Each step says what
+to do and what should happen, and highlights the element on the page. The human no longer has to
+read the pull request description to know what to try.
+
+**Scope**
+
+- The coding agent writes the tour as a ` ```demo ` block in the pull request description: a JSON
+  list of steps with `do`, `expect` and an optional CSS `selector` (format in CLAUDE.md). It keeps
+  the block up to date when it fixes review findings or implements human feedback. Nothing of the
+  tour lands on `main`.
+- `/api/preview` returns the steps parsed from the description. A missing or broken block means
+  no tour.
+- The tour starts by itself on the first visit of a commit and survives reloads (browser storage,
+  per deployed commit); a newer commit starts it from step 1. It moves on with "Weiter" or by
+  clicking the highlighted element. An element that appears later is highlighted as soon as it
+  exists; a step whose selector matches nothing is shown as text only.
+- "Passt nicht" on a step fills the feedback field with the step and its expectation.
+- The review fails a pull request whose block is missing, is not valid JSON, or has a selector
+  that clearly does not match the code.
+- Built in-house in the frontend, no tour library.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow
+changes, which the coding agent may not make.
+
+**Not in this step:** running the tour automatically in CI (e.g. Playwright), tours in production.
+
+**Done when**
+
+- [ ] `/api/preview` returns the steps of the ` ```demo ` block
+- [ ] The tour starts in a preview, highlights its elements and survives a reload
+- [ ] The next agent issue (e.g. "edit notes") arrives with a tour that the human walks through
+  without reading the pull request description
+
 ## Candidates for later steps
 
 Not planned, only to keep ideas. The order is decided when a step is done.

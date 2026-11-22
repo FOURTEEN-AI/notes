@@ -44,6 +44,9 @@ jobs:
             - Behaviour that is added or changed without a test that covers it.
             - A broken rule from CLAUDE.md, anything outside the scope of the current step in
               docs/plan.md, or a change under `.github/` that the pull request does not need.
+            - The description of a pull request from an `agent/*` branch has no demo tour (see
+              "Demo tour" in CLAUDE.md), the block is not a valid JSON list of steps, a step
+              does not match the change, or a selector matches no element in the code.
             Style preferences are not findings.
 
             Post exactly one comment with `gh pr comment ${{ github.event.number }} --body ...`.

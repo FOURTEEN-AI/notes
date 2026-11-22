@@ -15,6 +15,28 @@ project are in [docs/plan.md](docs/plan.md). Read it before you start.
   push to `main`: they work on a branch `agent/issue-<n>` and open a pull request.
 - GitHub org FOURTEEN-AI: use `GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh …`. Never print the token.
 
+## Demo tour
+
+Every pull request description of the coding agent contains a guided demo for its preview app,
+which the preview bar shows step by step. It is a fenced block with the info string `demo` and a
+JSON list of steps, in the order a human tries the change:
+
+````
+```demo
+[
+  {"do": "Write a note and save it", "expect": "It appears at the top of the list", "selector": "main form textarea"},
+  {"do": "Click the trash icon of the note", "expect": "The note disappears", "selector": "main li .icon-button"},
+  {"do": "Reload the page", "expect": "The note is still gone"}
+]
+```
+````
+
+- `do`: what the human does, in German, like the app. `expect`: what they should see then.
+- `selector` (optional): a CSS selector for the element the step is about, taken from the code as
+  it is after the change. It may match an element that appears only after an earlier step. A
+  click on it moves the tour on; leave it out for steps without an element.
+- Keep the block up to date with every later commit on the pull request.
+
 ## Skills
 
 Skills live in `.claude/skills/`. Add a skill here in the same change that creates it.

@@ -86,8 +86,8 @@ jobs:
             - Do only what the issue asks. Add tests that cover the behaviour you add or change.
             - Run `./gradlew build` and make it pass before you push.
             - Commit with a Conventional Commit message, push the branch and open a pull request
-              with `gh pr create`. The description says what changed and how to try it, and ends
-              with "Closes #${{ github.event.issue.number }}".
+              with `gh pr create`. The description says what changed, contains the demo tour
+              (see "Demo tour" in CLAUDE.md), and ends with "Closes #${{ github.event.issue.number }}".
             - Do not touch anything under `.github/`.
       - name: Fix the review findings
         if: github.event_name == 'workflow_dispatch'
@@ -98,7 +98,7 @@ jobs:
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 40
-            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh pr edit:*)"
           prompt: |
             The review of pull request #${{ inputs.pr }} in ${{ github.repository }} found problems.
             Read the latest comment that starts with "## Review round" with
@@ -106,6 +106,8 @@ jobs:
 
             - You are on the branch of the pull request. Fix exactly the findings of that comment
               and nothing else.
+            - If the fix changes what the human sees, update the demo tour in the description
+              with `gh pr edit` before you push (see "Demo tour" in CLAUDE.md).
             - Run `./gradlew build` and make it pass before you push.
             - Commit with a Conventional Commit message and push to this branch. Never push to
               `main`, and do not touch anything under `.github/`.
@@ -121,7 +123,7 @@ jobs:
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 40
-            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh issue view:*)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh issue view:*)"
           prompt: |
             The human tried pull request #${{ github.event.issue.number }} in ${{ github.repository }}
             in its preview app and left feedback. Read the latest comment that starts with
@@ -130,6 +132,8 @@ jobs:
 
             - You are on the branch of the pull request. Implement exactly that feedback and
               nothing else. Add or adjust tests that cover the behaviour you change.
+            - Update the demo tour in the description with `gh pr edit` before you push, so that
+              it shows the change as it is now (see "Demo tour" in CLAUDE.md).
             - Run `./gradlew build` and make it pass before you push.
             - Commit with a Conventional Commit message and push to this branch. Never push to
               `main`, and do not touch anything under `.github/`.

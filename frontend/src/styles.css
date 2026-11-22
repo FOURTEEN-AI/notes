@@ -160,3 +160,55 @@ header {
 .icon-button:focus-visible {
   opacity: 1;
 }
+
+/* The guided demo of a preview: the step box stays in view, the outline follows its element. */
+.tour {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  width: min(24rem, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, #f9a825 25%, Canvas);
+  border: 1px solid color-mix(in srgb, #f9a825 70%, transparent);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.25);
+}
+
+.tour p {
+  margin: 0;
+}
+
+.tour-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tour-header .icon-button {
+  margin: 0;
+}
+
+.tour-expect {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.tour .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.tour-highlight {
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  border: 3px solid #f9a825;
+  border-radius: 0.35rem;
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.15);
+  transition: all 0.15s ease-out;
+}

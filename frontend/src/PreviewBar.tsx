@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Tour, type DemoStep } from './Tour';
 
 type CheckState = 'PENDING' | 'SUCCESS' | 'FAILURE';
 type Preview = {
@@ -9,6 +10,7 @@ type Preview = {
   build: CheckState;
   review: CheckState;
   mergeable: boolean;
+  demo: DemoStep[];
 };
 
 const checkLabels: Record<CheckState, string> = {
@@ -25,6 +27,7 @@ export function PreviewBar() {
   const [busy, setBusy] = useState(false);
   // The commit that served this page. Once another one is deployed, the bar offers a reload.
   const loadedSha = useRef<string | null>(null);
+  const feedbackField = useRef<HTMLTextAreaElement>(null);
 
   async function load() {
     const response = await fetch('/api/preview');
@@ -43,6 +46,12 @@ export function PreviewBar() {
   if (!preview) return null;
 
   const newVersion = preview.deployedSha !== loadedSha.current;
+
+  // "Passt nicht" in the tour: start the feedback with the step, the human adds what happened.
+  function prefillFeedback(prefill: string) {
+    setText((current) => (current.trim() === '' ? prefill : `${current.trimEnd()}\n\n${prefill}`));
+    feedbackField.current?.focus();
+  }
 
   async function sendFeedback(event: FormEvent) {
     event.preventDefault();
@@ -97,9 +106,13 @@ export function PreviewBar() {
           </button>
         </p>
       )}
+      {preview.state === 'open' && loadedSha.current && (
+        <Tour steps={preview.demo} sha={loadedSha.current} onMismatch={prefillFeedback} />
+      )}
       {preview.state === 'open' && (
         <form onSubmit={sendFeedback}>
           <textarea
+            ref={feedbackField}
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Feedback an den Agenten"

@@ -25,7 +25,8 @@ class GitHub {
 
     record Issue(int number, String title) {}
 
-    record PullRequest(int number, String title, String url, String branch, String sha, String state) {}
+    record PullRequest(
+            int number, String title, String body, String url, String branch, String sha, String state) {}
 
     // run-name of agent.yml: "Agent #<issue or pull request number>".
     private static final Pattern AGENT_RUN = Pattern.compile("^Agent #(\\d+)$");
@@ -176,6 +177,8 @@ class GitHub {
         return new PullRequest(
                 pr.get("number").asInt(),
                 pr.get("title").asString(),
+                // An empty description is null.
+                pr.path("body").isString() ? pr.get("body").asString() : "",
                 pr.get("html_url").asString(),
                 pr.get("head").get("ref").asString(),
                 pr.get("head").get("sha").asString(),

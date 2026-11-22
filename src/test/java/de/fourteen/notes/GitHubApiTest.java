@@ -27,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Ideas and preview bar against a fake GitHub API. This app plays the preview of pull request 7. */
 @SpringBootTest(
@@ -167,8 +168,51 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$.deployedSha").value("abc123"))
                 .andExpect(jsonPath("$.build").value("SUCCESS"))
                 .andExpect(jsonPath("$.review").value("PENDING"))
+                .andExpect(jsonPath("$.mergeable").value(false))
+                .andExpect(jsonPath("$.demo.length()").value(0));
+    }
 
-                .andExpect(jsonPath("$.mergeable").value(false));
+    @Test
+    void preview_returns_the_demo_steps_from_the_pull_request_description() throws Exception {
+        String body =
+                """
+                Adds editing.
+
+                ```demo
+                [
+                  {"do": "Write a note and save it", "expect": "It is at the top", "selector": "main form textarea"},
+                  {"do": "Reload the page", "expect": "The note is still there"},
+                  {"expect": "A step without an action is left out"}
+                ]
+                ```
+
+                Closes #6
+                """;
+        github.expect(requestTo(REPO + "/pulls/7"))
+                .andRespond(json(withBody(pullRequest(7, "agent/issue-6", "def", "open"), body)));
+        github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
+                .andRespond(json(checkRuns("success", "success")));
+
+        mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(jsonPath("$.demo.length()").value(2))
+                .andExpect(jsonPath("$.demo[0].do").value("Write a note and save it"))
+                .andExpect(jsonPath("$.demo[0].expect").value("It is at the top"))
+                .andExpect(jsonPath("$.demo[0].selector").value("main form textarea"))
+                .andExpect(jsonPath("$.demo[1].do").value("Reload the page"))
+                .andExpect(jsonPath("$.demo[1].selector").doesNotExist());
+    }
+
+    @Test
+    void broken_demo_block_means_no_tour() throws Exception {
+        String body = "```demo\n[{\"do\": \"Click\",]\n```\n";
+        github.expect(requestTo(REPO + "/pulls/7"))
+                .andRespond(json(withBody(pullRequest(7, "agent/issue-6", "def", "open"), body)));
+        github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
+                .andRespond(json(checkRuns("success", "success")));
+
+        mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.demo.length()").value(0));
     }
 
     @Test
@@ -253,6 +297,11 @@ class GitHubApiTest {
                  "head": {"ref": "%s", "sha": "%s"}}
                 """
                 .formatted(number, number, state, number, branch, sha);
+    }
+
+    private static String withBody(String pullRequest, String body) {
+        return pullRequest.replace(
+                "\"state\"", "\"body\": " + JsonMapper.shared().writeValueAsString(body) + ", \"state\"");
     }
 
     private static String checkRuns(String build, String review) {
