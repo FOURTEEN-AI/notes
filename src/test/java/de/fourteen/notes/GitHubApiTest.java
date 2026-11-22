@@ -58,7 +58,7 @@ class GitHubApiTest {
     }
 
     @Test
-    void submitted_idea_becomes_an_issue_with_the_label_agent() throws Exception {
+    void submitted_idea_becomes_an_issue_with_the_label_refine() throws Exception {
         github.expect(requestTo(REPO + "/issues"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer test-token"))
@@ -66,7 +66,7 @@ class GitHubApiTest {
                         content()
                                 .json(
                                         """
-                                        {"title": "Edit notes", "body": "Click a note to edit it.", "labels": ["agent"]}
+                                        {"title": "Edit notes", "body": "Click a note to edit it.", "labels": ["refine"]}
                                         """))
                 .andRespond(
                         withSuccess(
@@ -86,7 +86,7 @@ class GitHubApiTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.number").value(12))
                 .andExpect(jsonPath("$.description").value("Click a note to edit it."))
-                .andExpect(jsonPath("$.status").value("AGENT_WORKING"));
+                .andExpect(jsonPath("$.status").value("REFINING"));
     }
 
     @Test
@@ -103,15 +103,18 @@ class GitHubApiTest {
 
     @Test
     void ideas_show_their_status_and_preview() throws Exception {
-        github.expect(requestTo(REPO + "/issues?labels=agent&state=open&per_page=100"))
+        github.expect(requestTo(REPO + "/issues?state=open&per_page=100"))
                 .andRespond(
                         json(
                                 """
                                 [
-                                  {"number": 16, "title": "Dark mode", "body": "Add a dark mode."},
-                                  {"number": 14, "title": "Search notes"},
-                                  {"number": 12, "title": "Edit notes"},
-                                  {"number": 11, "title": "A pull request", "pull_request": {}}
+                                  {"number": 19, "title": "Export notes", "labels": [{"name": "refine"}]},
+                                  {"number": 18, "title": "Tag notes", "labels": [{"name": "refine"}]},
+                                  {"number": 16, "title": "Dark mode", "body": "Add a dark mode.", "labels": [{"name": "agent"}]},
+                                  {"number": 14, "title": "Search notes", "labels": [{"name": "agent"}]},
+                                  {"number": 12, "title": "Edit notes", "labels": [{"name": "agent"}]},
+                                  {"number": 10, "title": "Not an idea", "labels": [{"name": "bug"}]},
+                                  {"number": 11, "title": "A pull request", "labels": [{"name": "agent"}], "pull_request": {}}
                                 ]
                                 """));
         github.expect(requestTo(REPO + "/pulls?state=open&per_page=100"))
@@ -131,6 +134,15 @@ class GitHubApiTest {
                                   {"display_title": "Agent #13", "status": "completed"}
                                 ]}
                                 """));
+        github.expect(requestTo(REPO + "/actions/workflows/refine.yml/runs?per_page=30"))
+                .andRespond(
+                        json(
+                                """
+                                {"workflow_runs": [
+                                  {"display_title": "Refine #19", "status": "queued"},
+                                  {"display_title": "Refine #18", "status": "completed"}
+                                ]}
+                                """));
         github.expect(requestTo(REPO + "/commits/xyz/check-runs?per_page=100"))
                 .andRespond(json(checkRuns("success", null, null)));
         github.expect(requestTo(REPO + "/commits/abc/check-runs?per_page=100"))
@@ -138,23 +150,78 @@ class GitHubApiTest {
 
         mvc.perform(get("/api/ideas").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].number").value(16))
-                .andExpect(jsonPath("$[0].description").value("Add a dark mode."))
-                .andExpect(jsonPath("$[1].description").value(""))
-                .andExpect(jsonPath("$[0].status").value("REVIEW_RUNNING"))
+                .andExpect(jsonPath("$.length()").value(5))
+                .andExpect(jsonPath("$[0].number").value(19))
+                .andExpect(jsonPath("$[0].status").value("REFINING"))
+                .andExpect(jsonPath("$[0].previewUrl").doesNotExist())
+                .andExpect(jsonPath("$[1].number").value(18))
+                .andExpect(jsonPath("$[1].status").value("WAITING_FOR_ANSWER"))
+                .andExpect(jsonPath("$[2].number").value(16))
+                .andExpect(jsonPath("$[2].description").value("Add a dark mode."))
+                .andExpect(jsonPath("$[3].description").value(""))
+                .andExpect(jsonPath("$[2].status").value("REVIEW_RUNNING"))
                 .andExpect(
-                        jsonPath("$[0].previewUrl").value("https://notes-fourteen-it-pr-17.fly.dev"))
-                .andExpect(jsonPath("$[0].previewReady").value(false))
-                .andExpect(jsonPath("$[1].number").value(14))
-                .andExpect(jsonPath("$[1].status").value("AGENT_WORKING"))
-                .andExpect(jsonPath("$[1].previewUrl").doesNotExist())
-                .andExpect(jsonPath("$[1].previewReady").value(false))
-                .andExpect(jsonPath("$[2].number").value(12))
-                .andExpect(jsonPath("$[2].status").value("READY_FOR_DEMO"))
+                        jsonPath("$[2].previewUrl").value("https://notes-fourteen-it-pr-17.fly.dev"))
+                .andExpect(jsonPath("$[2].previewReady").value(false))
+                .andExpect(jsonPath("$[3].number").value(14))
+                .andExpect(jsonPath("$[3].status").value("AGENT_WORKING"))
+                .andExpect(jsonPath("$[3].previewUrl").doesNotExist())
+                .andExpect(jsonPath("$[3].previewReady").value(false))
+                .andExpect(jsonPath("$[4].number").value(12))
+                .andExpect(jsonPath("$[4].status").value("READY_FOR_DEMO"))
                 .andExpect(
-                        jsonPath("$[2].previewUrl").value("https://notes-fourteen-it-pr-13.fly.dev"))
-                .andExpect(jsonPath("$[2].previewReady").value(true));
+                        jsonPath("$[4].previewUrl").value("https://notes-fourteen-it-pr-13.fly.dev"))
+                .andExpect(jsonPath("$[4].previewReady").value(true));
+    }
+
+    @Test
+    void chat_shows_only_the_messages_with_a_marker() throws Exception {
+        github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
+                .andRespond(
+                        json(
+                                """
+                                [
+                                  {"body": "## Idea chat\\n\\nOnly as CSV."},
+                                  {"body": "Claude is working on it"},
+                                  {"body": "## Refine\\n\\nWhich columns should it have?"}
+                                ]
+                                """));
+
+        mvc.perform(get("/api/ideas/19/messages").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].author").value("me"))
+                .andExpect(jsonPath("$[0].text").value("Only as CSV."))
+                .andExpect(jsonPath("$[1].author").value("agent"))
+                .andExpect(jsonPath("$[1].text").value("Which columns should it have?"));
+    }
+
+    @Test
+    void reply_is_a_comment_that_starts_the_refine_agent() throws Exception {
+        github.expect(requestTo(REPO + "/issues/19/comments"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().json("{\"body\": \"## Idea chat\\n\\nTitle and text.\"}"))
+                .andRespond(withStatus(HttpStatus.CREATED));
+
+        mvc.perform(
+                        post("/api/ideas/19/messages")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"text\": \" Title and text. \"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.author").value("me"));
+    }
+
+    @Test
+    void empty_reply_is_rejected() throws Exception {
+        github.expect(never(), requestTo(REPO + "/issues/19/comments"));
+
+        mvc.perform(
+                        post("/api/ideas/19/messages")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"text\": \" \"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

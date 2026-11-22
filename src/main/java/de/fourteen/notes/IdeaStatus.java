@@ -1,11 +1,18 @@
 package de.fourteen.notes;
 
-/** Where an idea (an open issue with the label `agent`) stands, derived from GitHub. */
+/** Where an idea (an open issue with the label `refine` or `agent`) stands, derived from GitHub. */
 enum IdeaStatus {
+    REFINING,
+    WAITING_FOR_ANSWER,
     AGENT_WORKING,
     REVIEW_RUNNING,
     READY_FOR_DEMO,
     WAITING_FOR_HUMAN;
+
+    /** An idea the refine agent has not released yet: it is thinking, or waits for the human. */
+    static IdeaStatus refine(boolean refineRuns) {
+        return refineRuns ? REFINING : WAITING_FOR_ANSWER;
+    }
 
     /**
      * @param agentRuns whether the coding agent runs or is queued for the issue or its pull request

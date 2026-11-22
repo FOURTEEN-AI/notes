@@ -188,6 +188,10 @@ header {
   font-size: 0.85rem;
 }
 
+.waiting_for_answer {
+  color: light-dark(#e65100, #ffb74d);
+}
+
 .ready_for_demo,
 .success {
   color: light-dark(#2e7d32, #81c784);

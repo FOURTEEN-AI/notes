@@ -178,6 +178,30 @@ changes, which the coding agent may not make.
 - [x] The next agent issue ("reverse the sort order", #6) arrives with a tour that the human walks through
   without reading the pull request description
 
+## Step 5: a refine agent asks back before coding
+
+**Result:** an idea is cleared up in its chat before the coding agent starts. The refine agent asks
+short questions, the human answers in the chat, and the agent releases the idea when it is clear.
+
+**Scope**
+
+- The app creates an idea as an issue with the label `refine` instead of `agent`. The new workflow
+  `refine.yml` starts the refine agent on it and on every answer.
+- The agent reads the idea, the chat, the code and the docs. It asks at most 3 short questions per
+  round, in a comment that starts with `## Refine`, or releases the idea with its assumptions: it
+  swaps `refine` for `agent`, which starts the coding agent as before. After 3 rounds it releases
+  the idea anyway. It can only read and comment; it never changes the issue text or any file.
+- Each idea has its own chat in the app: the description, then the issue comments that start with
+  `## Idea chat` (the human) or `## Refine` (the agent), then the preview link once the preview is
+  deployed. The status stays a status ("Refine-Agent arbeitet", "Rückfrage an dich", …), not a
+  message. The input is shown while the idea carries `refine`.
+
+**Not in this step:** a button to release an idea by hand, discarding an idea, replies after the
+coding agent started (that is the preview bar's feedback).
+
+**Risks:** the idea and the chat are untrusted text for an agent that can edit labels; it has no
+write access to code, and the coding agent's own limits stay as they are.
+
 ## Candidates for later steps
 
 Not planned, only to keep ideas. The order is decided when a step is done.

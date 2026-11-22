@@ -54,6 +54,11 @@ fly certs check notes.fourteen-it.de --app notes-fourteen-it
 
 ## Agents
 
+A new idea is an issue with the label `refine`. `.github/workflows/refine.yml` starts the refine agent on it: it
+asks back with a comment that starts with `## Refine` (at most 3 rounds), or releases the idea by
+swapping `refine` for `agent`. An answer is a comment that starts with `## Idea chat` (by the
+owner, a member or a collaborator) and starts it again; it can only read and comment.
+
 A GitHub issue with the label `agent` is taken to a pull request by `.github/workflows/agent.yml`.
 `.github/workflows/review.yml` reviews every pull request; its check `review` must pass. A failed
 review on an `agent/*` branch goes back to the coding agent, at most 3 rounds. `ci.yml` deploys a
@@ -68,10 +73,12 @@ collaborator) starts the coding agent on that pull request again, without a roun
 
 The app talks to GitHub with a token, so the whole loop runs without opening GitHub:
 
-- Production: "Ideen" creates an issue with the label `agent` and lists the open ones with their
-  status (agent working, review running, ready for the demo, waiting for the human) and a link to
-  the preview once its check `preview` (the deploy) is green. The status comes from the pull request on `agent/issue-<n>`, its checks `build`
-  and `review`, and running `agent.yml` runs (their `run-name` is `Agent #<n>`).
+- Production: "Ideen" creates an issue with the label `refine` and lists the open ones with `refine` or
+  `agent` and their status (refine agent working, question for you, agent working, review running,
+  ready for the demo, waiting for the human). A click opens the idea's chat: the description, the
+  comments with the markers `## Idea chat` and `## Refine`, an input while the label is `refine`, and
+  the preview link once its check `preview` (the deploy) is green. The status comes from the pull request on `agent/issue-<n>`, its checks `build`
+  and `review`, and running `agent.yml` runs (their `run-name` is `Agent #<n>`; `Refine #<n>` for `refine.yml`).
 - Preview app: `ci.yml` deploys it with `PULL_REQUEST=<n>`, which shows a bar with the pull
   request, its checks, a feedback field (posts a `## Human feedback` comment) and a merge button
   (squash). The app merges only when `build` and `review` are green on the head commit, because

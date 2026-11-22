@@ -23,13 +23,17 @@ import tools.jackson.databind.JsonNode;
 @Component
 class GitHub {
 
-    record Issue(int number, String title, String body) {}
+    /** refining: the label `refine` is still set, so the refine agent has not released the idea. */
+    record Issue(int number, String title, String body, boolean refining) {}
+
+    record Comment(String body) {}
 
     record PullRequest(
             int number, String title, String body, String url, String branch, String sha, String state) {}
 
-    // run-name of agent.yml: "Agent #<issue or pull request number>".
+    // run-name of agent.yml: "Agent #<issue or pull request number>", of refine.yml: "Refine #<issue>".
     private static final Pattern AGENT_RUN = Pattern.compile("^Agent #(\\d+)$");
+    private static final Pattern REFINE_RUN = Pattern.compile("^Refine #(\\d+)$");
 
     private final GitHubProperties properties;
     private final RestClient rest;
@@ -49,7 +53,7 @@ class GitHub {
                         .build();
     }
 
-    /** Creates an issue with the label `agent`, which starts the coding agent. */
+    /** Creates an issue with the label `refine`, which starts the refine agent. */
     Issue createIssue(String title, String body) {
         JsonNode issue =
                 call(
@@ -60,24 +64,25 @@ class GitHub {
                                                 Map.of(
                                                         "title", title,
                                                         "body", body,
-                                                        "labels", List.of("agent")))
+                                                        "labels", List.of("refine")))
                                         .retrieve()
                                         .body(JsonNode.class));
         return toIssue(issue);
     }
 
-    /** Open issues with the label `agent`, newest first. */
-    List<Issue> openAgentIssues() {
+    /** Open issues with the label `refine` or `agent`, newest first. */
+    List<Issue> openIdeaIssues() {
         JsonNode items =
                 call(
                         () ->
                                 rest.get()
-                                        .uri("/issues?labels=agent&state=open&per_page=100")
+                                        .uri("/issues?state=open&per_page=100")
                                         .retrieve()
                                         .body(JsonNode.class));
         return items.values().stream()
                 // The issues endpoint lists pull requests too.
                 .filter(item -> !item.has("pull_request"))
+                .filter(item -> hasLabel(item, "refine") || hasLabel(item, "agent"))
                 .map(GitHub::toIssue)
                 .toList();
     }
@@ -105,16 +110,39 @@ class GitHub {
 
     /** The numbers (issue or pull request) for which the coding agent runs or is queued. */
     Set<Integer> activeAgentRuns() {
+        return activeRuns("agent.yml", AGENT_RUN);
+    }
+
+    /** The numbers of the issues for which the refine agent runs or is queued. */
+    Set<Integer> activeRefineRuns() {
+        return activeRuns("refine.yml", REFINE_RUN);
+    }
+
+    /** The comments of an issue, oldest first. */
+    List<Comment> comments(int number) {
+        JsonNode items =
+                call(
+                        () ->
+                                rest.get()
+                                        .uri("/issues/{number}/comments?per_page=100", number)
+                                        .retrieve()
+                                        .body(JsonNode.class));
+        return items.values().stream()
+                .map(item -> new Comment(item.path("body").asString("")))
+                .toList();
+    }
+
+    private Set<Integer> activeRuns(String workflow, Pattern runName) {
         JsonNode runs =
                 call(
                         () ->
                                 rest.get()
-                                        .uri("/actions/workflows/agent.yml/runs?per_page=30")
+                                        .uri("/actions/workflows/{workflow}/runs?per_page=30", workflow)
                                         .retrieve()
                                         .body(JsonNode.class));
         Set<Integer> numbers = new HashSet<>();
         for (JsonNode run : runs.get("workflow_runs").values()) {
-            Matcher matcher = AGENT_RUN.matcher(run.path("display_title").asString(""));
+            Matcher matcher = runName.matcher(run.path("display_title").asString(""));
             if (!"completed".equals(run.path("status").asString()) && matcher.matches()) {
                 numbers.add(Integer.parseInt(matcher.group(1)));
             }
@@ -173,12 +201,18 @@ class GitHub {
                 .orElse(CheckState.PENDING);
     }
 
+    private static boolean hasLabel(JsonNode issue, String name) {
+        return issue.path("labels").values().stream()
+                .anyMatch(label -> name.equals(label.path("name").asString()));
+    }
+
     private static Issue toIssue(JsonNode issue) {
         return new Issue(
                 issue.get("number").asInt(),
                 issue.get("title").asString(),
                 // An empty description is null.
-                issue.path("body").isString() ? issue.get("body").asString() : "");
+                issue.path("body").isString() ? issue.get("body").asString() : "",
+                hasLabel(issue, "refine"));
     }
 
     private static PullRequest toPullRequest(JsonNode pr) {
