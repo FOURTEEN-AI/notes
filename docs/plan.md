@@ -45,10 +45,10 @@ tool, ADRs.
 
 **Done when**
 
-- [ ] Fly app, Postgres, secrets and `FLY_API_TOKEN` are set up (see README)
-- [ ] A push to `main` deploys without manual steps
-- [ ] A note written on the phone shows up on the laptop
-- [ ] The note is still there after the next deploy
+- [x] Fly app, Postgres, secrets and `FLY_API_TOKEN` are set up (see README)
+- [x] A push to `main` deploys without manual steps
+- [x] A note written on the phone shows up on the laptop
+- [x] The note is still there after the next deploy
 
 ## Candidates for later steps
 
