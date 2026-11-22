@@ -28,6 +28,9 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: claude
+          # The agent's turns in the log, to see why a review ended without a verdict. The
+          # repository is public, and so is all the reviewer reads; secrets stay masked.
+          show_full_output: true
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 30
