@@ -94,6 +94,8 @@ limit, hence the 3 rounds.
 
 Not planned, only to keep ideas. The order is decided when a step is done.
 
+- Strengthen the harness: what the agents need to work more reliably (feedback such as checks
+  and tests, instructions, guardrails, observability), based on what the run with issue #1 shows.
 - Edit notes.
 - Linting and formatting, once style discussions start to cost time.
 - Database migrations (e.g. Flyway), with the first schema change that `create table if not
