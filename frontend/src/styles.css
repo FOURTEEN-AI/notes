@@ -56,7 +56,25 @@ input {
 }
 
 .ideas {
-  margin-top: 2rem;
+  margin-top: 3rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, #1565c0 35%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, #1565c0 8%, Canvas);
+}
+
+.ideas h2 {
+  margin: 0;
+}
+
+.ideas .hint {
+  margin: 0.25rem 0 1rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.ideas li:last-child {
+  border-bottom: none;
 }
 
 .status,

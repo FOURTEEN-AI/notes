@@ -16,7 +16,8 @@ const statusLabels: Record<Status, string> = {
   WAITING_FOR_HUMAN: 'Wartet auf dich',
 };
 
-// Each idea is a GitHub issue with the label `agent`. Hidden when GitHub is not configured (503).
+// Each idea is a GitHub issue with the label `agent`. Hidden when GitHub is not configured (503)
+// and in a preview app (/api/preview answers there): ideas are submitted in production only.
 export function Ideas() {
   const [ideas, setIdeas] = useState<Idea[] | null>(null);
   const [title, setTitle] = useState('');
@@ -36,8 +37,14 @@ export function Ideas() {
   }
 
   useEffect(() => {
-    load().catch(() => setError('Ideen konnten nicht geladen werden.'));
-    const timer = setInterval(() => load().catch(() => {}), 30000);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    fetch('/api/preview')
+      .then((preview) => {
+        if (preview.ok) return;
+        load().catch(() => setError('Ideen konnten nicht geladen werden.'));
+        timer = setInterval(() => load().catch(() => {}), 30000);
+      })
+      .catch(() => {});
     return () => clearInterval(timer);
   }, []);
 
@@ -66,6 +73,7 @@ export function Ideas() {
   return (
     <section className="ideas">
       <h2>Ideen</h2>
+      <p className="hint">Eine Idee wird ein Issue, ein Agent setzt sie um.</p>
       <form onSubmit={submit}>
         <input
           value={title}
