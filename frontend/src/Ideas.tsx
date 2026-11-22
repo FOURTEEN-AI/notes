@@ -21,12 +21,12 @@ const statusLabels: Record<Status, string> = {
 // A button opens them in a dialog, so they stay apart from the notes.
 export function Ideas() {
   const [ideas, setIdeas] = useState<Idea[] | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  const chat = useRef<HTMLUListElement>(null);
 
   async function load() {
     const response = await fetch('/api/ideas');
@@ -56,16 +56,23 @@ export function Ideas() {
     return () => clearInterval(timer);
   }, [open]);
 
+  // The newest message is at the bottom, like in a chat.
+  useEffect(() => {
+    chat.current?.scrollTo({ top: chat.current.scrollHeight });
+  }, [ideas, open]);
+
   if (ideas === null && error === null) return null;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    const text = message.trim();
+    if (busy || text === '') return;
     setBusy(true);
     setError(null);
     const response = await fetch('/api/ideas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description }),
+      body: JSON.stringify({ title: text.split('\n')[0].slice(0, 80), description: text }),
     });
     setBusy(false);
     if (!response.ok) {
@@ -74,8 +81,7 @@ export function Ideas() {
     }
     const idea = (await response.json()) as Idea;
     setIdeas((current) => [idea, ...(current ?? [])]);
-    setTitle('');
-    setDescription('');
+    setMessage('');
   }
 
   return (
@@ -97,46 +103,48 @@ export function Ideas() {
             Schließen
           </button>
         </div>
-        <p className="hint">Eine Idee wird ein Issue, ein Agent setzt sie um.</p>
-        <form onSubmit={submit}>
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Titel"
-          />
-          <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="Beschreibung"
-            rows={4}
-          />
-          <button type="submit" disabled={busy || title.trim() === ''}>
-            Idee einreichen
-          </button>
-        </form>
-        {error && <p className="error">{error}</p>}
-        <ul>
-          {(ideas ?? []).map((idea) => (
+        <p className="hint">Schreib deine Idee als Nachricht: Sie wird ein Issue, ein Agent setzt sie um.</p>
+        <ul className="chat" ref={chat}>
+          {[...(ideas ?? [])].reverse().map((idea) => (
             <li key={idea.number}>
-              <p>
-                #{idea.number} {idea.title}
+              <p className="bubble me">{idea.title}</p>
+              <p className="bubble agent">
+                #{idea.number} ·{' '}
+                <span className={`status ${idea.status.toLowerCase()}`}>{statusLabels[idea.status]}</span>
+                {idea.previewUrl && (
+                  <>
+                    {' · '}
+                    {idea.previewReady ? (
+                      <a href={idea.previewUrl} target="_blank" rel="noreferrer">
+                        Preview
+                      </a>
+                    ) : (
+                      <span className="status">Preview wird vorbereitet</span>
+                    )}
+                  </>
+                )}
               </p>
-              <span className={`status ${idea.status.toLowerCase()}`}>{statusLabels[idea.status]}</span>
-              {idea.previewUrl && (
-                <>
-                  {' · '}
-                  {idea.previewReady ? (
-                    <a href={idea.previewUrl} target="_blank" rel="noreferrer">
-                      Preview
-                    </a>
-                  ) : (
-                    <span className="status">Preview wird vorbereitet</span>
-                  )}
-                </>
-              )}
             </li>
           ))}
         </ul>
+        {error && <p className="error">{error}</p>}
+        <form className="chat-form" onSubmit={submit}>
+          <textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder="Beschreibe deine Idee …"
+            rows={2}
+          />
+          <button type="submit" disabled={busy || message.trim() === ''}>
+            Senden
+          </button>
+        </form>
       </dialog>
     </>
   );
