@@ -85,6 +85,7 @@ class GitHubApiTest {
                                         """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.number").value(12))
+                .andExpect(jsonPath("$.description").value("Click a note to edit it."))
                 .andExpect(jsonPath("$.status").value("AGENT_WORKING"));
     }
 
@@ -107,7 +108,7 @@ class GitHubApiTest {
                         json(
                                 """
                                 [
-                                  {"number": 16, "title": "Dark mode"},
+                                  {"number": 16, "title": "Dark mode", "body": "Add a dark mode."},
                                   {"number": 14, "title": "Search notes"},
                                   {"number": 12, "title": "Edit notes"},
                                   {"number": 11, "title": "A pull request", "pull_request": {}}
@@ -139,6 +140,8 @@ class GitHubApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].number").value(16))
+                .andExpect(jsonPath("$[0].description").value("Add a dark mode."))
+                .andExpect(jsonPath("$[1].description").value(""))
                 .andExpect(jsonPath("$[0].status").value("REVIEW_RUNNING"))
                 .andExpect(
                         jsonPath("$[0].previewUrl").value("https://notes-fourteen-it-pr-17.fly.dev"))

@@ -23,7 +23,7 @@ import tools.jackson.databind.JsonNode;
 @Component
 class GitHub {
 
-    record Issue(int number, String title) {}
+    record Issue(int number, String title, String body) {}
 
     record PullRequest(
             int number, String title, String body, String url, String branch, String sha, String state) {}
@@ -63,7 +63,7 @@ class GitHub {
                                                         "labels", List.of("agent")))
                                         .retrieve()
                                         .body(JsonNode.class));
-        return new Issue(issue.get("number").asInt(), issue.get("title").asString());
+        return toIssue(issue);
     }
 
     /** Open issues with the label `agent`, newest first. */
@@ -78,7 +78,7 @@ class GitHub {
         return items.values().stream()
                 // The issues endpoint lists pull requests too.
                 .filter(item -> !item.has("pull_request"))
-                .map(item -> new Issue(item.get("number").asInt(), item.get("title").asString()))
+                .map(GitHub::toIssue)
                 .toList();
     }
 
@@ -171,6 +171,14 @@ class GitHub {
                                     : CheckState.FAILURE;
                         })
                 .orElse(CheckState.PENDING);
+    }
+
+    private static Issue toIssue(JsonNode issue) {
+        return new Issue(
+                issue.get("number").asInt(),
+                issue.get("title").asString(),
+                // An empty description is null.
+                issue.path("body").isString() ? issue.get("body").asString() : "");
     }
 
     private static PullRequest toPullRequest(JsonNode pr) {

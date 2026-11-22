@@ -120,6 +120,39 @@ header {
   border: none;
 }
 
+.ideas .idea-title {
+  margin: 0.75rem 0 0;
+  font-size: 1.1rem;
+}
+
+.ideas .idea-status {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.ideas .idea-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 50vh;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ideas .idea-list li {
+  padding: 0;
+  border: none;
+}
+
+.ideas .idea-list button {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  text-align: left;
+}
+
 .bubble {
   max-width: 80%;
   margin: 0;
