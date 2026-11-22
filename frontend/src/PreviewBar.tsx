@@ -39,7 +39,7 @@ export function PreviewBar() {
 
   useEffect(() => {
     load().catch(() => {});
-    const timer = setInterval(() => load().catch(() => {}), 15000);
+    const timer = setInterval(() => load().catch(() => {}), 5000);
     return () => clearInterval(timer);
   }, []);
 
