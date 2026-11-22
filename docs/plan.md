@@ -143,7 +143,7 @@ login, and let them comment and merge through production.
   preview
 - [x] A feature went from idea to production without opening GitHub
 
-## Step 4: a guided demo in the preview
+## Step 4: a guided demo in the preview (done)
 
 **Result:** a preview app walks the human through its change step by step. Each step says what
 to do and what should happen, and highlights the element on the page. The human no longer has to
@@ -173,9 +173,9 @@ changes, which the coding agent may not make.
 
 **Done when**
 
-- [ ] `/api/preview` returns the steps of the ` ```demo ` block
-- [ ] The tour starts in a preview, highlights its elements and survives a reload
-- [ ] The next agent issue (e.g. "edit notes") arrives with a tour that the human walks through
+- [x] `/api/preview` returns the steps of the ` ```demo ` block
+- [x] The tour starts in a preview, highlights its elements and survives a reload
+- [x] The next agent issue ("reverse the sort order", #6) arrives with a tour that the human walks through
   without reading the pull request description
 
 ## Candidates for later steps
