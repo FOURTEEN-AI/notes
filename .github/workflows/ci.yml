@@ -83,10 +83,12 @@ jobs:
         run: flyctl secrets set --app "$APP" --stage GITHUB_TOKEN="$GITHUB_APP_TOKEN"
         env:
           GITHUB_APP_TOKEN: ${{ secrets.APP_GITHUB_TOKEN }}
-      # PULL_REQUEST turns on the preview bar for exactly this pull request.
+      # PULL_REQUEST turns on the preview bar for exactly this pull request. PULL_REQUEST_SHA
+      # lets an open page notice that a newer commit is deployed.
       - run: >-
           flyctl deploy --app "$APP" --remote-only --ha=false
           --env PULL_REQUEST=${{ github.event.number }}
+          --env PULL_REQUEST_SHA=${{ github.event.pull_request.head.sha }}
       - name: Link the preview in the pull request
         run: |
           gh pr comment "${{ github.event.number }}" --edit-last --create-if-none \

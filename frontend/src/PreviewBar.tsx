@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 type CheckState = 'PENDING' | 'SUCCESS' | 'FAILURE';
 type Preview = {
   number: number;
   title: string;
   state: string;
+  deployedSha: string | null;
   build: CheckState;
   review: CheckState;
   mergeable: boolean;
@@ -22,10 +23,15 @@ export function PreviewBar() {
   const [text, setText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The commit that served this page. Once another one is deployed, the bar offers a reload.
+  const loadedSha = useRef<string | null>(null);
 
   async function load() {
     const response = await fetch('/api/preview');
-    if (response.ok) setPreview((await response.json()) as Preview);
+    if (!response.ok) return;
+    const current = (await response.json()) as Preview;
+    loadedSha.current ??= current.deployedSha;
+    setPreview(current);
   }
 
   useEffect(() => {
@@ -35,6 +41,8 @@ export function PreviewBar() {
   }, []);
 
   if (!preview) return null;
+
+  const newVersion = preview.deployedSha !== loadedSha.current;
 
   async function sendFeedback(event: FormEvent) {
     event.preventDefault();
@@ -81,6 +89,14 @@ export function PreviewBar() {
         </span>
         {preview.state !== 'open' && <span>{preview.state === 'merged' ? 'gemergt' : 'geschlossen'}</span>}
       </span>
+      {newVersion && (
+        <p>
+          Neue Version bereit.{' '}
+          <button type="button" onClick={() => location.reload()}>
+            Neu laden
+          </button>
+        </p>
+      )}
       {preview.state === 'open' && (
         <form onSubmit={sendFeedback}>
           <textarea

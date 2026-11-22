@@ -131,3 +131,4 @@ EOF
 | `GITHUB_TOKEN` | Fly secret (production; set by `ci.yml` on previews) | ideas and preview bar |
 | `APP_GITHUB_TOKEN` | GitHub Actions secret | the same token, for the preview apps |
 | `PULL_REQUEST` | Fly env of a preview (set by `ci.yml`) | turns on the preview bar |
+| `PULL_REQUEST_SHA` | Fly env of a preview (set by `ci.yml`) | lets the bar offer a reload after a new deploy |

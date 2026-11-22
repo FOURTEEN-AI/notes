@@ -34,7 +34,8 @@ import org.springframework.test.web.servlet.MockMvc;
             "spring.security.user.name=test",
             "spring.security.user.password=secret",
             "github.token=test-token",
-            "pull-request=7"
+            "pull-request=7",
+            "pull-request-sha=abc123"
         })
 @AutoConfigureMockMvc
 @AutoConfigureMockRestServiceServer
@@ -163,8 +164,10 @@ class GitHubApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(7))
                 .andExpect(jsonPath("$.title").value("feat: pull request 7"))
+                .andExpect(jsonPath("$.deployedSha").value("abc123"))
                 .andExpect(jsonPath("$.build").value("SUCCESS"))
                 .andExpect(jsonPath("$.review").value("PENDING"))
+
                 .andExpect(jsonPath("$.mergeable").value(false));
     }
 

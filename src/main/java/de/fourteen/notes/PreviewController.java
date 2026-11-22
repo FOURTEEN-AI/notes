@@ -19,8 +19,18 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/preview")
 class PreviewController {
 
+    /**
+     * deployedSha is the commit this app runs (env PULL_REQUEST_SHA, set by ci.yml). A page that
+     * was loaded from another commit offers to reload.
+     */
     record Preview(
-            int number, String title, String state, CheckState build, CheckState review, boolean mergeable) {}
+            int number,
+            String title,
+            String state,
+            String deployedSha,
+            CheckState build,
+            CheckState review,
+            boolean mergeable) {}
 
     record Feedback(String text) {}
 
@@ -29,10 +39,15 @@ class PreviewController {
 
     private final GitHub github;
     private final Integer pullRequest;
+    private final String deployedSha;
 
-    PreviewController(GitHub github, @Value("${pull-request:#{null}}") Integer pullRequest) {
+    PreviewController(
+            GitHub github,
+            @Value("${pull-request:#{null}}") Integer pullRequest,
+            @Value("${pull-request-sha:#{null}}") String deployedSha) {
         this.github = github;
         this.pullRequest = pullRequest;
+        this.deployedSha = deployedSha;
     }
 
     @GetMapping
@@ -43,6 +58,7 @@ class PreviewController {
                 pr.number(),
                 pr.title(),
                 pr.state(),
+                deployedSha,
                 checks.build(),
                 checks.review(),
                 "open".equals(pr.state()) && checks.green());
