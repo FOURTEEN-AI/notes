@@ -50,7 +50,7 @@ tool, ADRs.
 - [x] A note written on the phone shows up on the laptop
 - [x] The note is still there after the next deploy
 
-## Step 2: an agent takes an issue to a pull request (current)
+## Step 2: an agent takes an issue to a pull request (done)
 
 **Result:** a GitHub issue labelled `agent` becomes a pull request with a preview app. A second
 agent reviews it. The human sees no code, only the demo, and merges. Proven with the issue
@@ -89,7 +89,7 @@ limit, hence the 3 rounds.
 - [x] A labelled issue produces a pull request without manual steps
 - [x] The review agent blocks a pull request with a finding and the coding agent fixes it
 - [x] Every pull request has a preview app, removed when the pull request closes
-- [ ] "Delete notes" is merged after a demo and live in production
+- [x] "Delete notes" is merged after a demo and live in production
 
 ## Step 3: from idea to merge without GitHub (next)
 
