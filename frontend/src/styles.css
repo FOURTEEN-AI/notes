@@ -47,7 +47,7 @@ time {
 }
 
 .error {
-  color: #c62828;
+  color: light-dark(#c62828, #ef9a9a);
 }
 
 input {
@@ -190,12 +190,12 @@ header {
 
 .ready_for_demo,
 .success {
-  color: #2e7d32;
+  color: light-dark(#2e7d32, #81c784);
 }
 
 .waiting_for_human,
 .failure {
-  color: #c62828;
+  color: light-dark(#c62828, #ef9a9a);
 }
 
 .preview-bar {
