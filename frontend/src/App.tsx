@@ -8,16 +8,17 @@ export function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [oldestFirst, setOldestFirst] = useState(false);
 
   useEffect(() => {
-    fetch('/api/notes')
+    fetch(`/api/notes?order=${oldestFirst ? 'asc' : 'desc'}`)
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json() as Promise<Note[]>;
       })
       .then(setNotes)
       .catch(() => setError('Notizen konnten nicht geladen werden.'));
-  }, []);
+  }, [oldestFirst]);
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -32,7 +33,7 @@ export function App() {
       return;
     }
     const note = (await response.json()) as Note;
-    setNotes([note, ...notes]);
+    setNotes(oldestFirst ? [...notes, note] : [note, ...notes]);
     setText('');
   }
 
@@ -66,6 +67,13 @@ export function App() {
           </button>
         </form>
         {error && <p className="error">{error}</p>}
+        <button
+          type="button"
+          className="sort-button"
+          onClick={() => setOldestFirst(!oldestFirst)}
+        >
+          {oldestFirst ? 'Älteste zuerst ↑' : 'Neueste zuerst ↓'}
+        </button>
         <ul>
           {notes.map((note) => (
             <li key={note.id}>

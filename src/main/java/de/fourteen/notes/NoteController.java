@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,8 +28,20 @@ class NoteController {
     }
 
     @GetMapping
-    List<Note> list() {
-        return jdbc.sql("select id, text, created_at from note order by created_at desc, id desc")
+    List<Note> list(@RequestParam(defaultValue = "desc") String order) {
+        String direction =
+                switch (order) {
+                    case "asc" -> "asc";
+                    case "desc" -> "desc";
+                    default ->
+                            throw new ResponseStatusException(
+                                    HttpStatus.BAD_REQUEST, "order must be asc or desc");
+                };
+        return jdbc.sql(
+                        "select id, text, created_at from note order by created_at "
+                                + direction
+                                + ", id "
+                                + direction)
                 .query(Note.class)
                 .list();
     }

@@ -54,6 +54,27 @@ class NotesApiTest {
     }
 
     @Test
+    void notes_can_be_listed_oldest_first_and_bad_order_is_rejected() throws Exception {
+        for (String text : new String[] {"older", "newer"}) {
+            mvc.perform(
+                            post("/api/notes")
+                                    .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"text\":\"" + text + "\"}"))
+                    .andExpect(status().isCreated());
+        }
+
+        mvc.perform(get("/api/notes?order=asc").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[-1].text").value("newer"))
+                .andExpect(jsonPath("$[-2].text").value("older"));
+        mvc.perform(get("/api/notes?order=desc").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(jsonPath("$[0].text").value("newer"));
+        mvc.perform(get("/api/notes?order=sideways").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void deleted_note_disappears_and_unknown_id_is_not_found() throws Exception {
         String body =
                 mvc.perform(
