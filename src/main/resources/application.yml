@@ -6,6 +6,10 @@ spring:
   sql:
     init:
       mode: always
+  # Production and every preview share one small Postgres (512 MB RAM); keep each app's share small.
+  datasource:
+    hikari:
+      maximum-pool-size: 3
 
 server:
   shutdown: graceful
