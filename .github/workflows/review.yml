@@ -35,8 +35,9 @@ jobs:
           prompt: |
             You are the reviewer of pull request #${{ github.event.number }} in ${{ github.repository }}.
             Nobody else reads the code of this pull request, so you are the gate. You did not
-            write the change. Read CLAUDE.md and docs/plan.md, then the diff
-            (`gh pr diff ${{ github.event.number }}`) and the code around it.
+            write the change. Read CLAUDE.md and docs/plan.md, the issue that the pull request
+            closes (`gh issue view <n>`), then the diff (`gh pr diff ${{ github.event.number }}`)
+            and the code around it.
 
             Fail the review for any of these, and only for these:
             - The change does not do what the pull request or its issue says, or does more.
