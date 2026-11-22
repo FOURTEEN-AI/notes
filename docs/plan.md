@@ -85,10 +85,10 @@ limit, hence the 3 rounds.
 
 **Done when**
 
-- [ ] Branch protection on `main` requires pull request, green CI and green review
-- [ ] A labelled issue produces a pull request without manual steps
-- [ ] The review agent blocks a pull request with a finding and the coding agent fixes it
-- [ ] Every pull request has a preview app, removed when the pull request closes
+- [x] Branch protection on `main` requires pull request, green CI and green review
+- [x] A labelled issue produces a pull request without manual steps
+- [x] The review agent blocks a pull request with a finding and the coding agent fixes it
+- [x] Every pull request has a preview app, removed when the pull request closes
 - [ ] "Delete notes" is merged after a demo and live in production
 
 ## Candidates for later steps
