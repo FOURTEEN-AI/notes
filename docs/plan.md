@@ -136,7 +136,7 @@ login, and let them comment and merge through production.
 
 **Done when**
 
-- [ ] An idea submitted in production becomes an issue and the coding agent starts
+- [x] An idea submitted in production becomes an issue and the coding agent starts
 - [ ] The list in production shows each idea's status and links to its preview
 - [ ] A comment from the preview bar makes the coding agent push a fix
 - [ ] The merge button is only enabled with green `build` and `review`, and merges from the
