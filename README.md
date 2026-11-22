@@ -62,9 +62,11 @@ closed.
 One-time setup:
 
 ```sh
-# Claude GitHub App on the repository, so that the agent's pushes start CI, and the secret
-# CLAUDE_CODE_OAUTH_TOKEN (paid by the Claude subscription). Run in the devcontainer:
-claude    # then /install-github-app
+# Install the Claude GitHub App (https://github.com/apps/claude) on the repository, so that the
+# agent's pushes start CI. Then, in a terminal inside the devcontainer, create a token that is
+# paid by the Claude subscription and store it as the secret CLAUDE_CODE_OAUTH_TOKEN:
+claude setup-token
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo FOURTEEN-AI/notes
 
 # Fly org token for the preview jobs. Production keeps its own, narrower FLY_API_TOKEN.
 fly tokens create org | GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set FLY_ORG_TOKEN --repo FOURTEEN-AI/notes
