@@ -37,6 +37,19 @@ fly tokens create deploy --app notes-fourteen-it \
   | GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set FLY_API_TOKEN --repo FOURTEEN-AI/notes
 ```
 
+The app runs on one machine (`--ha=false` in CI). The first deploy creates two; remove the
+extra one with `fly machines list --app notes-fourteen-it` and `fly machines destroy <id>`.
+
+### Custom domain
+
+The app is served at https://notes.fourteen-it.de. At the DNS provider (IONOS) add a `CNAME`
+record `notes` → `notes-fourteen-it.fly.dev`, then:
+
+```sh
+fly certs add notes.fourteen-it.de --app notes-fourteen-it
+fly certs check notes.fourteen-it.de --app notes-fourteen-it
+```
+
 ## Configuration
 
 | Name | Where | Purpose |
