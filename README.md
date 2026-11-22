@@ -81,7 +81,7 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/
 {
   "required_status_checks": {"strict": false, "contexts": ["build", "review"]},
   "enforce_admins": false,
-  "required_pull_request_reviews": null,
+  "required_pull_request_reviews": {"required_approving_review_count": 0},
   "restrictions": null
 }
 EOF
