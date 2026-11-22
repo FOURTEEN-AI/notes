@@ -91,6 +91,58 @@ limit, hence the 3 rounds.
 - [x] Every pull request has a preview app, removed when the pull request closes
 - [ ] "Delete notes" is merged after a demo and live in production
 
+## Step 3: from idea to merge without GitHub (next)
+
+**Result:** the human runs the whole loop from the app. A feature idea is submitted in production,
+its progress is visible there, and the new feature is demoed, commented on and merged in its
+preview app. GitHub is no longer opened.
+
+**Scope**
+
+- GitHub stays the source of truth (issues, pull requests, labels). The app talks to the GitHub
+  API; the agent and review workflows keep working as in step 2.
+- Production: a form with title and description creates an issue with the label `agent`, so the
+  coding agent starts right away. Below it, a list of the open issues labelled `agent`, each with
+  a status derived from its pull request and checks (agent working, review running, ready for
+  demo, waiting for the human) and a link to its preview app. A merged pull request closes its
+  issue, which then leaves the list.
+- Preview app: a bar on top with the pull request's title, the state of its checks, a comment
+  field and a merge button for exactly this pull request. The deploy job passes the pull request
+  number as an environment variable; without it the bar is not shown.
+- Feedback: the comment is posted on the pull request and starts with `## Human feedback`.
+  `agent.yml` gets an `issue_comment` trigger for this marker, and the coding agent implements
+  exactly that feedback; the review then runs again. Human feedback has no round limit. The same
+  comment written directly on GitHub works too.
+- Merge: only when the checks `build` and `review` are green. The app checks this itself,
+  because the token belongs to an admin and could bypass the branch protection.
+- Access: a fine-grained personal access token for `FOURTEEN-AI/notes` only (Issues, Pull
+  requests, Contents: write). A Fly secret in production, and a GitHub Actions secret that the
+  preview deploy job passes to the preview apps.
+- Tests: the GitHub API is faked with Spring's own test support, no new test tool.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow
+changes, which the coding agent may not make.
+
+**Not in this step:** discarding an idea from the app, notifications, a separate login for the
+previews, a GitHub App or GitHub login instead of the token, ideas stored in the app's database.
+
+**Risks:** the preview apps run code that only the review agent has read, and they hold the
+token. Such code (an agent mistake, a bad dependency, a prompt injection) could read the token
+and push to `main` as an admin, which CI then deploys, or merge its own pull request without a
+demo. The previews also share the production login, so their code can already call the
+production API. Accepted for now: only the human writes issues, so the chance is low. The fix,
+if it becomes necessary, is to keep the token in production only, give the previews their own
+login, and let them comment and merge through production.
+
+**Done when**
+
+- [ ] An idea submitted in production becomes an issue and the coding agent starts
+- [ ] The list in production shows each idea's status and links to its preview
+- [ ] A comment from the preview bar makes the coding agent push a fix
+- [ ] The merge button is only enabled with green `build` and `review`, and merges from the
+  preview
+- [ ] A feature went from idea to production without opening GitHub
+
 ## Candidates for later steps
 
 Not planned, only to keep ideas. The order is decided when a step is done.
