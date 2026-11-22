@@ -25,6 +25,8 @@ fly apps create notes-fourteen-it
 # Unmanaged Fly Postgres, a single small machine.
 fly postgres create --name notes-fourteen-it-db --region fra \
   --initial-cluster-size 1 --vm-size shared-cpu-1x --volume-size 1
+# 256 MB RAM is not enough once preview apps connect too.
+fly machine update <db-machine-id> --app notes-fourteen-it-db --vm-memory 512
 # Creates the database and user and sets the secret DATABASE_URL on the app.
 fly postgres attach notes-fourteen-it-db --app notes-fourteen-it
 
@@ -68,7 +70,7 @@ The app talks to GitHub with a token, so the whole loop runs without opening Git
 
 - Production: "Ideen" creates an issue with the label `agent` and lists the open ones with their
   status (agent working, review running, ready for the demo, waiting for the human) and a link to
-  the preview. The status comes from the pull request on `agent/issue-<n>`, its checks `build`
+  the preview once its check `preview` (the deploy) is green. The status comes from the pull request on `agent/issue-<n>`, its checks `build`
   and `review`, and running `agent.yml` runs (their `run-name` is `Agent #<n>`).
 - Preview app: `ci.yml` deploys it with `PULL_REQUEST=<n>`, which shows a bar with the pull
   request, its checks, a feedback field (posts a `## Human feedback` comment) and a merge button

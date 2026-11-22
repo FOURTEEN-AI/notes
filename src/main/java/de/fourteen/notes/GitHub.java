@@ -121,7 +121,7 @@ class GitHub {
         return numbers;
     }
 
-    /** The latest runs of the checks `build` and `review` on a commit. */
+    /** The latest runs of the checks `build`, `review` and `preview` on a commit. */
     Checks checks(String sha) {
         JsonNode runs =
                 call(
@@ -130,7 +130,8 @@ class GitHub {
                                         .uri("/commits/{sha}/check-runs?per_page=100", sha)
                                         .retrieve()
                                         .body(JsonNode.class));
-        return new Checks(checkState(runs, "build"), checkState(runs, "review"));
+        return new Checks(
+                checkState(runs, "build"), checkState(runs, "review"), checkState(runs, "preview"));
     }
 
     void comment(int number, String body) {

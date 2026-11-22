@@ -22,7 +22,9 @@ class IdeaController {
 
     record NewIdea(String title, String description) {}
 
-    record Idea(int number, String title, IdeaStatus status, String previewUrl) {}
+    /** previewUrl is set once a pull request exists; previewReady once its app is deployed. */
+    record Idea(
+            int number, String title, IdeaStatus status, String previewUrl, boolean previewReady) {}
 
     // The preview app of a pull request, as ci.yml names it.
     private static final String PREVIEW_URL = "https://notes-fourteen-it-pr-%d.fly.dev";
@@ -57,7 +59,8 @@ class IdeaController {
                                     issue.number(),
                                     issue.title(),
                                     IdeaStatus.of(running, checks),
-                                    pr == null ? null : PREVIEW_URL.formatted(pr.number()));
+                                    pr == null ? null : PREVIEW_URL.formatted(pr.number()),
+                                    checks != null && checks.preview() == CheckState.SUCCESS);
                         })
                 .toList();
     }
@@ -71,6 +74,6 @@ class IdeaController {
         }
         String description = idea.description() == null ? "" : idea.description();
         GitHub.Issue issue = github.createIssue(idea.title().strip(), description);
-        return new Idea(issue.number(), issue.title(), IdeaStatus.AGENT_WORKING, null);
+        return new Idea(issue.number(), issue.title(), IdeaStatus.AGENT_WORKING, null, false);
     }
 }

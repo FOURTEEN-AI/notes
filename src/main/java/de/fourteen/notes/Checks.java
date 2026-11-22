@@ -1,7 +1,10 @@
 package de.fourteen.notes;
 
-/** The two required checks of a pull request. Merging needs both green. */
-record Checks(CheckState build, CheckState review) {
+/**
+ * The checks of a pull request: `build` and `review` are required, merging needs both green.
+ * `preview` is the deploy of the preview app.
+ */
+record Checks(CheckState build, CheckState review, CheckState preview) {
 
     boolean green() {
         return build == CheckState.SUCCESS && review == CheckState.SUCCESS;

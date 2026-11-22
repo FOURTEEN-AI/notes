@@ -1,7 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 
 type Status = 'AGENT_WORKING' | 'REVIEW_RUNNING' | 'READY_FOR_DEMO' | 'WAITING_FOR_HUMAN';
-type Idea = { number: number; title: string; status: Status; previewUrl: string | null };
+type Idea = {
+  number: number;
+  title: string;
+  status: Status;
+  previewUrl: string | null;
+  previewReady: boolean;
+};
 
 const statusLabels: Record<Status, string> = {
   AGENT_WORKING: 'Agent arbeitet',
@@ -87,9 +93,13 @@ export function Ideas() {
             {idea.previewUrl && (
               <>
                 {' · '}
-                <a href={idea.previewUrl} target="_blank" rel="noreferrer">
-                  Preview
-                </a>
+                {idea.previewReady ? (
+                  <a href={idea.previewUrl} target="_blank" rel="noreferrer">
+                    Preview
+                  </a>
+                ) : (
+                  <span className="status">Preview wird vorbereitet</span>
+                )}
               </>
             )}
           </li>

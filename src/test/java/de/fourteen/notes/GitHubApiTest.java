@@ -105,13 +105,20 @@ class GitHubApiTest {
                         json(
                                 """
                                 [
+                                  {"number": 16, "title": "Dark mode"},
                                   {"number": 14, "title": "Search notes"},
                                   {"number": 12, "title": "Edit notes"},
                                   {"number": 11, "title": "A pull request", "pull_request": {}}
                                 ]
                                 """));
         github.expect(requestTo(REPO + "/pulls?state=open&per_page=100"))
-                .andRespond(json("[" + pullRequest(13, "agent/issue-12", "abc", "open") + "]"));
+                .andRespond(
+                        json(
+                                "["
+                                        + pullRequest(17, "agent/issue-16", "xyz", "open")
+                                        + ","
+                                        + pullRequest(13, "agent/issue-12", "abc", "open")
+                                        + "]"));
         github.expect(requestTo(REPO + "/actions/workflows/agent.yml/runs?per_page=30"))
                 .andRespond(
                         json(
@@ -121,19 +128,28 @@ class GitHubApiTest {
                                   {"display_title": "Agent #13", "status": "completed"}
                                 ]}
                                 """));
+        github.expect(requestTo(REPO + "/commits/xyz/check-runs?per_page=100"))
+                .andRespond(json(checkRuns("success", null, null)));
         github.expect(requestTo(REPO + "/commits/abc/check-runs?per_page=100"))
                 .andRespond(json(checkRuns("success", "success")));
 
         mvc.perform(get("/api/ideas").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].number").value(14))
-                .andExpect(jsonPath("$[0].status").value("AGENT_WORKING"))
-                .andExpect(jsonPath("$[0].previewUrl").doesNotExist())
-                .andExpect(jsonPath("$[1].number").value(12))
-                .andExpect(jsonPath("$[1].status").value("READY_FOR_DEMO"))
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].number").value(16))
+                .andExpect(jsonPath("$[0].status").value("REVIEW_RUNNING"))
                 .andExpect(
-                        jsonPath("$[1].previewUrl").value("https://notes-fourteen-it-pr-13.fly.dev"));
+                        jsonPath("$[0].previewUrl").value("https://notes-fourteen-it-pr-17.fly.dev"))
+                .andExpect(jsonPath("$[0].previewReady").value(false))
+                .andExpect(jsonPath("$[1].number").value(14))
+                .andExpect(jsonPath("$[1].status").value("AGENT_WORKING"))
+                .andExpect(jsonPath("$[1].previewUrl").doesNotExist())
+                .andExpect(jsonPath("$[1].previewReady").value(false))
+                .andExpect(jsonPath("$[2].number").value(12))
+                .andExpect(jsonPath("$[2].status").value("READY_FOR_DEMO"))
+                .andExpect(
+                        jsonPath("$[2].previewUrl").value("https://notes-fourteen-it-pr-13.fly.dev"))
+                .andExpect(jsonPath("$[2].previewReady").value(true));
     }
 
     @Test
@@ -236,19 +252,28 @@ class GitHubApiTest {
                 .formatted(number, number, state, number, branch, sha);
     }
 
-    /** An older failed review and the latest runs; a null conclusion means still running. */
     private static String checkRuns(String build, String review) {
+        return checkRuns(build, review, "success");
+    }
+
+    /** An older failed review and the latest runs; a null conclusion means still running. */
+    private static String checkRuns(String build, String review, String preview) {
         return """
                 {"check_runs": [
                   {"id": 1, "name": "review", "status": "completed", "conclusion": "failure"},
                   {"id": 2, "name": "build", "status": "completed", "conclusion": "%s"},
-                  {"id": 3, "name": "review", "status": "%s", "conclusion": %s},
-                  {"id": 4, "name": "preview", "status": "completed", "conclusion": "success"}
+                  %s,
+                  %s
                 ]}
                 """
-                .formatted(
-                        build,
-                        review == null ? "in_progress" : "completed",
-                        review == null ? "null" : "\"" + review + "\"");
+                .formatted(build, checkRun(3, "review", review), checkRun(4, "preview", preview));
+    }
+
+    private static String checkRun(int id, String name, String conclusion) {
+        return conclusion == null
+                ? "{\"id\": %d, \"name\": \"%s\", \"status\": \"in_progress\", \"conclusion\": null}"
+                        .formatted(id, name)
+                : "{\"id\": %d, \"name\": \"%s\", \"status\": \"completed\", \"conclusion\": \"%s\"}"
+                        .formatted(id, name, conclusion);
     }
 }
