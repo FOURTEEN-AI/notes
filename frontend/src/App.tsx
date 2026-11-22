@@ -34,6 +34,16 @@ export function App() {
     setText('');
   }
 
+  async function remove(id: number) {
+    setError(null);
+    const response = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+    if (!response.ok && response.status !== 404) {
+      setError('Notiz konnte nicht gelöscht werden.');
+      return;
+    }
+    setNotes((current) => current.filter((note) => note.id !== id));
+  }
+
   return (
     <main>
       <h1>Notizen</h1>
@@ -54,6 +64,9 @@ export function App() {
           <li key={note.id}>
             <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString('de-DE')}</time>
             <p>{note.text}</p>
+            <button type="button" onClick={() => remove(note.id)}>
+              Löschen
+            </button>
           </li>
         ))}
       </ul>
