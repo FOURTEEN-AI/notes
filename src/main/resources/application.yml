@@ -1,0 +1,11 @@
+# Every value can be overridden by an environment variable (e.g. SPRING_SECURITY_USER_PASSWORD).
+spring:
+  application:
+    name: notes
+  # The schema is created on every start (create table if not exists).
+  sql:
+    init:
+      mode: always
+
+server:
+  shutdown: graceful

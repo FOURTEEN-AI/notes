@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+out/
+.idea/
+*.iml
+node_modules/
+frontend/dist/
+.pnpm-store/

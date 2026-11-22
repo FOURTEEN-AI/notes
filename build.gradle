@@ -1,0 +1,71 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.2.0'
+}
+
+group = 'de.fourteen.notes'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	runtimeOnly 'org.postgresql:postgresql'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// One executable jar with a fixed name, which the Dockerfile copies.
+tasks.named('jar') {
+	enabled = false
+}
+tasks.named('bootJar') {
+	archiveFileName = 'notes.jar'
+}
+
+// The React frontend is built with pnpm and served by Spring Boot from classpath:/static.
+def frontendDir = layout.projectDirectory.dir('frontend')
+
+tasks.register('frontendInstall', Exec) {
+	workingDir = frontendDir
+	commandLine 'pnpm', 'install', '--frozen-lockfile'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'))
+	outputs.dir(frontendDir.dir('node_modules'))
+}
+
+tasks.register('frontendBuild', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'build'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
+			frontendDir.file('index.html'), frontendDir.file('tsconfig.json'),
+			frontendDir.file('vite.config.ts'))
+	inputs.dir(frontendDir.dir('src'))
+	outputs.dir(frontendDir.dir('dist'))
+}
+
+tasks.named('processResources') {
+	from(tasks.named('frontendBuild')) {
+		into 'static'
+	}
+}

@@ -1,0 +1,51 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+textarea {
+  font: inherit;
+  padding: 0.5rem;
+}
+
+button {
+  align-self: flex-end;
+  font: inherit;
+  padding: 0.4rem 1rem;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  padding: 0.75rem 0;
+}
+
+li p {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+}
+
+time {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.error {
+  color: #c62828;
+}
