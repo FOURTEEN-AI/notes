@@ -161,7 +161,7 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$[3].description").value(""))
                 .andExpect(jsonPath("$[2].status").value("REVIEW_RUNNING"))
                 .andExpect(
-                        jsonPath("$[2].previewUrl").value("https://notes-fourteen-it-pr-17.fly.dev"))
+                        jsonPath("$[2].previewUrl").value("https://notes-fourteen-it-issue-16.fly.dev"))
                 .andExpect(jsonPath("$[2].previewReady").value(false))
                 .andExpect(jsonPath("$[3].number").value(14))
                 .andExpect(jsonPath("$[3].status").value("AGENT_WORKING"))
@@ -170,7 +170,7 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$[4].number").value(12))
                 .andExpect(jsonPath("$[4].status").value("READY_FOR_DEMO"))
                 .andExpect(
-                        jsonPath("$[4].previewUrl").value("https://notes-fourteen-it-pr-13.fly.dev"))
+                        jsonPath("$[4].previewUrl").value("https://notes-fourteen-it-issue-12.fly.dev"))
                 .andExpect(jsonPath("$[4].previewReady").value(true));
     }
 

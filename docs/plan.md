@@ -68,7 +68,7 @@ agent reviews it. The human sees no code, only the demo, and merges. Proven with
 - Branch protection on `main`: pull request, green CI and green review required. Admins are
   exempt, so a local session can still commit directly to `main`; agents and everyone else go
   through a pull request.
-- Preview app per pull request on Fly (`notes-fourteen-it-pr-<n>`), with its own schema in the
+- Preview app per pull request on Fly (`notes-fourteen-it-issue-<n>`, named after the issue), with its own schema in the
   existing Postgres and the same login as production. Removed when the pull request is closed.
 - Build and test run without secrets. Only a separate deploy job gets the Fly org token
   (second secret, next to the production deploy token) and only handles the built jar.

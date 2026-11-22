@@ -12,9 +12,17 @@ jobs:
     concurrency: preview-${{ github.event.number }}
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
-      APP: notes-fourteen-it-pr-${{ github.event.number }}
-      DB: pr_${{ github.event.number }}
     steps:
+      # The preview is named after the issue of an agent branch (agent/issue-<n>), else after the
+      # pull request.
+      - name: Name the preview
+        run: |
+          if [[ "$HEAD_REF" =~ ^agent/issue-([0-9]+)$ ]]; then N="issue-${BASH_REMATCH[1]}"; else N="pr-$PR"; fi
+          echo "APP=notes-fourteen-it-$N" >> "$GITHUB_ENV"
+          echo "DB=${N//-/_}" >> "$GITHUB_ENV"
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          PR: ${{ github.event.number }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Destroy the preview app
         run: flyctl apps destroy "$APP" --yes || true

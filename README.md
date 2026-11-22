@@ -62,7 +62,7 @@ owner, a member or a collaborator) and starts it again; it can only read and com
 A GitHub issue with the label `agent` is taken to a pull request by `.github/workflows/agent.yml`.
 `.github/workflows/review.yml` reviews every pull request; its check `review` must pass. A failed
 review on an `agent/*` branch goes back to the coding agent, at most 3 rounds. `ci.yml` deploys a
-preview app `notes-fourteen-it-pr-<n>` per pull request (own database `pr_<n>` in the existing
+preview app `notes-fourteen-it-issue-<n>` per pull request, named after its issue (own database `issue_<n>` in the existing
 Postgres, same login as production); `preview-cleanup.yml` removes both when the pull request is
 closed. Both agents run on `claude-sonnet-5-5`, set with `--model` in `claude_args`.
 

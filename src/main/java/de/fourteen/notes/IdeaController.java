@@ -49,7 +49,7 @@ class IdeaController {
     static final String REFINE_MARKER = "## Refine";
 
     // The preview app of a pull request, as ci.yml names it.
-    private static final String PREVIEW_URL = "https://notes-fourteen-it-pr-%d.fly.dev";
+    private static final String PREVIEW_URL = "https://notes-fourteen-it-issue-%d.fly.dev";
 
     private final GitHub github;
 
@@ -92,7 +92,7 @@ class IdeaController {
                                     issue.title(),
                                     issue.body(),
                                     IdeaStatus.of(running, checks),
-                                    pr == null ? null : PREVIEW_URL.formatted(pr.number()),
+                                    pr == null ? null : PREVIEW_URL.formatted(issue.number()),
                                     checks != null && checks.preview() == CheckState.SUCCESS);
                         })
                 .toList();
