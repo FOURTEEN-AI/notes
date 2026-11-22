@@ -1,0 +1,30 @@
+package de.fourteen.notes;
+
+/** Where an idea (an open issue with the label `agent`) stands, derived from GitHub. */
+enum IdeaStatus {
+    AGENT_WORKING,
+    REVIEW_RUNNING,
+    READY_FOR_DEMO,
+    WAITING_FOR_HUMAN;
+
+    /**
+     * @param agentRuns whether the coding agent runs or is queued for the issue or its pull request
+     * @param checks the checks of the pull request, or null if there is none yet
+     */
+    static IdeaStatus of(boolean agentRuns, Checks checks) {
+        if (agentRuns) {
+            return AGENT_WORKING;
+        }
+        if (checks == null) {
+            // No pull request and no agent: the agent run failed.
+            return WAITING_FOR_HUMAN;
+        }
+        if (checks.green()) {
+            return READY_FOR_DEMO;
+        }
+        if (checks.pending()) {
+            return REVIEW_RUNNING;
+        }
+        return WAITING_FOR_HUMAN;
+    }
+}

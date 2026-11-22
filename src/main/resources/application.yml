@@ -9,3 +9,8 @@ spring:
 
 server:
   shutdown: graceful
+
+# The ideas and the preview bar talk to this repository. The token comes from GITHUB_TOKEN.
+github:
+  api-url: https://api.github.com
+  repository: FOURTEEN-AI/notes

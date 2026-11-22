@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Ideas } from './Ideas';
+import { PreviewBar } from './PreviewBar';
 
 type Note = { id: number; text: string; createdAt: string };
 
@@ -45,31 +47,35 @@ export function App() {
   }
 
   return (
-    <main>
-      <h1>Notizen</h1>
-      <form onSubmit={save}>
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="Neue Notiz"
-          rows={4}
-        />
-        <button type="submit" disabled={text.trim() === ''}>
-          Speichern
-        </button>
-      </form>
-      {error && <p className="error">{error}</p>}
-      <ul>
-        {notes.map((note) => (
-          <li key={note.id}>
-            <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString('de-DE')}</time>
-            <p>{note.text}</p>
-            <button type="button" onClick={() => remove(note.id)}>
-              Löschen
-            </button>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <>
+      <PreviewBar />
+      <main>
+        <h1>Notizen</h1>
+        <form onSubmit={save}>
+          <textarea
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            placeholder="Neue Notiz"
+            rows={4}
+          />
+          <button type="submit" disabled={text.trim() === ''}>
+            Speichern
+          </button>
+        </form>
+        {error && <p className="error">{error}</p>}
+        <ul>
+          {notes.map((note) => (
+            <li key={note.id}>
+              <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString('de-DE')}</time>
+              <p>{note.text}</p>
+              <button type="button" onClick={() => remove(note.id)}>
+                Löschen
+              </button>
+            </li>
+          ))}
+        </ul>
+        <Ideas />
+      </main>
+    </>
   );
 }

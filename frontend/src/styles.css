@@ -49,3 +49,51 @@ time {
 .error {
   color: #c62828;
 }
+
+input {
+  font: inherit;
+  padding: 0.5rem;
+}
+
+.ideas {
+  margin-top: 2rem;
+}
+
+.status,
+.check {
+  font-size: 0.85rem;
+}
+
+.ready_for_demo,
+.success {
+  color: #2e7d32;
+}
+
+.waiting_for_human,
+.failure {
+  color: #c62828;
+}
+
+.preview-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, #f9a825 25%, Canvas);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.preview-bar .checks {
+  display: flex;
+  gap: 1rem;
+}
+
+.preview-bar p {
+  margin: 0;
+}
+
+.preview-bar .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

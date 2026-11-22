@@ -59,6 +59,34 @@ preview app `notes-fourteen-it-pr-<n>` per pull request (own database `pr_<n>` i
 Postgres, same login as production); `preview-cleanup.yml` removes both when the pull request is
 closed. Both agents run on `claude-sonnet-5-5`, set with `--model` in `claude_args`.
 
+A comment on a pull request that starts with `## Human feedback` (by the owner, a member or a
+collaborator) starts the coding agent on that pull request again, without a round limit.
+
+## Ideas and preview bar
+
+The app talks to GitHub with a token, so the whole loop runs without opening GitHub:
+
+- Production: "Ideen" creates an issue with the label `agent` and lists the open ones with their
+  status (agent working, review running, ready for the demo, waiting for the human) and a link to
+  the preview. The status comes from the pull request on `agent/issue-<n>`, its checks `build`
+  and `review`, and running `agent.yml` runs (their `run-name` is `Agent #<n>`).
+- Preview app: `ci.yml` deploys it with `PULL_REQUEST=<n>`, which shows a bar with the pull
+  request, its checks, a feedback field (posts a `## Human feedback` comment) and a merge button
+  (squash). The app merges only when `build` and `review` are green on the head commit, because
+  the token belongs to an admin and could bypass the branch protection.
+
+Without `GITHUB_TOKEN` the ideas are hidden; without `PULL_REQUEST` the bar is.
+
+One-time setup: create a fine-grained personal access token at
+https://github.com/settings/personal-access-tokens/new, resource owner `FOURTEEN-AI`, only the
+repository `FOURTEEN-AI/notes`, permissions Issues, Pull requests and Contents: read and write.
+The repository is public, so reading check runs and workflow runs needs no further permission.
+
+```sh
+fly secrets set --app notes-fourteen-it GITHUB_TOKEN=<token>
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_GITHUB_TOKEN --repo FOURTEEN-AI/notes
+```
+
 One-time setup:
 
 ```sh
@@ -98,3 +126,6 @@ EOF
 | `FLY_ORG_TOKEN`, variable `FLY_ORG` | GitHub Actions secret and variable | preview apps |
 | `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD` | GitHub Actions secrets | login of the preview apps |
 | `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions secret | coding and review agent |
+| `GITHUB_TOKEN` | Fly secret (production; set by `ci.yml` on previews) | ideas and preview bar |
+| `APP_GITHUB_TOKEN` | GitHub Actions secret | the same token, for the preview apps |
+| `PULL_REQUEST` | Fly env of a preview (set by `ci.yml`) | turns on the preview bar |

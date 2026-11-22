@@ -101,6 +101,14 @@ class NotesApiTest {
     }
 
     @Test
+    void without_token_and_pull_request_ideas_and_preview_bar_are_off() throws Exception {
+        mvc.perform(get("/api/ideas").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isServiceUnavailable());
+        mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void health_check_is_public() throws Exception {
         mvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
