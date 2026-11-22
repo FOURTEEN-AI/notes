@@ -55,15 +55,42 @@ input {
   padding: 0.5rem;
 }
 
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ideas-button {
+  align-self: center;
+}
+
 .ideas {
-  margin-top: 3rem;
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
   padding: 1rem;
+  color: inherit;
   border: 1px solid color-mix(in srgb, #1565c0 35%, transparent);
   border-radius: 0.5rem;
   background: color-mix(in srgb, #1565c0 8%, Canvas);
 }
 
+.ideas::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.ideas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .ideas h2 {
+  margin: 0;
+}
+
+.ideas-header .icon-button {
   margin: 0;
 }
 

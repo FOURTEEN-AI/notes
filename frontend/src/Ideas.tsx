@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 type Status = 'AGENT_WORKING' | 'REVIEW_RUNNING' | 'READY_FOR_DEMO' | 'WAITING_FOR_HUMAN';
 type Idea = {
@@ -18,12 +18,14 @@ const statusLabels: Record<Status, string> = {
 
 // Each idea is a GitHub issue with the label `agent`. Hidden when GitHub is not configured (503)
 // and in a preview app (/api/preview answers there): ideas are submitted in production only.
+// A button opens them in a dialog, so they stay apart from the notes.
 export function Ideas() {
   const [ideas, setIdeas] = useState<Idea[] | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
 
   async function load() {
     const response = await fetch('/api/ideas');
@@ -71,48 +73,58 @@ export function Ideas() {
   }
 
   return (
-    <section className="ideas">
-      <h2>Ideen</h2>
-      <p className="hint">Eine Idee wird ein Issue, ein Agent setzt sie um.</p>
-      <form onSubmit={submit}>
-        <input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Titel"
-        />
-        <textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="Beschreibung"
-          rows={4}
-        />
-        <button type="submit" disabled={busy || title.trim() === ''}>
-          Idee einreichen
-        </button>
-      </form>
-      {error && <p className="error">{error}</p>}
-      <ul>
-        {(ideas ?? []).map((idea) => (
-          <li key={idea.number}>
-            <p>
-              #{idea.number} {idea.title}
-            </p>
-            <span className={`status ${idea.status.toLowerCase()}`}>{statusLabels[idea.status]}</span>
-            {idea.previewUrl && (
-              <>
-                {' · '}
-                {idea.previewReady ? (
-                  <a href={idea.previewUrl} target="_blank" rel="noreferrer">
-                    Preview
-                  </a>
-                ) : (
-                  <span className="status">Preview wird vorbereitet</span>
-                )}
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <>
+      <button type="button" className="ideas-button" onClick={() => dialog.current?.showModal()}>
+        Ideen{ideas && ideas.length > 0 && ` (${ideas.length})`}
+      </button>
+      <dialog ref={dialog} className="ideas" closedby="any">
+        <div className="ideas-header">
+          <h2>Ideen</h2>
+          <button type="button" className="icon-button" onClick={() => dialog.current?.close()}>
+            Schließen
+          </button>
+        </div>
+        <p className="hint">Eine Idee wird ein Issue, ein Agent setzt sie um.</p>
+        <form onSubmit={submit}>
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Titel"
+          />
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Beschreibung"
+            rows={4}
+          />
+          <button type="submit" disabled={busy || title.trim() === ''}>
+            Idee einreichen
+          </button>
+        </form>
+        {error && <p className="error">{error}</p>}
+        <ul>
+          {(ideas ?? []).map((idea) => (
+            <li key={idea.number}>
+              <p>
+                #{idea.number} {idea.title}
+              </p>
+              <span className={`status ${idea.status.toLowerCase()}`}>{statusLabels[idea.status]}</span>
+              {idea.previewUrl && (
+                <>
+                  {' · '}
+                  {idea.previewReady ? (
+                    <a href={idea.previewUrl} target="_blank" rel="noreferrer">
+                      Preview
+                    </a>
+                  ) : (
+                    <span className="status">Preview wird vorbereitet</span>
+                  )}
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      </dialog>
+    </>
   );
 }

@@ -50,7 +50,10 @@ export function App() {
     <>
       <PreviewBar />
       <main>
-        <h1>Notizen</h1>
+        <header>
+          <h1>Notizen</h1>
+          <Ideas />
+        </header>
         <form onSubmit={save}>
           <textarea
             value={text}
@@ -94,7 +97,6 @@ export function App() {
             </li>
           ))}
         </ul>
-        <Ideas />
       </main>
     </>
   );
