@@ -1,5 +1,6 @@
 package de.fourteen.notes;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,6 +51,27 @@ class NotesApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].text").value("second"))
                 .andExpect(jsonPath("$[1].text").value("first"));
+    }
+
+    @Test
+    void deleted_note_disappears_and_unknown_id_is_not_found() throws Exception {
+        String body =
+                mvc.perform(
+                                post("/api/notes")
+                                        .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"text\":\"to delete\"}"))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        long id = new tools.jackson.databind.json.JsonMapper().readTree(body).get("id").asLong();
+
+        mvc.perform(delete("/api/notes/" + id).header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/notes").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(jsonPath("$[?(@.id == " + id + ")]").isEmpty());
+        mvc.perform(delete("/api/notes/" + id).header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isNotFound());
     }
 
     @Test
