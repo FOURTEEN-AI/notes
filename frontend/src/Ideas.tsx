@@ -25,6 +25,7 @@ export function Ideas() {
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
 
   async function load() {
@@ -38,17 +39,22 @@ export function Ideas() {
     setIdeas((await response.json()) as Idea[]);
   }
 
+  // Loaded once for the count on the button, polled only while the dialog is open.
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined;
     fetch('/api/preview')
       .then((preview) => {
         if (preview.ok) return;
         load().catch(() => setError('Ideen konnten nicht geladen werden.'));
-        timer = setInterval(() => load().catch(() => {}), 10000);
       })
       .catch(() => {});
-    return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    load().catch(() => {});
+    const timer = setInterval(() => load().catch(() => {}), 10000);
+    return () => clearInterval(timer);
+  }, [open]);
 
   if (ideas === null && error === null) return null;
 
@@ -74,10 +80,17 @@ export function Ideas() {
 
   return (
     <>
-      <button type="button" className="ideas-button" onClick={() => dialog.current?.showModal()}>
+      <button
+        type="button"
+        className="ideas-button"
+        onClick={() => {
+          dialog.current?.showModal();
+          setOpen(true);
+        }}
+      >
         Ideen{ideas && ideas.length > 0 && ` (${ideas.length})`}
       </button>
-      <dialog ref={dialog} className="ideas" closedby="any">
+      <dialog ref={dialog} className="ideas" closedby="any" onClose={() => setOpen(false)}>
         <div className="ideas-header">
           <h2>Ideen</h2>
           <button type="button" className="icon-button" onClick={() => dialog.current?.close()}>
