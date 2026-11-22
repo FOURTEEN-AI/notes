@@ -71,8 +71,6 @@ export function App() {
               <button
                 type="button"
                 className="icon-button"
-                aria-label="Löschen"
-                title="Löschen"
                 onClick={() => remove(note.id)}
               >
                 <svg
@@ -91,6 +89,7 @@ export function App() {
                   <path d="M19 6l-1 14H6L5 6" />
                   <path d="M10 11v6M14 11v6" />
                 </svg>
+                Löschen
               </button>
             </li>
           ))}
