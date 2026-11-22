@@ -10,3 +10,4 @@ out/
 node_modules/
 frontend/dist/
 .pnpm-store/
+*.tsbuildinfo
