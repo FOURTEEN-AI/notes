@@ -44,7 +44,7 @@ export function Ideas() {
       .then((preview) => {
         if (preview.ok) return;
         load().catch(() => setError('Ideen konnten nicht geladen werden.'));
-        timer = setInterval(() => load().catch(() => {}), 5000);
+        timer = setInterval(() => load().catch(() => {}), 10000);
       })
       .catch(() => {});
     return () => clearInterval(timer);

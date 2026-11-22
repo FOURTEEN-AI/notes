@@ -17,8 +17,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+// github.token is pinned empty: GitHub Actions sets the env GITHUB_TOKEN, which would bind to it.
 @SpringBootTest(
-        properties = {"spring.security.user.name=test", "spring.security.user.password=secret"})
+        properties = {
+            "spring.security.user.name=test",
+            "spring.security.user.password=secret",
+            "github.token="
+        })
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class NotesApiTest {
