@@ -215,8 +215,8 @@ app, is the living documentation.
   criteria as a ` ```gherkin ` block in German (`# language: de`) in its `## Refine` comment. The
   proposal is a delta against `main`, as far as the agent can see it from the acceptance tests:
   new scenarios have no tag, changed ones `@ersetzt("<old title>")`, removed ones are a title stub
-  with `@entfällt`. Scenarios that only the frontend can show are tagged `@ui`; the demo tour
-  covers them, not a test.
+  with `@entfällt`. A scenario that gets no acceptance test, because only the frontend shows it
+  or for another reason, is tagged `@manuell("<reason>")`; the demo tour covers it.
 - Approval: only the human approves; the release after 3 rounds goes away. The idea chat shows a
   button "Freigeben" and, for every changed or removed scenario, its old version from the report
   of `main`. A text answer starts another round instead. The button makes the app post a comment
@@ -227,6 +227,10 @@ app, is the living documentation.
   named in German like the steps, an exception to "English for code" that goes into CLAUDE.md.
   The scenario title is the test's title and its identity, unique across the report. No origin
   tag; the history is in git.
+- A `@manuell` scenario still gets a JGiven test, marked `@Pending` and tagged with its reason, so
+  the report shows it as pending and a change or removal has an old version to compare with, in
+  the check and in the idea chat. A stage method that only such scenarios use is `@Pending` too.
+  First example from the notes: the input field is empty after saving.
 - The coding agent works in two phases. Phase 1 writes only the acceptance tests, stages, fakes
   and compiling stubs (new port methods included) and pushes. Phase 2 starts only when
   `acceptance` is green and writes the production code; the test classes, stages and fakes must
@@ -235,10 +239,13 @@ app, is the living documentation.
   It reads the latest `## Acceptance criteria` and the JGiven JSON report from `build`, and
   compares it with the report of the current `main`:
   - Deterministic: the scenarios added, changed and removed against `main` are exactly the
-    approved delta, and every scenario without `@ui` has one test whose steps match word for word
-    (keyword, order, text, parameters as placeholders).
+    approved delta, and every scenario has one test whose steps match word for word (keyword,
+    order, text, parameters as placeholders). A `@manuell` scenario's test is pending with the
+    approved reason, every other test is not pending, and no old test becomes pending outside the
+    delta.
   - Per stage method: every stage and fake method that changed against `main` is judged in every
-    scenario that uses it, not only in the delta. The state is the scenario, the step text, the
+    scenario that uses it, not only in the delta. Pending scenarios are skipped; their steps do
+    not run. The state is the scenario, the step text, the
     method's source and the fake and service methods it calls; the question is whether the method
     implements exactly this step. Jev (TypeSafe, own budget and key) decides: from p ≥ 0.9 it
     passes, below 0.5 it fails, in between Haiku decides (`claude -p --model claude-haiku-5-5`
@@ -255,18 +262,22 @@ app, is the living documentation.
   `build`, `review` and `acceptance`.
 - The app serves the JGiven HTML report behind the login, in production and in every preview.
 - The existing behaviour of notes gets scenarios and JGiven tests. Existing tests stay.
+- At the end of the step, the process as it is then gets a short description of its own, separate
+  from the history of steps in this file: who does what when, which labels, comments and checks.
+  It is updated at the end of every later step, as the JGiven report is for the behaviour of the
+  app.
 
 **Process:** built in a local session and committed directly to `main`, including the workflow
 changes, which the coding agent may not make.
 
-**Not in this step:** scenarios for ideas, automated tests for `@ui` scenarios, rewriting the
-existing tests, `.feature` files.
+**Not in this step:** scenarios for ideas, automated tests for `@manuell` scenarios, rewriting
+the existing tests, `.feature` files.
 
 **Risks:** the decision model judges with a probability, so a test that is too weak can still
 pass; the deterministic checks only guard the wording and the delta. A hidden conflict with an
 old scenario shows only after phase 2, when phase 1, `acceptance` and phase 2 have already run.
-`@ui` scenarios leave no trace in the report, so a change of frontend-only behaviour is not
-checked against the old one. Jev costs its own budget, Haiku the subscription limit.
+A `@manuell` scenario is checked only for its wording; whether it holds shows only in the demo.
+Jev costs its own budget, Haiku the subscription limit.
 
 **Progress:** done so far: JGiven tests of the notes (title = `@Description`, the report shows
 it), the report in the jar (`/jgiven/`), proposal and the button "Freigeben" (with the old
@@ -288,7 +299,8 @@ checked commit and the rounds; the preview bar shows a pending proposal with the
 "Freigeben", which calls the approval endpoint of the idea chat; feedback that changes approved
 behaviour takes the same path), the old versions in the idea chat (`GET /api/ideas/{n}/previous-scenarios`
 reads title and steps of every `@ersetzt` and `@entfällt` scenario from the JGiven data of the
-running build, which is `main` in production; a preview shows its own build's report).
+running build, which is `main` in production; a preview shows its own build's report). Open:
+pending scenarios instead of `@ui`, the description of the current process.
 
 **Done when**
 
@@ -297,6 +309,9 @@ running build, which is `main` in production; a preview shows its own build's re
   delta
 - [ ] Phase 2 starts only after a green `acceptance` and cannot change the checked tests
 - [x] The notes' behaviour has scenarios and tests, and the report is served in production
+- [ ] A `@manuell` scenario is pending in the report, and `acceptance` fails a test that is pending
+  without approval
+- [ ] The current process is described apart from the history of steps
 - [ ] An agent issue went from approved scenarios to production, with at least one finding of
   `acceptance` on the way
 
@@ -310,3 +325,18 @@ Not planned, only to keep ideas. The order is decided when a step is done.
 - Linting and formatting, once style discussions start to cost time.
 - Database migrations (e.g. Flyway), with the first schema change that `create table if not
   exists` cannot express.
+- "Als neue Idee" in the preview bar: feedback that does not block the merge (an idea, polish, a
+  nice-to-have) becomes a new idea with the label `refine` instead of going to the coding agent,
+  so the pull request does not grow. Only blocking feedback stays `## Human feedback`.
+- WIP limit 1 for `agent`: "Freigeben" is refused while another idea holds the slot (label
+  `agent` or an open pull request `agent/issue-<n>`); the idea that holds it may be released
+  again (amended delta). The button says which idea is in the way. Fewer late conflicts and
+  previews.
+- Assumptions instead of stopping: where an agent stops today and waits for the human (after 3
+  rounds of review or `acceptance`, an open question in refinement), it decides by default rules
+  instead (follow an existing pattern, the more restrictive variant, the smallest scope) and
+  writes the assumption down. Every assumption becomes a step of the demo tour ("Annahme: …"),
+  where the human confirms it or answers with "Passt nicht".
+- Size limits and vertical slicing: an idea with more than about 12 scenarios is too big for one
+  pull request and one demo. The refine agent splits it into several ideas, each a thin slice
+  through all layers that can be demoed on its own, never along layers (domain, API, UI).
