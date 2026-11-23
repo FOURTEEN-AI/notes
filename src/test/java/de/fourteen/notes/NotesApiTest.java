@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
             "github.token="
         })
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, OpenApiContract.class})
 class NotesApiTest {
 
     private static final String LOGIN =

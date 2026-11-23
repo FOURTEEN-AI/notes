@@ -1,0 +1,667 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "description" : "The REST API of the notes app, used by its own frontend.",
+    "title" : "Notes API",
+    "version" : "1"
+  },
+  "servers" : [ {
+    "description" : "This app",
+    "url" : "/"
+  } ],
+  "security" : [ {
+    "basic" : [ ]
+  } ],
+  "tags" : [ {
+    "name" : "preview"
+  }, {
+    "name" : "notes"
+  }, {
+    "name" : "ideas"
+  } ],
+  "paths" : {
+    "/api/ideas" : {
+      "get" : {
+        "operationId" : "getApiIdeas",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Idea"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "ideas" ]
+      },
+      "post" : {
+        "operationId" : "postApiIdeas",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewIdea"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Idea"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "ideas" ]
+      }
+    },
+    "/api/ideas/{number}/approval" : {
+      "post" : {
+        "operationId" : "postApiIdeasNumberApproval",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "ideas" ]
+      }
+    },
+    "/api/ideas/{number}/messages" : {
+      "get" : {
+        "operationId" : "getApiIdeasNumberMessages",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ChatMessage"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "ideas" ]
+      },
+      "post" : {
+        "operationId" : "postApiIdeasNumberMessages",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewMessage"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChatMessage"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "ideas" ]
+      }
+    },
+    "/api/ideas/{number}/previous-scenarios" : {
+      "get" : {
+        "operationId" : "getApiIdeasNumberPreviousScenarios",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Scenario"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "ideas" ]
+      }
+    },
+    "/api/notes" : {
+      "get" : {
+        "operationId" : "getApiNotes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Note"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "notes" ]
+      },
+      "post" : {
+        "operationId" : "postApiNotes",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewNote"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Note"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "notes" ]
+      }
+    },
+    "/api/notes/{id}" : {
+      "delete" : {
+        "operationId" : "deleteApiNotesId",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "notes" ]
+      }
+    },
+    "/api/preview" : {
+      "get" : {
+        "operationId" : "getApiPreview",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreviewResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "preview" ]
+      }
+    },
+    "/api/preview/feedback" : {
+      "post" : {
+        "operationId" : "postApiPreviewFeedback",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Feedback"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "preview" ]
+      }
+    },
+    "/api/preview/merge" : {
+      "post" : {
+        "operationId" : "postApiPreviewMerge",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "No or wrong login"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Failure"
+          }
+        },
+        "tags" : [ "preview" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ChatMessage" : {
+        "type" : "object",
+        "properties" : {
+          "author" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "author", "text" ]
+      },
+      "DemoStepResponse" : {
+        "type" : "object",
+        "properties" : {
+          "do" : {
+            "type" : "string"
+          },
+          "expect" : {
+            "type" : "string"
+          },
+          "selector" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "do", "expect" ]
+      },
+      "Feedback" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ]
+      },
+      "Idea" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "previewReady" : {
+            "type" : "boolean"
+          },
+          "previewUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "REFINING", "WAITING_FOR_ANSWER", "AGENT_WORKING", "REVIEW_RUNNING", "READY_FOR_DEMO", "WAITING_FOR_HUMAN" ]
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "description", "number", "previewReady", "status", "title" ]
+      },
+      "NewIdea" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "description", "title" ]
+      },
+      "NewMessage" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ]
+      },
+      "NewNote" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ]
+      },
+      "Note" : {
+        "type" : "object",
+        "properties" : {
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "createdAt", "id", "text" ]
+      },
+      "PreviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "acceptance" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "SUCCESS", "FAILURE" ]
+          },
+          "build" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "SUCCESS", "FAILURE" ]
+          },
+          "demo" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DemoStepResponse"
+            }
+          },
+          "deployedSha" : {
+            "type" : "string"
+          },
+          "issue" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "mergeable" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "proposal" : {
+            "type" : [ "string", "null" ]
+          },
+          "review" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "SUCCESS", "FAILURE" ]
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "acceptance", "build", "demo", "deployedSha", "mergeable", "number", "review", "state", "title" ]
+      },
+      "ProblemDetail" : {
+        "type" : "object",
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "format" : "uri"
+          }
+        }
+      },
+      "Scenario" : {
+        "type" : "object",
+        "properties" : {
+          "steps" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "steps", "title" ]
+      }
+    },
+    "securitySchemes" : {
+      "basic" : {
+        "scheme" : "basic",
+        "type" : "http"
+      }
+    }
+  }
+}

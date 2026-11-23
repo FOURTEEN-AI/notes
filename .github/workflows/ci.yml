@@ -64,6 +64,9 @@ jobs:
       - run: .github/docs.sh
       # Spell check (typos from its PyPI wheel in a pinned Python image); also in phase 1.
       - run: .github/spell.sh
+      # Spectral lint of docs/openapi.json (pinned Docker image); the file is compared with the
+      # controllers by OpenApiContractTest in the build below. Also in phase 1.
+      - run: .github/openapi.sh
       - run: ./gradlew compileTestJava
         if: steps.phase.outputs.phase1 == 'true'
       - run: ./gradlew build

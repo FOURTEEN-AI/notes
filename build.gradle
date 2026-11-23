@@ -43,6 +43,8 @@ dependencies {
 	testImplementation 'com.tngtech.jgiven:jgiven-junit5:3.0.0'
 	testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
 	testImplementation 'net.jqwik:jqwik:1.10.2'
+	testImplementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:3.2.1'
+	testImplementation 'com.networknt:json-schema-validator:3.0.9'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -51,6 +53,8 @@ tasks.named('test') {
 	// DocumentedExamplesTest reads the docs and the frontend sources from the repository root.
 	inputs.files(fileTree(dir: '.', includes: ['CLAUDE.md', 'README.md', 'docs/**/*.md', 'frontend/src/**']))
 			.withPropertyName('documentedExamples')
+	// OpenApiContractTest compares docs/openapi.json with the controllers; the API tests check against it.
+	inputs.files('docs/openapi.json').withPropertyName('apiContract')
 	// SchemaMigrationTest compares schema.sql with the one of origin/main; rerun when that moves.
 	// Empty without git or origin/main (the test itself fails then, but other runs are unaffected).
 	inputs.property('mainSchema', providers.exec {

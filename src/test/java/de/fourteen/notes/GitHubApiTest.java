@@ -43,7 +43,7 @@ import tools.jackson.databind.json.JsonMapper;
         })
 @AutoConfigureMockMvc
 @AutoConfigureMockRestServiceServer
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, OpenApiContract.class})
 class GitHubApiTest {
 
     private static final String LOGIN =

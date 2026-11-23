@@ -1,0 +1,10 @@
+# Spectral ruleset for docs/openapi.json (run by .github/openapi.sh): the recommended OpenAPI rules,
+# every warning fails. The two rules below are off, because the contract is generated from the
+# controllers by reflection (see OpenApiContract) and has no place for them:
+extends: ["spectral:oas"]
+rules:
+  # The app has no support contact: it is the API of its own frontend.
+  info-contact: off
+  # Method, path and operationId say what an operation does; a description would need swagger
+  # annotations on every controller method in production code.
+  operation-description: off
