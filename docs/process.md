@@ -24,7 +24,7 @@ Paths off the main line:
 | Case | What happens |
 |------|--------------|
 | Late conflict: a test of `main` that the delta leaves alone is red after phase 2, or `acceptance` has findings while the branch is behind `main` and does not merge with it (`git merge-tree`). A branch that is behind but merges cleanly gets a normal `## Acceptance round` that tells the agent to merge `origin/main` first | `acceptance` posts `## Acceptance conflict` and dispatches `agent.yml` with `conflict=true`. The agent changes no code, proposes an amended full delta (`## Refine` on the issue) and swaps `agent` for `refine`. After "Freigeben" the new `## Acceptance criteria` replaces the old one; the agent posts `## Acceptance reset` on the pull request and repeats phase 1 on the same branch |
-| Feedback that changes approved behaviour | Same path as a late conflict, started by the feedback comment instead |
+| Feedback that changes approved behaviour or adds a requirement | Same path as a late conflict, started by the feedback comment instead |
 | Phase 2 needs a change in tests, stages or fakes | Commit with the line `Phase: 1` at the end; the pull request is back in phase 1 |
 | Phase 2 changed the checked tests | `phase.mjs` makes `acceptance` fail; counts as a round |
 | Pull request from a branch that is not `agent/issue-<n>` | No phases, no criteria: `acceptance` passes at once, the review runs at once |

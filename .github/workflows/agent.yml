@@ -247,10 +247,15 @@ jobs:
               nothing else. Add or adjust tests that cover the behaviour you change. Do not
               change the files under `src/test/java/de/fourteen/notes/acceptance` (checked
               commit, see docs/plan.md); feedback that needs it is not implemented here.
-            - Exception: feedback that changes behaviour the approved scenarios describe (the
-              latest "## Acceptance criteria" on the idea; the branch `agent/issue-<n>` names it,
-              read it with `gh issue view <n> --comments`) is not implemented. Change no code and
-              push nothing. Propose an amended delta instead: one comment on the idea with
+            - Exception: feedback that changes behaviour the approved scenarios describe, or that
+              asks for something they do not describe yet (the latest "## Acceptance criteria" on
+              the idea; the branch `agent/issue-<n>` names it, read it with
+              `gh issue view <n> --comments`) is not implemented. That includes every visible
+              change to an element that a scenario names (its text, colour, place or state) and
+              every additional requirement, however small. Only feedback that changes nothing a
+              user can see or do (a typo in a code comment, a refactoring, a failing build) is
+              implemented here. In doubt, take this path. Change no code and push nothing.
+              Propose an amended delta instead: one comment on the idea with
               `gh issue comment <n> --body-file -`, starting with the line "## Refine", a few
               lines on the change, then a fenced `gherkin` block (German, `# language: de`) with
               the full delta against `main` that replaces the previous one (new scenarios no
