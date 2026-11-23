@@ -67,7 +67,7 @@ export function App() {
             placeholder="Neue Notiz"
             rows={4}
           />
-          <p className="counter">
+          <p className={text.length > MAX_LENGTH ? 'counter error' : 'counter'}>
             {text.length}/{MAX_LENGTH}
           </p>
           <button type="submit" disabled={text.trim() === ''}>
