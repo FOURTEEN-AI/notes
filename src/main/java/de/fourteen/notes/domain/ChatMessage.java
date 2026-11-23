@@ -9,7 +9,7 @@ import java.util.Optional;
 public record ChatMessage(String author, String text) {
 
     // The refine agent starts on comments with the human marker (refine.yml) and writes the other.
-    private static final String HUMAN_MARKER = "## Idea chat";
+    static final String HUMAN_MARKER = "## Idea chat";
     private static final String REFINE_MARKER = "## Refine";
 
     public static ChatMessage fromHuman(String text) {

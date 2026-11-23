@@ -114,21 +114,18 @@ public class IdeaService {
     /**
      * Releases the idea with the acceptance criteria the refine agent proposed last: copies its
      * gherkin block into a comment `## Acceptance criteria`, then swaps `refine` for `agent`. The
-     * scenarios stay in that comment; they never land in the repository.
+     * scenarios stay in that comment; they never land in the repository. Refused when there is no
+     * pending proposal: none yet, already released (a second click), or an answer in the chat is
+     * newer than it.
      */
     public void approve(int number) {
-        List<Comment> comments = github.comments(number);
         String proposal =
-                comments.stream()
-                        .map(Comment::body)
-                        .filter(body -> body.startsWith("## Refine"))
-                        .reduce((first, second) -> second)
-                        .flatMap(AcceptanceCriteria::gherkinBlock)
+                AcceptanceCriteria.pendingProposal(github.comments(number))
                         .orElseThrow(
                                 () ->
                                         new DomainException(
                                                 DomainException.Kind.CONFLICT,
-                                                "there is no proposal to approve"));
+                                                "there is no pending proposal to approve"));
         github.comment(number, AcceptanceCriteria.toComment(proposal));
         github.release(number);
     }

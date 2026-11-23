@@ -32,13 +32,13 @@ public final class AcceptanceCriteria {
 
     /**
      * The gherkin block of the newest `## Refine` comment, as long as no `## Acceptance criteria`
-     * comment follows it: the coding agent proposes an amended delta (late conflict or feedback)
-     * that the human has not released yet.
+     * comment follows it (it is released already) and no `## Idea chat` answer (the human asked for
+     * another round, the agent works on it): a proposal that the human can release now.
      */
     public static Optional<String> pendingProposal(List<Comment> comments) {
         for (int i = comments.size() - 1; i >= 0; i--) {
             String body = comments.get(i).body();
-            if (body.startsWith(MARKER)) {
+            if (body.startsWith(MARKER) || body.startsWith(ChatMessage.HUMAN_MARKER)) {
                 return Optional.empty();
             }
             if (body.startsWith("## Refine")) {

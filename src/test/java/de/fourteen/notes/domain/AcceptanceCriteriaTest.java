@@ -2,6 +2,7 @@ package de.fourteen.notes.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AcceptanceCriteriaTest {
@@ -28,5 +29,24 @@ class AcceptanceCriteriaTest {
 
         assertThat(AcceptanceCriteria.oldTitles(gherkin))
                 .containsExactly("Eine Notiz speichern", "Alt ändern", "Eine Notiz löschen");
+    }
+
+    private static final Comment PROPOSAL = new Comment("## Refine\n\n```gherkin\nSzenario: Neu\n```");
+
+    @Test
+    void the_newest_proposal_is_pending_until_it_is_released_or_answered() {
+        assertThat(AcceptanceCriteria.pendingProposal(List.of(PROPOSAL))).contains("Szenario: Neu");
+        assertThat(
+                        AcceptanceCriteria.pendingProposal(
+                                List.of(PROPOSAL, new Comment("## Acceptance criteria\n\n..."))))
+                .isEmpty();
+        assertThat(
+                        AcceptanceCriteria.pendingProposal(
+                                List.of(PROPOSAL, new Comment("## Idea chat\n\nLieber als CSV."))))
+                .isEmpty();
+        assertThat(
+                        AcceptanceCriteria.pendingProposal(
+                                List.of(PROPOSAL, new Comment("Preview: https://..."))))
+                .contains("Szenario: Neu");
     }
 }

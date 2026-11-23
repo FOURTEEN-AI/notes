@@ -280,6 +280,22 @@ class GitHubApiTest {
     }
 
     @Test
+    void a_second_approval_of_the_same_proposal_is_refused() throws Exception {
+        github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
+                .andRespond(
+                        json(
+                                """
+                                [
+                                  {"body": "## Refine\\n\\n```gherkin\\nSzenario: Neu\\n```"},
+                                  {"body": "## Acceptance criteria\\n\\n```gherkin\\nSzenario: Neu\\n```"}
+                                ]
+                                """));
+
+        mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void approval_without_a_proposal_is_refused() throws Exception {
         github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
                 .andRespond(json("[{\"body\": \"## Refine\\n\\nWhich columns?\"}]"));
