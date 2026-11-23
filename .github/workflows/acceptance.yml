@@ -44,6 +44,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
       # In phase 1 the tests are red against the stubs, in phase 2 an old red test is a late
       # conflict; only the report matters.
       - run: ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks || true
@@ -112,6 +118,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
+      - uses: pnpm/action-setup@v4
+        if: steps.issue.outputs.number
+        with:
+          package_json_file: base/frontend/package.json
       - uses: actions/setup-node@v5
         if: steps.issue.outputs.number
         with:
