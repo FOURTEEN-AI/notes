@@ -74,7 +74,9 @@ jobs:
       # Needs the jar and node_modules of the build above: SBOMs, Trivy on them and on the image.
       - run: .github/supply-chain.sh
         if: steps.phase.outputs.phase1 != 'true'
-      - run: node --test .github/acceptance/criteria.test.mjs .github/acceptance/check.test.mjs .github/acceptance/stages.test.mjs .github/acceptance/phase.test.mjs .github/acceptance/conflict.test.mjs
+      # The policy test parses the workflows with `yaml` from frontend/node_modules (a no-op after the build).
+      - run: ./gradlew frontendInstall
+      - run: node --test .github/acceptance/criteria.test.mjs .github/acceptance/check.test.mjs .github/acceptance/stages.test.mjs .github/acceptance/phase.test.mjs .github/acceptance/conflict.test.mjs .github/policy/policy.test.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: steps.phase.outputs.phase1 != 'true'
         with:
@@ -192,7 +194,9 @@ jobs:
         run: .github/smoke.sh notes-fourteen-it
 
   # A preview app per pull request. Only this job gets the Fly org token, and it only handles the
-  # jar built above, never the code of the pull request itself.
+  # jar built above, never the code of the pull request itself. The token is set on the flyctl
+  # steps only, not on the step that runs .github/smoke.sh from the checkout of the pull request
+  # (.github/policy).
   preview:
     needs: build
     if: github.event_name == 'pull_request' && needs.build.outputs.phase1 != 'true'
@@ -201,8 +205,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
     steps:
       # The preview is named after the issue of an agent branch (agent/issue-<n>), else after the
       # pull request.
@@ -224,6 +226,7 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@98172f70657cb3e15db199af139be99bd3e61200 # master
       - name: Create the app and its database
         env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
           FLY_ORG: ${{ vars.FLY_ORG }}
           APP_LOGIN_NAME: ${{ secrets.APP_LOGIN_NAME }}
           APP_LOGIN_PASSWORD: ${{ secrets.APP_LOGIN_PASSWORD }}
@@ -242,6 +245,7 @@ jobs:
       - name: Pass the GitHub token
         run: flyctl secrets set --app "$APP" --stage GITHUB_TOKEN="$GITHUB_APP_TOKEN"
         env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
           GITHUB_APP_TOKEN: ${{ secrets.APP_GITHUB_TOKEN }}
       # PULL_REQUEST turns on the preview bar for exactly this pull request. PULL_REQUEST_SHA
       # lets an open page notice that a newer commit is deployed.
@@ -249,6 +253,8 @@ jobs:
           flyctl deploy --app "$APP" --remote-only --ha=false
           --env PULL_REQUEST=${{ github.event.number }}
           --env PULL_REQUEST_SHA=${{ github.event.pull_request.head.sha }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
       - name: Smoke test
         run: .github/smoke.sh "$APP"
       - name: Link the preview in the pull request

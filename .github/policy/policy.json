@@ -1,0 +1,59 @@
+{
+  "ci.yml#build": {
+    "secrets": [],
+    "permissions": { "contents": "read", "pull-requests": "read" },
+    "pullRequestCode": "yes"
+  },
+  "ci.yml#e2e": {
+    "secrets": [],
+    "permissions": { "contents": "read" },
+    "pullRequestCode": "yes"
+  },
+  "ci.yml#dast": {
+    "secrets": [],
+    "permissions": { "contents": "read" },
+    "pullRequestCode": "jar"
+  },
+  "ci.yml#deploy": {
+    "secrets": ["FLY_API_TOKEN"],
+    "permissions": { "contents": "read" },
+    "pullRequestCode": "jar"
+  },
+  "ci.yml#preview": {
+    "secrets": ["FLY_ORG_TOKEN", "APP_LOGIN_NAME", "APP_LOGIN_PASSWORD", "APP_GITHUB_TOKEN"],
+    "permissions": { "contents": "read", "pull-requests": "write" },
+    "pullRequestCode": "jar"
+  },
+  "acceptance.yml#tests": {
+    "secrets": [],
+    "permissions": { "contents": "read" },
+    "pullRequestCode": "yes",
+    "noCache": true
+  },
+  "acceptance.yml#acceptance": {
+    "secrets": ["CLAUDE_CODE_OAUTH_TOKEN"],
+    "secretSteps": { "CLAUDE_CODE_OAUTH_TOKEN": "Judge the changed stage and fake methods" },
+    "permissions": { "contents": "read", "issues": "read", "pull-requests": "write", "actions": "write" },
+    "pullRequestCode": "no"
+  },
+  "review.yml#review": {
+    "secrets": ["CLAUDE_CODE_OAUTH_TOKEN"],
+    "permissions": { "contents": "read", "pull-requests": "write", "actions": "write", "id-token": "write" },
+    "pullRequestCode": "no"
+  },
+  "agent.yml#work": {
+    "secrets": ["CLAUDE_CODE_OAUTH_TOKEN"],
+    "permissions": { "contents": "write", "pull-requests": "write", "issues": "write", "id-token": "write" },
+    "pullRequestCode": "yes"
+  },
+  "refine.yml#refine": {
+    "secrets": ["CLAUDE_CODE_OAUTH_TOKEN"],
+    "permissions": { "contents": "read", "issues": "write", "id-token": "write" },
+    "pullRequestCode": "no"
+  },
+  "preview-cleanup.yml#cleanup": {
+    "secrets": ["FLY_ORG_TOKEN"],
+    "permissions": {},
+    "pullRequestCode": "no"
+  }
+}

@@ -61,7 +61,7 @@ a workflow or count as approval.
 
 | Check | Job | Required by branch protection | Blocks merge button | Notes |
 |-------|-----|------|------|-------|
-| `build` | `ci.yml` `build` | yes | yes | `./gradlew build` (with Testcontainers) and the Node tests of `.github/acceptance`. On an agent branch in phase 1 only `./gradlew compileTestJava` (the new acceptance tests are red against the stubs), same phase test as `review`; then no jar |
+| `build` | `ci.yml` `build` | yes | yes | `./gradlew build` (with Testcontainers) and the Node tests of `.github/acceptance` and `.github/policy`. On an agent branch in phase 1 only `./gradlew compileTestJava` (the new acceptance tests are red against the stubs), same phase test as `review`; then no jar |
 | `review` | `review.yml` | yes | yes | Fails without a review until phase 2 has pushed on top of the checked commit |
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
 | `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) |
@@ -104,6 +104,8 @@ The job `dast` (`ci.yml`, needs `build`, takes its jar, not in phase 1; `deploy`
 
 The `review` agent also does an explicit security pass on every pull request (the prompt in `review.yml`; an LLM, so not deterministic, and it cannot run locally: validate a change to the prompt with `.github/security-static.sh` and by reading). It looks at the change, not the whole app, for the OWASP Top 10 (2021) as far as the change touches it, untrusted input (issue, comment and pull request text, branch names) reaching an agent, a `run:` block or the allowed tools, token handling against "Secrets per job" below, and new dependencies (need, publisher, pinning, a nameable vulnerability). A finding needs a concrete path from the change to the harm and fails the review like every other finding, so it goes back to the coding agent in the same rounds. No new job, secret or permission, and the limit of 30 turns is unchanged (the pass reads the same diff). It runs after phase 2 only, like the whole review, and is not a replacement for the static and dynamic scans above. Change the pass by editing the prompt; there is no suppression: a wrong finding is answered by making the prompt more precise.
 
+`build` also checks the compliance policy of the workflows (`.github/policy/policy.test.mjs`, `node:test` like the tests of `.github/acceptance`, no new tool; about 1 s, also in phase 1, in the same `node --test` step of `ci.yml`, after `./gradlew frontendInstall`, which does nothing after the build): `.github/policy/policy.json` is "Secrets per job" below as data, one entry per job (`<file>#<job id>`), and the test parses `.github/workflows/*.yml` with `yaml` 2.9.1 (a pinned devDependency of `frontend`, in `knip.json` under `ignoreDependencies`, because only this test uses it) and fails when a job has no entry (or an entry has no job), uses a secret that is not listed (also `secrets: inherit` and `secrets[...]`; `secretSteps`: only in the named step), declares no `permissions` or a token permission wider than listed, or runs code of the pull request against `pullRequestCode`: `no` (no step does), `jar` (scripts of the checkout may run, but with no secret in scope: not in the step, its job or the workflow), `yes` (anything; today `build`, `e2e`, `acceptance tests`, agent `work`, so the secret of `work` is exposed to the code of the pull request on purpose). `noCache` fails any cache in the job. A step runs code of the pull request when the job checks it out (the head of the pull request, or no `ref` in a workflow with the trigger `pull_request`, which is the merge commit regardless of the job's `if`; `gh pr checkout`, `git checkout`) and the step runs `./gradlew`, `pnpm`, `npm`, `node`, `bash`, a script of the checkout or a local action, or the agent may (`--allowedTools` with such a `Bash(...)`); `node` on a script from `$RUNNER_TEMP` or `base/` (taken from `main`) does not count, and a checkout in a subdirectory counts only for steps that `cd` or `working-directory` into it. These are heuristics for drift, not a proof: a script that downloads and runs code, or a command the list does not know, passes. Fix a finding in the workflow; to allow something deliberately change `policy.json` and the table below together (the reviewer sees both in the diff); there is no suppression. The test found that `preview` had the Fly org token on the whole job, so `.github/smoke.sh` of the pull request ran with it; the token is now set on the `flyctl` steps only.
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 
@@ -123,16 +125,19 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 
 | Job | Secrets | Token permissions | Runs code of the pull request |
 |-----|---------|-------------------|-------------------------------|
-| `build` | none | default | yes |
+| `build` | none | contents, pull-requests: read | yes |
+| `e2e` | none | contents: read | yes (the tests and the built jar) |
 | `acceptance tests` | none | contents: read | yes (acceptance tests only), no cache |
-| `acceptance` | `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | pull-requests: write, actions: write | no (reads files as text) |
-| `review` | `CLAUDE_CODE_OAUTH_TOKEN` | pull-requests: write, actions: write | no |
-| agent `work` | `CLAUDE_CODE_OAUTH_TOKEN` | contents, pull-requests, issues: write | yes (builds and tests) |
-| refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |
-| `dast` | none | contents: read | only the built jar |
-| `deploy` | `FLY_API_TOKEN` | default | only the built jar |
-| `preview` | `FLY_ORG_TOKEN`, `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD`, `APP_GITHUB_TOKEN` | pull-requests: write | only the built jar |
-| preview cleanup | `FLY_ORG_TOKEN` | default | no |
+| `acceptance` | `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | contents: read, issues: read, pull-requests: write, actions: write | no (reads files as text) |
+| `review` | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, pull-requests: write, actions: write, id-token: write | no |
+| agent `work` | `CLAUDE_CODE_OAUTH_TOKEN` | contents, pull-requests, issues: write, id-token: write | yes (builds and tests) |
+| refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write, id-token: write | no |
+| `dast` | none | contents: read | only the built jar and the scripts of the checkout, never with a secret |
+| `deploy` | `FLY_API_TOKEN` | contents: read | only the built jar, never with the secret in a step that runs a script of the checkout |
+| `preview` | `FLY_ORG_TOKEN`, `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD`, `APP_GITHUB_TOKEN` | contents: read, pull-requests: write | only the built jar and the scripts of the checkout, never with a secret |
+| preview cleanup | `FLY_ORG_TOKEN` | none | no |
+
+`id-token: write` is for the OIDC exchange of the Claude action. The file `.github/policy/policy.json` has the same table; `policy.test.mjs` checks the workflows against it (see "Checks").
 
 The app itself holds one fine-grained GitHub token (`GITHUB_TOKEN` env) in production and in every
 preview, for ideas, the idea chat, feedback and merge.
