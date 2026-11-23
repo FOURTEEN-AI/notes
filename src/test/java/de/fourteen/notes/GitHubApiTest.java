@@ -323,6 +323,7 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$.title").value("feat: pull request 7"))
                 .andExpect(jsonPath("$.deployedSha").value("abc123"))
                 .andExpect(jsonPath("$.build").value("SUCCESS"))
+                .andExpect(jsonPath("$.e2e").value("SUCCESS"))
                 .andExpect(jsonPath("$.review").value("PENDING"))
                 .andExpect(jsonPath("$.acceptance").value("SUCCESS"))
                 .andExpect(jsonPath("$.mergeable").value(false))
