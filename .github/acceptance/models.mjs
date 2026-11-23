@@ -17,9 +17,9 @@ export async function askJev({ state }) {
           instructions:
             'Does `method.source`, together with the methods in `called`, do exactly what `step` says in the scenario `scenario`?',
           criteria: {
-            true: 'Carrying out the method does what the step says, no less and nothing else that the step does not say',
+            true: 'Carrying out the method does what the step says, no less and nothing else that the step does not say. A "Dann" step really checks the outcome and fails when the outcome is wrong',
             false:
-              'The method does something different, only a part of it, something more, or an assertion that cannot fail',
+              'The method does something different, only a part of it, or something more than the step says. Or it is a "Dann" step whose assertion cannot fail or checks less than the step says: no assertion at all, one that compares a value with itself or with what the method just set, one that accepts any value (for example only "not null" or "not empty"), a swallowed exception, or a check that only reads from the fake and never from what the service produced',
           },
         },
       },
