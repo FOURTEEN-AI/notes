@@ -71,9 +71,12 @@ class IdeaServiceTest {
                                 pr(16, "agent/issue-5")));
         when(github.activeAgentRuns()).thenReturn(Set.of(2, 12));
         when(github.activeRefineRuns()).thenReturn(Set.of());
-        when(github.checks("sha14")).thenReturn(new Checks(PENDING, PENDING, PENDING, PENDING));
-        when(github.checks("sha15")).thenReturn(new Checks(SUCCESS, SUCCESS, SUCCESS, SUCCESS));
-        when(github.checks("sha12")).thenReturn(new Checks(SUCCESS, SUCCESS, SUCCESS, PENDING));
+        when(github.checks("sha14"))
+                .thenReturn(new Checks(PENDING, PENDING, PENDING, PENDING, PENDING));
+        when(github.checks("sha15"))
+                .thenReturn(new Checks(SUCCESS, SUCCESS, SUCCESS, SUCCESS, SUCCESS));
+        when(github.checks("sha12"))
+                .thenReturn(new Checks(SUCCESS, SUCCESS, SUCCESS, SUCCESS, PENDING));
 
         List<Idea> ideas = service.list();
 

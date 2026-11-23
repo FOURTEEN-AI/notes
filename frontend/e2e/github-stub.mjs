@@ -74,7 +74,7 @@ export function startGitHubStub(port) {
         return json(response, 200, { workflow_runs: [] });
       }
       if (method === 'GET' && path.startsWith('/commits/')) {
-        const runs = ['build', 'review', 'acceptance'].map((name, id) => ({
+        const runs = ['build', 'e2e', 'review', 'acceptance'].map((name, id) => ({
           id: id + 1,
           name,
           status: 'completed',

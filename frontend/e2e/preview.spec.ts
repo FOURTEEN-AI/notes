@@ -8,6 +8,7 @@ test('the preview bar shows the pull request, its checks and the tour', async ({
   const bar = page.getByRole('complementary');
   await expect(bar).toContainText('Preview #7: Notizen sortieren');
   await expect(bar).toContainText('build grün');
+  await expect(bar).toContainText('e2e grün');
   await expect(bar).toContainText('review grün');
   await expect(bar).toContainText('acceptance grün');
   await expect(bar.getByRole('button', { name: 'Mergen' })).toBeEnabled();

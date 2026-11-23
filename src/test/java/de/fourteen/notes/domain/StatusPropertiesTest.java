@@ -10,26 +10,30 @@ class StatusPropertiesTest {
     @Property
     void a_running_agent_always_wins(
             @ForAll CheckState build,
+            @ForAll CheckState e2e,
             @ForAll CheckState review,
             @ForAll CheckState acceptance,
             @ForAll CheckState preview) {
-        assertThat(IdeaStatus.of(true, new Checks(build, review, acceptance, preview)))
+        assertThat(IdeaStatus.of(true, new Checks(build, e2e, review, acceptance, preview)))
                 .isEqualTo(IdeaStatus.AGENT_WORKING);
     }
 
     @Property
     void the_status_follows_the_required_checks_and_ignores_the_preview(
             @ForAll CheckState build,
+            @ForAll CheckState e2e,
             @ForAll CheckState review,
             @ForAll CheckState acceptance,
             @ForAll CheckState preview) {
-        Checks checks = new Checks(build, review, acceptance, preview);
+        Checks checks = new Checks(build, e2e, review, acceptance, preview);
         boolean green =
                 build == CheckState.SUCCESS
+                        && e2e == CheckState.SUCCESS
                         && review == CheckState.SUCCESS
                         && acceptance == CheckState.SUCCESS;
         boolean pending =
                 build == CheckState.PENDING
+                        || e2e == CheckState.PENDING
                         || review == CheckState.PENDING
                         || acceptance == CheckState.PENDING;
 
@@ -47,10 +51,11 @@ class StatusPropertiesTest {
     @Property
     void green_and_pending_exclude_each_other(
             @ForAll CheckState build,
+            @ForAll CheckState e2e,
             @ForAll CheckState review,
             @ForAll CheckState acceptance,
             @ForAll CheckState preview) {
-        Checks checks = new Checks(build, review, acceptance, preview);
+        Checks checks = new Checks(build, e2e, review, acceptance, preview);
 
         assertThat(checks.green() && checks.pending()).isFalse();
     }

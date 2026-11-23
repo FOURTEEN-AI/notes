@@ -77,11 +77,11 @@ The app talks to GitHub with a token, so the whole loop runs without opening Git
   `agent` and their status (refine agent working, question for you, agent working, review running,
   ready for the demo, waiting for the human). A click opens the idea's chat: the description, the
   comments with the markers `## Idea chat` and `## Refine`, an input while the label is `refine`, and
-  the preview link once its check `preview` (the deploy) is green. The status comes from the pull request on `agent/issue-<n>`, its checks `build`
-  and `review`, and running `agent.yml` runs (their `run-name` is `Agent #<n>`; `Refine #<n>` for `refine.yml`).
+  the preview link once its check `preview` (the deploy) is green. The status comes from the pull request on `agent/issue-<n>`, its checks `build`,
+  `e2e` and `review`, and running `agent.yml` runs (their `run-name` is `Agent #<n>`; `Refine #<n>` for `refine.yml`).
 - Preview app: `ci.yml` deploys it with `PULL_REQUEST=<n>`, which shows a bar with the pull
   request, its checks, a feedback field (posts a `## Human feedback` comment) and a merge button
-  (squash). The app merges only when `build` and `review` are green on the head commit, because
+  (squash). The app merges only when `build`, `e2e`, `review` and `acceptance` are green on the head commit, because
   the token belongs to an admin and could bypass the branch protection.
 
 Without `GITHUB_TOKEN` the ideas are hidden; without `PULL_REQUEST` the bar is.
@@ -117,11 +117,11 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_PASSWORD --repo FOURTEE
 # budget; no other workflow uses it.
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set TYPESAFE_API_KEY --repo FOURTEEN-AI/notes
 
-# Last, once the checks `build`, `review` and `acceptance` have run on a pull request: protect main.
+# Last, once the checks `build`, `e2e`, `review` and `acceptance` have run on a pull request: protect main.
 # "enforce_admins": false keeps direct pushes to main open for admins (local sessions).
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
 {
-  "required_status_checks": {"strict": false, "contexts": ["build", "review", "acceptance"]},
+  "required_status_checks": {"strict": false, "contexts": ["build", "e2e", "review", "acceptance"]},
   "enforce_admins": false,
   "required_pull_request_reviews": {"required_approving_review_count": 0},
   "restrictions": null

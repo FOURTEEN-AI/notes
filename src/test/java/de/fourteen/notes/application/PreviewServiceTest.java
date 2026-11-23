@@ -25,7 +25,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 class PreviewServiceTest {
 
-    private static final Checks GREEN = new Checks(SUCCESS, SUCCESS, SUCCESS, PENDING);
+    private static final Checks GREEN = new Checks(SUCCESS, SUCCESS, SUCCESS, SUCCESS, PENDING);
 
     private final GitHub github = mock(GitHub.class);
     private final PreviewService service =
@@ -59,7 +59,8 @@ class PreviewServiceTest {
                 "agent/issue-4",
                 "open",
                 "```demo\n[{\"do\":\"A\",\"expect\":\"B\",\"selector\":\"main\"}]\n```");
-        when(github.checks("sha")).thenReturn(new Checks(SUCCESS, FAILURE, PENDING, SUCCESS));
+        when(github.checks("sha"))
+                .thenReturn(new Checks(SUCCESS, SUCCESS, FAILURE, PENDING, SUCCESS));
         when(github.comments(4))
                 .thenReturn(List.of(new Comment("## Refine\n\n```gherkin\nSzenario: N\n```")));
 
@@ -70,6 +71,7 @@ class PreviewServiceTest {
                                 "Titel",
                                 "open",
                                 "deployed",
+                                SUCCESS,
                                 SUCCESS,
                                 FAILURE,
                                 PENDING,
@@ -161,7 +163,12 @@ class PreviewServiceTest {
     @Test
     void refuses_to_merge_unless_open_and_green() {
         pr("x", "open", "");
-        when(github.checks("sha")).thenReturn(new Checks(SUCCESS, SUCCESS, PENDING, SUCCESS));
+        when(github.checks("sha"))
+                .thenReturn(new Checks(SUCCESS, SUCCESS, SUCCESS, PENDING, SUCCESS));
+        kind(service::merge, DomainException.Kind.CONFLICT);
+
+        when(github.checks("sha"))
+                .thenReturn(new Checks(SUCCESS, FAILURE, SUCCESS, SUCCESS, SUCCESS));
         kind(service::merge, DomainException.Kind.CONFLICT);
 
         pr("x", "closed", "");

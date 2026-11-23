@@ -147,9 +147,9 @@ class GitHubApiTest {
                                 ]}
                                 """));
         github.expect(requestTo(REPO + "/commits/xyz/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", null, null, null)));
+                .andRespond(json(checkRuns("success", "success", null, null, null)));
         github.expect(requestTo(REPO + "/commits/abc/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
 
         mvc.perform(get("/api/ideas").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
@@ -315,7 +315,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", null)));
+                .andRespond(json(checkRuns("success", "success", null)));
         issueComments(6, "[]");
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
@@ -323,6 +323,7 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$.title").value("feat: pull request 7"))
                 .andExpect(jsonPath("$.deployedSha").value("abc123"))
                 .andExpect(jsonPath("$.build").value("SUCCESS"))
+                .andExpect(jsonPath("$.e2e").value("SUCCESS"))
                 .andExpect(jsonPath("$.review").value("PENDING"))
                 .andExpect(jsonPath("$.acceptance").value("SUCCESS"))
                 .andExpect(jsonPath("$.mergeable").value(false))
@@ -334,7 +335,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
         issueComments(
                 6,
                 """
@@ -354,7 +355,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
         issueComments(
                 6,
                 """
@@ -388,7 +389,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(withBody(pullRequest(7, "agent/issue-6", "def", "open"), body)));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
         issueComments(6, "[]");
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(jsonPath("$.demo.length()").value(2))
@@ -405,7 +406,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(withBody(pullRequest(7, "agent/issue-6", "def", "open"), body)));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
         issueComments(6, "[]");
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
@@ -420,7 +421,7 @@ class GitHubApiTest {
                                 pullRequest(7, "agent/issue-6", "def", "closed")
                                         .replace("\"state\"", "\"merged\": true, \"state\"")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
 
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(jsonPath("$.state").value("merged"))
@@ -452,7 +453,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success")));
+                .andRespond(json(checkRuns("success", "success", "success")));
         github.expect(requestTo(REPO + "/pulls/7/merge"))
                 .andExpect(method(HttpMethod.PUT))
                 .andExpect(content().json("{\"sha\": \"def\", \"merge_method\": \"squash\"}"))
@@ -467,7 +468,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "failure")));
+                .andRespond(json(checkRuns("success", "success", "failure")));
         github.expect(never(), requestTo(REPO + "/pulls/7/merge"));
 
         mvc.perform(post("/api/preview/merge").header(HttpHeaders.AUTHORIZATION, LOGIN))
@@ -479,7 +480,7 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
-                .andRespond(json(checkRuns("success", "success", "failure", "success")));
+                .andRespond(json(checkRuns("success", "success", "success", "failure", "success")));
         github.expect(never(), requestTo(REPO + "/pulls/7/merge"));
 
         mvc.perform(post("/api/preview/merge").header(HttpHeaders.AUTHORIZATION, LOGIN))
@@ -519,17 +520,18 @@ class GitHubApiTest {
                 "\"body\": " + JsonMapper.shared().writeValueAsString(body) + ", \"state\"");
     }
 
-    private static String checkRuns(String build, String review) {
-        return checkRuns(build, review, "success", "success");
+    private static String checkRuns(String build, String e2e, String review) {
+        return checkRuns(build, e2e, review, "success", "success");
     }
 
     /** An older failed review and the latest runs; a null conclusion means still running. */
     private static String checkRuns(
-            String build, String review, String acceptance, String preview) {
+            String build, String e2e, String review, String acceptance, String preview) {
         return """
                 {"check_runs": [
                   {"id": 1, "name": "review", "status": "completed", "conclusion": "failure"},
                   {"id": 2, "name": "build", "status": "completed", "conclusion": "%s"},
+                  %s,
                   %s,
                   %s,
                   %s
@@ -537,6 +539,7 @@ class GitHubApiTest {
                 """
                 .formatted(
                         build,
+                        checkRun(6, "e2e", e2e),
                         checkRun(3, "review", review),
                         checkRun(5, "acceptance", acceptance),
                         checkRun(4, "preview", preview));
