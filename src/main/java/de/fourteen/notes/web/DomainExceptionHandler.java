@@ -15,7 +15,7 @@ class DomainExceptionHandler {
     ResponseEntity<ProblemDetail> handle(DomainException e) {
         HttpStatus status =
                 switch (e.kind()) {
-                    case INVALID -> HttpStatus.BAD_REQUEST;
+                    case INVALID, TOO_LONG -> HttpStatus.BAD_REQUEST;
                     case NOT_FOUND -> HttpStatus.NOT_FOUND;
                     case CONFLICT -> HttpStatus.CONFLICT;
                     case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;

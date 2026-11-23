@@ -6,6 +6,8 @@ public class DomainException extends RuntimeException {
 
     public enum Kind {
         INVALID,
+        /** A text exceeds its maximum length. */
+        TOO_LONG,
         NOT_FOUND,
         CONFLICT,
         /** A service the app depends on is not configured. */

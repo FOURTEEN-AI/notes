@@ -91,6 +91,62 @@ public class NotizenStage extends Stage<NotizenStage> {
         return self();
     }
 
+    public NotizenStage ich_eine_Notiz_mit_$_Zeichen_speichere(int anzahl) {
+        speichereVersuch("x".repeat(anzahl));
+        return self();
+    }
+
+    public NotizenStage ich_eine_Notiz_aus_$_Leerzeichen_speichere(int anzahl) {
+        speichereVersuch(" ".repeat(anzahl));
+        return self();
+    }
+
+    public NotizenStage die_Liste_zeigt_die_Notiz_mit_$_Zeichen(int anzahl) {
+        assertThat(notizen.list().stream().map(Note::text).toList())
+                .isEqualTo(List.of("x".repeat(anzahl)));
+        return self();
+    }
+
+    public NotizenStage die_Eingabe_wird_als_zu_lang_abgelehnt() {
+        assertThat(fehler).isNotNull();
+        assertThat(fehler.kind()).isEqualTo(DomainException.Kind.TOO_LONG);
+        return self();
+    }
+
+    private void speichereVersuch(String text) {
+        try {
+            zuletztGespeichert = notizen.create(text);
+        } catch (DomainException e) {
+            fehler = e;
+        }
+    }
+
+    @Pending
+    public NotizenStage ich_$_ins_Eingabefeld_schreibe(String text) {
+        return self();
+    }
+
+    @Pending
+    @As("der Zähler zeigt $")
+    public NotizenStage der_Zaehler_zeigt_$(String text) {
+        return self();
+    }
+
+    @Pending
+    public NotizenStage ich_eine_Notiz_mit_$_Zeichen_speichern_will(int anzahl) {
+        return self();
+    }
+
+    @Pending
+    public NotizenStage ich_sehe_die_Meldung_$(String text) {
+        return self();
+    }
+
+    @Pending
+    public NotizenStage der_Text_bleibt_im_Eingabefeld() {
+        return self();
+    }
+
     @Pending
     public NotizenStage das_Eingabefeld_ist_leer() {
         return self();
