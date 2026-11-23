@@ -93,7 +93,7 @@ export function Ideas() {
   useEffect(() => {
     fetch('/api/preview')
       .then((preview) => {
-        if (preview.ok) return;
+        if (preview.status === 200) return;
         load().catch(() => setError('Ideen konnten nicht geladen werden.'));
         const linked = Number(new URLSearchParams(location.search).get('idee'));
         if (Number.isInteger(linked) && linked > 0) {

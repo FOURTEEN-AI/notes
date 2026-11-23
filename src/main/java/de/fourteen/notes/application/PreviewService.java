@@ -69,6 +69,10 @@ public class PreviewService {
         this.deployedSha = deployedSha;
     }
 
+    public boolean isPreview() {
+        return pullRequest != null;
+    }
+
     public Preview get() {
         PullRequest pr = github.pullRequest(number());
         Checks checks = github.checks(pr.sha());

@@ -26,7 +26,7 @@ const checkLabels: Record<CheckState, string> = {
   FAILURE: 'rot',
 };
 
-// Only shown in a preview app: there /api/preview knows its pull request, elsewhere it is 404.
+// Only shown in a preview app: there /api/preview knows its pull request, elsewhere it is 204.
 export function PreviewBar() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [text, setText] = useState('');
@@ -36,17 +36,24 @@ export function PreviewBar() {
   const loadedSha = useRef<string | null>(null);
   const feedbackField = useRef<HTMLTextAreaElement>(null);
 
+  // False when this is no preview app (204): that never changes, so there is nothing to poll.
   async function load() {
     const response = await fetch('/api/preview');
-    if (!response.ok) return;
+    if (response.status === 204) return false;
+    if (response.status !== 200) return true; // e.g. GitHub unreachable: try again
     const current = (await response.json()) as Preview;
     loadedSha.current ??= current.deployedSha;
     setPreview(current);
+    return true;
   }
 
   useEffect(() => {
-    load().catch(() => {});
-    const timer = setInterval(() => load().catch(() => {}), 10000);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    load()
+      .then((isPreview) => {
+        if (isPreview) timer = setInterval(() => load().catch(() => {}), 10000);
+      })
+      .catch(() => {});
     return () => clearInterval(timer);
   }, []);
 

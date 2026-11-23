@@ -110,7 +110,7 @@ class NotesApiTest {
         mvc.perform(get("/api/ideas").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isServiceUnavailable());
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNoContent());
     }
 
     @Test

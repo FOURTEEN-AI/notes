@@ -7,6 +7,7 @@ import de.fourteen.notes.domain.DemoStep;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** The bar of a preview app. Outside a preview app everything here is 404. */
+/** The bar of a preview app. Outside a preview app everything here is 404, except the GET, which is 204. */
 @RestController
 @RequestMapping("/api/preview")
 class PreviewController {
@@ -49,9 +50,11 @@ class PreviewController {
     }
 
     @GetMapping
-    PreviewResponse get() {
+    ResponseEntity<PreviewResponse> get() {
+        // 204 instead of 404: the browser logs every 404, and every production page asks.
+        if (!preview.isPreview()) return ResponseEntity.noContent().build();
         PreviewService.Preview p = preview.get();
-        return new PreviewResponse(
+        return ResponseEntity.ok(new PreviewResponse(
                 p.number(),
                 p.title(),
                 p.state(),
@@ -62,7 +65,7 @@ class PreviewController {
                 p.mergeable(),
                 p.demo().stream().map(DemoStepResponse::of).toList(),
                 p.issue(),
-                p.proposal());
+                p.proposal()));
     }
 
     @PostMapping(path = "/feedback", consumes = MediaType.APPLICATION_JSON_VALUE)
