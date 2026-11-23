@@ -26,7 +26,9 @@ public class NoteService {
             throw new DomainException(DomainException.Kind.INVALID, "text must not be blank");
         }
         if (text.length() > MAX_LENGTH) {
-            throw new DomainException(DomainException.Kind.INVALID, "text must not exceed " + MAX_LENGTH + " characters");
+            throw new DomainException(
+                    DomainException.Kind.INVALID,
+                    "text must not exceed " + MAX_LENGTH + " characters");
         }
         return notes.add(text);
     }
