@@ -247,6 +247,11 @@ class GitHubClient implements GitHub {
                 pr.path("merged").asBoolean(false) ? "merged" : pr.get("state").asString());
     }
 
+    private static boolean isConflict(RestClientResponseException e) {
+        int status = e.getStatusCode().value();
+        return status == 405 || status == 409;
+    }
+
     private <T> T call(Supplier<T> request) {
         if (!properties.configured()) {
             throw new DomainException(DomainException.Kind.UNAVAILABLE, "GitHub is not configured");
@@ -255,7 +260,7 @@ class GitHubClient implements GitHub {
             return request.get();
         } catch (RestClientResponseException e) {
             // 405: not mergeable, 409: the head changed. Both mean "look again".
-            if (e.getStatusCode().value() == 405 || e.getStatusCode().value() == 409) {
+            if (isConflict(e)) {
                 throw new DomainException(DomainException.Kind.CONFLICT, "GitHub refused");
             }
             throw new DomainException(

@@ -4,6 +4,7 @@ plugins {
 	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
 	id 'com.diffplug.spotless' version '8.2.1'
 	id 'net.ltgt.errorprone' version '5.2.0'
+	id 'pmd'
 }
 
 group = 'de.fourteen.notes'
@@ -37,6 +38,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'com.tngtech.jgiven:jgiven-junit5:3.0.0'
+	testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -109,6 +111,16 @@ spotless {
 		removeUnusedImports()
 		importOrder()
 	}
+}
+
+// Static analysis of main sources: a small PMD ruleset (config/pmd/ruleset.xml) with complexity
+// limits. Tests are not linted: JGiven stages and fakes are written for readability.
+pmd {
+	toolVersion = '7.29.0'
+	ruleSetFiles = files('config/pmd/ruleset.xml')
+	ruleSets = []
+	consoleOutput = true
+	sourceSets = [sourceSets.main]
 }
 
 tasks.register('prettierCheck', Exec) {

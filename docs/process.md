@@ -70,6 +70,8 @@ a workflow or count as approval.
 
 `build` also compiles strictly: javac with `-Xlint:all -Werror` (tests without `deprecation`: JGiven's `ScenarioTest`), Error Prone (bug patterns, warnings are errors) and NullAway on main sources. Every package of `de.fourteen.notes` is `@NullMarked` (JSpecify, `package-info.java`); where null is allowed it says `@Nullable`. `OnionArchitectureTest` lets `domain` import `org.jspecify` besides the JDK.
 
+`build` also runs PMD 7 on main sources (`config/pmd/ruleset.xml`: a few errorprone and bestpractices rules, no style rules; tests are not linted). Complexity limits: cyclomatic 10 per method (80 per class), cognitive 15 per method; today's code is below them. `ArchitectureRulesTest` (ArchUnit, compiled classes) adds to `OnionArchitectureTest`: controllers live in `web` and do not use the ports, `NoteRepository` and `GitHub` are interfaces in `domain` implemented only in `infrastructure`, no cycles between rings, `domain` and `application` throw no exception but `DomainException`.
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

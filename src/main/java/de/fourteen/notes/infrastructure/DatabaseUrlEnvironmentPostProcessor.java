@@ -5,6 +5,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -50,15 +51,19 @@ class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProcessor {
                         + (uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery());
         Map<String, Object> properties = new HashMap<>();
         properties.put("spring.datasource.url", jdbcUrl);
-        String userInfo = uri.getRawUserInfo();
-        if (userInfo != null) {
-            String[] parts = userInfo.split(":", 2);
-            properties.put("spring.datasource.username", decode(parts[0]));
-            if (parts.length == 2) {
-                properties.put("spring.datasource.password", decode(parts[1]));
-            }
-        }
+        addCredentials(properties, uri.getRawUserInfo());
         return properties;
+    }
+
+    private static void addCredentials(Map<String, Object> properties, @Nullable String userInfo) {
+        if (userInfo == null) {
+            return;
+        }
+        String[] parts = userInfo.split(":", 2);
+        properties.put("spring.datasource.username", decode(parts[0]));
+        if (parts.length == 2) {
+            properties.put("spring.datasource.password", decode(parts[1]));
+        }
     }
 
     private static String decode(String value) {
