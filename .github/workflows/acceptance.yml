@@ -3,7 +3,7 @@ name: Acceptance
 # Required check `acceptance`: do the acceptance tests of an agent pull request match the
 # scenarios that the human approved (latest "## Acceptance criteria" comment on its issue), as a
 # delta against the tests of `main`? A failure is posted as "## Acceptance round <n>", at most 3
-# rounds, then the pull request waits for the human. Pull requests that are not from an
+# rounds, then the pull request waits for the human. Each round starts the coding agent. Pull requests that are not from an
 # `agent/issue-<n>` branch have no criteria and pass.
 
 on:
@@ -21,6 +21,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: read
+      actions: write
     env:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.number }}
@@ -90,6 +91,8 @@ jobs:
               echo
               cat "$RUNNER_TEMP/findings.md"
             } | gh pr comment "$PR" --body-file -
+            # The coding agent fixes the findings, like after a failed review.
+            gh workflow run agent.yml -f pr="$PR"
           else
             gh pr comment "$PR" --body "Acceptance failed in $rounds rounds. Waiting for the human."
           fi

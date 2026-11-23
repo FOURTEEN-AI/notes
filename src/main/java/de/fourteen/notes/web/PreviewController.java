@@ -26,6 +26,7 @@ class PreviewController {
             String deployedSha,
             CheckState build,
             CheckState review,
+            CheckState acceptance,
             boolean mergeable,
             List<DemoStepResponse> demo) {}
 
@@ -55,6 +56,7 @@ class PreviewController {
                 p.deployedSha(),
                 p.build(),
                 p.review(),
+                p.acceptance(),
                 p.mergeable(),
                 p.demo().stream().map(DemoStepResponse::of).toList());
     }

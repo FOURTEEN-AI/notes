@@ -1,16 +1,21 @@
 package de.fourteen.notes.domain;
 
 /**
- * The checks of a pull request: `build` and `review` are required, merging needs both green.
+ * The checks of a pull request: `build`, `review` and `acceptance` are required, merging needs all
+ * green.
  * `preview` is the deploy of the preview app.
  */
-public record Checks(CheckState build, CheckState review, CheckState preview) {
+public record Checks(CheckState build, CheckState review, CheckState acceptance, CheckState preview) {
 
     public boolean green() {
-        return build == CheckState.SUCCESS && review == CheckState.SUCCESS;
+        return build == CheckState.SUCCESS
+                && review == CheckState.SUCCESS
+                && acceptance == CheckState.SUCCESS;
     }
 
     public boolean pending() {
-        return build == CheckState.PENDING || review == CheckState.PENDING;
+        return build == CheckState.PENDING
+                || review == CheckState.PENDING
+                || acceptance == CheckState.PENDING;
     }
 }

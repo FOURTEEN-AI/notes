@@ -1,7 +1,7 @@
 name: Agent
 
-# Takes a labelled issue to a pull request, fixes the findings of a failed review, or implements
-# a comment on a pull request that starts with "## Human feedback" (from the preview bar or
+# Takes a labelled issue to a pull request, fixes the findings of a failed review or acceptance
+# check, or implements a comment on a pull request that starts with "## Human feedback" (from the preview bar or
 # written on GitHub; no round limit). Needs the Claude GitHub App (so that the agent's pushes
 # start CI) and the secret CLAUDE_CODE_OAUTH_TOKEN, see README.
 
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       pr:
-        description: Pull request whose review findings are to be fixed
+        description: Pull request whose review or acceptance findings are to be fixed
         required: true
 
 jobs:
@@ -89,7 +89,7 @@ jobs:
               with `gh pr create`. The description says what changed, contains the demo tour
               (see "Demo tour" in CLAUDE.md), and ends with "Closes #${{ github.event.issue.number }}".
             - Do not touch anything under `.github/`.
-      - name: Fix the review findings
+      - name: Fix the review or acceptance findings
         if: github.event_name == 'workflow_dispatch'
         uses: anthropics/claude-code-action@v1
         with:
@@ -100,8 +100,9 @@ jobs:
             --max-turns 40
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh pr edit:*)"
           prompt: |
-            The review of pull request #${{ inputs.pr }} in ${{ github.repository }} found problems.
-            Read the latest comment that starts with "## Review round" with
+            The review or the acceptance check of pull request #${{ inputs.pr }} in
+            ${{ github.repository }} found problems. Read the latest comment that starts with
+            "## Review round" or "## Acceptance round" (whichever is newer) with
             `gh pr view ${{ inputs.pr }} --comments`, and read CLAUDE.md.
 
             - You are on the branch of the pull request. Fix exactly the findings of that comment

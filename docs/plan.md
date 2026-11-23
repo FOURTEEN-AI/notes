@@ -273,9 +273,9 @@ it), the report in the jar (`/jgiven/`), proposal and the button "Freigeben" (wi
 versions of changed scenarios), the deterministic comparison of approved delta and report
 (`.github/acceptance/`, tested in `ci.yml`), the workflow `acceptance` around it (latest
 `## Acceptance criteria`, tests of `main` and of the pull request, the comment
-`## Acceptance round <n>`; not yet a required check and the failure does not yet start the coding
-agent). Open: the judgement per stage method (Jev, Haiku), the two phases of the coding agent, late conflicts, `acceptance`
-in branch protection and the merge button, the old versions in the idea chat.
+`## Acceptance round <n>`, which starts the coding agent, at most 3 rounds), `acceptance` as a
+required check in branch protection and for the merge button (preview bar lists it). Open: the judgement per stage method
+(Jev, Haiku), the two phases of the coding agent, late conflicts, the old versions in the idea chat.
 
 **Done when**
 

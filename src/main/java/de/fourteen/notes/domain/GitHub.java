@@ -29,7 +29,7 @@ public interface GitHub {
     /** The comments of an issue, oldest first. */
     List<Comment> comments(int number);
 
-    /** The latest runs of the checks `build`, `review` and `preview` on a commit. */
+    /** The latest runs of the checks `build`, `review`, `acceptance` and `preview` on a commit. */
     Checks checks(String sha);
 
     void comment(int number, String body);

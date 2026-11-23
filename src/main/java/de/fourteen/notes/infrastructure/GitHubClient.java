@@ -156,7 +156,10 @@ class GitHubClient implements GitHub {
                                         .retrieve()
                                         .body(JsonNode.class));
         return new Checks(
-                checkState(runs, "build"), checkState(runs, "review"), checkState(runs, "preview"));
+                checkState(runs, "build"),
+                checkState(runs, "review"),
+                checkState(runs, "acceptance"),
+                checkState(runs, "preview"));
     }
 
     @Override

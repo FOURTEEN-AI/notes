@@ -113,11 +113,11 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh variable set FLY_ORG --repo FOURTEEN-AI/note
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_NAME --repo FOURTEEN-AI/notes
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_PASSWORD --repo FOURTEEN-AI/notes
 
-# Last, once the checks `build` and `review` have run on a pull request: protect main.
+# Last, once the checks `build`, `review` and `acceptance` have run on a pull request: protect main.
 # "enforce_admins": false keeps direct pushes to main open for admins (local sessions).
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
 {
-  "required_status_checks": {"strict": false, "contexts": ["build", "review"]},
+  "required_status_checks": {"strict": false, "contexts": ["build", "review", "acceptance"]},
   "enforce_admins": false,
   "required_pull_request_reviews": {"required_approving_review_count": 0},
   "restrictions": null

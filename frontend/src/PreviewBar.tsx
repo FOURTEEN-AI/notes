@@ -9,6 +9,7 @@ type Preview = {
   deployedSha: string | null;
   build: CheckState;
   review: CheckState;
+  acceptance: CheckState;
   mergeable: boolean;
   demo: DemoStep[];
 };
@@ -76,7 +77,7 @@ export function PreviewBar() {
     const response = await fetch('/api/preview/merge', { method: 'POST' });
     setBusy(false);
     if (!response.ok) {
-      setMessage('Merge abgelehnt. Sind build und review grün?');
+      setMessage('Merge abgelehnt. Sind build, review und acceptance grün?');
       await load();
       return;
     }
@@ -95,6 +96,9 @@ export function PreviewBar() {
         </span>
         <span className={`check ${preview.review.toLowerCase()}`}>
           review {checkLabels[preview.review]}
+        </span>
+        <span className={`check ${preview.acceptance.toLowerCase()}`}>
+          acceptance {checkLabels[preview.acceptance]}
         </span>
         {preview.state !== 'open' && <span>{preview.state === 'merged' ? 'gemergt' : 'geschlossen'}</span>}
       </span>
