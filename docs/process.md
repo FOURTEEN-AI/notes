@@ -74,6 +74,10 @@ a workflow or count as approval.
 
 `build` also lints the frontend (`frontendLint`, `pnpm run lint` in `frontend/`): ESLint 10 flat config (`eslint.config.js`) with typescript-eslint type-aware `recommendedTypeChecked`, `react-hooks` (rules of hooks, exhaustive deps; not the React Compiler rules), `jsx-a11y` recommended, `eslint-config-prettier` (formatting stays with Prettier) and `complexity` at 10 per function (same as PMD's cyclomatic limit; JSX `&&` and `?:` count, so big components are split). knip finds unused files, exports and dependencies. `tsc --noEmit` (strict) stays in `pnpm build`. typescript-eslint does not support TypeScript 7 yet, so `typescript` in `package.json` is the TS 6 API package for the linters and `typescript7` provides the `tsc` binary; drop the alias once typescript-eslint supports TS 7.
 
+`build` also tests properties (jqwik 1.10.2 on the JUnit platform, `*PropertiesTest` next to the unit tests): round trips and invariants of `AcceptanceCriteria` (gherkin block, `@ersetzt`/`@entfällt` titles), `IdeaStatus`/`Checks`, `ChatMessage`, the demo block of `PreviewService` and the `DATABASE_URL` mapping (user and password with special characters). It found that a host Java's `URI` cannot parse (e.g. `my_db`) became `jdbc:postgresql://null/...`; it is rejected now. Plain unit tests cover the services (`application`, Mockito on the ports).
+
+`build` also runs mutation tests (`pitest` is part of `check`: PIT 1.30.2, pitest-junit5-plugin 1.2.3, gradle-pitest-plugin 1.19.0) on `de.fourteen.notes.domain.*` and `application.*`, with only the tests in those packages (no Spring, no Testcontainers, no acceptance tests): about 50 seconds. Score today 100 % (91 mutants), `mutationThreshold` is 95 in `build.gradle`; the HTML report is in `build/reports/pitest`. A surviving mutant means a missing test, not a reason to lower the threshold.
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

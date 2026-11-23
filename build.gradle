@@ -5,6 +5,7 @@ plugins {
 	id 'com.diffplug.spotless' version '8.2.1'
 	id 'net.ltgt.errorprone' version '5.2.0'
 	id 'pmd'
+	id 'info.solidsoft.pitest' version '1.19.0'
 }
 
 group = 'de.fourteen.notes'
@@ -39,6 +40,7 @@ dependencies {
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'com.tngtech.jgiven:jgiven-junit5:3.0.0'
 	testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
+	testImplementation 'net.jqwik:jqwik:1.10.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -156,6 +158,19 @@ tasks.register('format') {
 	dependsOn 'spotlessApply', 'prettierApply'
 }
 
+// Mutation testing of the pure rules in domain and application, with the plain unit tests only
+// (no Spring, no Testcontainers, no acceptance tests). `check` fails below the threshold.
+pitest {
+	pitestVersion = '1.30.2'
+	junit5PluginVersion = '1.2.3'
+	targetClasses = ['de.fourteen.notes.domain.*', 'de.fourteen.notes.application.*']
+	targetTests = ['de.fourteen.notes.domain.*', 'de.fourteen.notes.application.*']
+	mutationThreshold = 95
+	threads = 4
+	outputFormats = ['HTML', 'XML']
+	timestampedReports = false
+}
+
 tasks.named('check') {
-	dependsOn 'prettierCheck', 'frontendLint'
+	dependsOn 'prettierCheck', 'frontendLint', 'pitest'
 }

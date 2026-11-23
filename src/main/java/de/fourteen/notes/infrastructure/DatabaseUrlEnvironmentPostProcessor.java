@@ -43,16 +43,22 @@ class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProcessor {
         if (!"postgres".equals(uri.getScheme()) && !"postgresql".equals(uri.getScheme())) {
             throw new IllegalArgumentException("DATABASE_URL must start with postgres://");
         }
-        String jdbcUrl =
-                "jdbc:postgresql://"
-                        + uri.getHost()
-                        + (uri.getPort() == -1 ? "" : ":" + uri.getPort())
-                        + uri.getRawPath()
-                        + (uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery());
+        String jdbcUrl = jdbcUrl(uri);
         Map<String, Object> properties = new HashMap<>();
         properties.put("spring.datasource.url", jdbcUrl);
         addCredentials(properties, uri.getRawUserInfo());
         return properties;
+    }
+
+    private static String jdbcUrl(URI uri) {
+        if (uri.getHost() == null) {
+            throw new IllegalArgumentException("DATABASE_URL has no valid host");
+        }
+        return "jdbc:postgresql://"
+                + uri.getHost()
+                + (uri.getPort() == -1 ? "" : ":" + uri.getPort())
+                + uri.getRawPath()
+                + (uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery());
     }
 
     private static void addCredentials(Map<String, Object> properties, @Nullable String userInfo) {
