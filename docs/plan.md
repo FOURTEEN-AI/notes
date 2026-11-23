@@ -304,7 +304,7 @@ running build, which is `main` in production; a preview shows its own build's re
 pending scenarios instead of `@ui` (the tag is `@manuell("<reason>")`; the test is `@Pending` with
 the annotation `@Manuell("<reason>")`, `report.mjs` reads status and reason from the JGiven JSON,
 `check.mjs` compares them with the delta, `stages.mjs` skips pending scenarios; first example:
-"Das Eingabefeld ist nach dem Speichern leer"). Open: the description of the current process.
+"Das Eingabefeld ist nach dem Speichern leer"), and the description of the current process in [process.md](process.md).
 
 **Done when**
 
@@ -315,7 +315,7 @@ the annotation `@Manuell("<reason>")`, `report.mjs` reads status and reason from
 - [x] The notes' behaviour has scenarios and tests, and the report is served in production
 - [ ] A `@manuell` scenario is pending in the report, and `acceptance` fails a test that is pending
   without approval
-- [ ] The current process is described apart from the history of steps
+- [x] The current process is described apart from the history of steps
 - [ ] An agent issue went from approved scenarios to production, with at least one finding of
   `acceptance` on the way
 

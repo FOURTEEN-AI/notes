@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 A notes app, built step by step by AI agents. The current step and the rules for growing the
-project are in [docs/plan.md](docs/plan.md). Read it before you start.
+project are in [docs/plan.md](docs/plan.md). Read it before you start. The process as it is today (who does what when, labels, comments, checks)
+is in [docs/process.md](docs/process.md): update it at the end of every step.
 
 - Stack: Spring Boot 4 (Java 25, Gradle) serves a React app (Vite, pnpm) from `frontend/`.
   PostgreSQL. Fly.io.
