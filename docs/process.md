@@ -78,6 +78,10 @@ a workflow or count as approval.
 
 `build` also runs mutation tests (`pitest` is part of `check`: PIT 1.30.2, pitest-junit5-plugin 1.2.3, gradle-pitest-plugin 1.19.0) on `de.fourteen.notes.domain.*` and `application.*`, with only the tests in those packages (no Spring, no Testcontainers, no acceptance tests): about 50 seconds. Score today 100 % (91 mutants), `mutationThreshold` is 95 in `build.gradle`; the HTML report is in `build/reports/pitest`. A surviving mutant means a missing test, not a reason to lower the threshold.
 
+`build` also validates the configuration at startup: `GitHubProperties` is `@Validated` (spring-boot-starter-validation): `github.api-url` must be an http(s) URL and `github.repository` `owner/name`, else the app does not start (`GitHubPropertiesTest`). The token stays optional (local runs, tests), as do `PULL_REQUEST`, `PULL_REQUEST_SHA` (previews only) and `DATABASE_URL`, which `DatabaseUrlEnvironmentPostProcessor` already checks. `/actuator/health` is public and shows only the status, no details (`NotesApiTest`); the JDBC check is part of it.
+
+After `flyctl deploy`, `deploy` and `preview` run `.github/smoke.sh <app>` (no secrets, GETs only): polls `https://<app>.fly.dev/actuator/health` until it says `"status":"UP"` (30 x 5 s, the machine starts on the first request), then expects `/` without login to answer 401. A failure fails the job (for `preview` the link comment is then not posted).
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

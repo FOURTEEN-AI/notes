@@ -81,6 +81,8 @@ jobs:
       - run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Smoke test
+        run: .github/smoke.sh notes-fourteen-it
 
   # A preview app per pull request. Only this job gets the Fly org token, and it only handles the
   # jar built above, never the code of the pull request itself.
@@ -134,6 +136,8 @@ jobs:
           flyctl deploy --app "$APP" --remote-only --ha=false
           --env PULL_REQUEST=${{ github.event.number }}
           --env PULL_REQUEST_SHA=${{ github.event.pull_request.head.sha }}
+      - name: Smoke test
+        run: .github/smoke.sh "$APP"
       - name: Link the preview in the pull request
         run: |
           # Edit only the preview comment: the acceptance markers are comments of the same user.
