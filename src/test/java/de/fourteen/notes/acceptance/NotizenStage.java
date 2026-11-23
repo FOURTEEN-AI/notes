@@ -109,6 +109,7 @@ public class NotizenStage extends Stage<NotizenStage> {
 
     public NotizenStage wird_die_Eingabe_abgelehnt() {
         assertThat(fehler).isNotNull();
+        assertThat(fehler.kind()).isEqualTo(DomainException.Kind.INVALID);
         return self();
     }
 
