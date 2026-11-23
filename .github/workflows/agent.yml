@@ -168,7 +168,9 @@ jobs:
             `gh pr view ${{ inputs.pr }} --comments`, and read CLAUDE.md.
 
             - You are on the branch of the pull request. Fix exactly the findings of that comment
-              and nothing else.
+              and nothing else. If the comment says the branch is behind `main`, merge `origin/main`
+              into it first (`git fetch origin main && git merge origin/main`) and fix the findings
+              on top of that.
             - The phase is ${{ steps.phase.outputs.phase }}. The pull request has two phases:
               - Phase 1 (the acceptance tests are not checked yet): you may change only the
                 acceptance tests, stages, fakes and stubs, no production code. Make

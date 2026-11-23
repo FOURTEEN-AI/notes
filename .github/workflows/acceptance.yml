@@ -12,8 +12,10 @@ name: Acceptance
 # the acceptance tests, stages and fakes must equal that commit, otherwise this is a finding.
 #
 # Late conflicts: an old test of `main` that is red after phase 2, or findings while the branch is
-# behind `main` (a parallel pull request was merged), are no findings for the coding agent: the
-# comment "## Acceptance conflict" sends the idea back to the idea chat (agent.yml, input `conflict`).
+# behind `main` and does not merge with it (a parallel pull request changed the same lines), are no
+# findings for the coding agent: the comment "## Acceptance conflict" sends the idea back to the
+# idea chat (agent.yml, input `conflict`). A branch that is behind but merges cleanly is no conflict:
+# the round tells the coding agent to merge `main` first and then fix the findings.
 #
 # Two jobs, because the acceptance tests of the pull request are code under check: `tests` runs them
 # with no token, no secret and no cache, and hands over only their JGiven report. `acceptance` has
@@ -113,6 +115,13 @@ jobs:
         run: |
           git -C head merge-base --is-ancestor "origin/${{ github.base_ref }}" HEAD \
             && echo "behind=false" >> "$GITHUB_OUTPUT" || echo "behind=true" >> "$GITHUB_OUTPUT"
+      # Only git, on the objects: touches no file of the pull request and runs none of its code.
+      - name: Does the branch merge with main
+        id: merges
+        if: steps.behind.outputs.behind == 'true'
+        run: |
+          git -C head merge-tree --write-tree HEAD "origin/${{ github.base_ref }}" > /dev/null \
+            && echo "clean=true" >> "$GITHUB_OUTPUT" || echo "clean=false" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
         if: steps.issue.outputs.number
         with:
@@ -195,9 +204,10 @@ jobs:
         if: steps.issue.outputs.number
         run: |
           exit_code=$(cat "$RUNNER_TEMP/exit_code")
-          # The delta does not fit main any more: findings while the branch lacks what main got meanwhile.
+          # The delta does not fit main any more: findings while the branch lacks what main got
+          # meanwhile and cannot merge it. A clean merge is for the coding agent (see below).
           if [ "$exit_code" = 1 ] && [ "${{ steps.phase.outputs.violation }}" != true ] \
-              && [ "${{ steps.behind.outputs.behind }}" = true ]; then
+              && [ "${{ steps.merges.outputs.clean }}" = false ]; then
             cp "$RUNNER_TEMP/findings.md" "$RUNNER_TEMP/conflict.md"
           fi
           if [ -s "$RUNNER_TEMP/conflict.md" ]; then
@@ -232,6 +242,10 @@ jobs:
               echo
               echo "The acceptance tests do not match the approved scenarios, or a changed stage or fake method or do not implement their steps:"
               echo
+              if [ "${{ steps.behind.outputs.behind }}" = true ]; then
+                echo "The branch is behind \`main\` (it merges cleanly): merge \`origin/main\` first, then fix the findings."
+                echo
+              fi
               cat "$RUNNER_TEMP/findings.md"
             } | gh pr comment "$PR" --body-file -
             # The coding agent fixes the findings, like after a failed review.
