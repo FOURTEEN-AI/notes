@@ -25,7 +25,8 @@ import tools.jackson.databind.JsonNode;
 @Component
 class GitHubClient implements GitHub {
 
-    // run-name of agent.yml: "Agent #<issue or pull request number>", of refine.yml: "Refine #<issue>".
+    // run-name of agent.yml: "Agent #<issue or pull request number>", of refine.yml: "Refine
+    // #<issue>".
     private static final Pattern AGENT_RUN = Pattern.compile("^Agent #(\\d+)$");
     private static final Pattern REFINE_RUN = Pattern.compile("^Refine #(\\d+)$");
 
@@ -133,7 +134,9 @@ class GitHubClient implements GitHub {
                 call(
                         () ->
                                 rest.get()
-                                        .uri("/actions/workflows/{workflow}/runs?per_page=30", workflow)
+                                        .uri(
+                                                "/actions/workflows/{workflow}/runs?per_page=30",
+                                                workflow)
                                         .retrieve()
                                         .body(JsonNode.class));
         Set<Integer> numbers = new HashSet<>();

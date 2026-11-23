@@ -5,8 +5,8 @@ import java.util.Set;
 
 /**
  * The few things the app needs from GitHub. GitHub stays the source of truth: the app stores
- * nothing about issues or pull requests itself. Every call fails with a {@link DomainException}
- * of kind UNAVAILABLE without a token, CONFLICT if GitHub refuses, and UPSTREAM_FAILED otherwise.
+ * nothing about issues or pull requests itself. Every call fails with a {@link DomainException} of
+ * kind UNAVAILABLE without a token, CONFLICT if GitHub refuses, and UPSTREAM_FAILED otherwise.
  */
 public interface GitHub {
 

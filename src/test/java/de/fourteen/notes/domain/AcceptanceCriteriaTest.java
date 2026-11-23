@@ -31,7 +31,8 @@ class AcceptanceCriteriaTest {
                 .containsExactly("Eine Notiz speichern", "Alt ändern", "Eine Notiz löschen");
     }
 
-    private static final Comment PROPOSAL = new Comment("## Refine\n\n```gherkin\nSzenario: Neu\n```");
+    private static final Comment PROPOSAL =
+            new Comment("## Refine\n\n```gherkin\nSzenario: Neu\n```");
 
     @Test
     void the_newest_proposal_is_pending_until_it_is_released_or_answered() {
@@ -52,7 +53,9 @@ class AcceptanceCriteriaTest {
 
     @Test
     void a_gherkin_block_without_closing_fence_runs_to_the_end() {
-        assertThat(AcceptanceCriteria.gherkinBlock("## Refine\n\n```gherkin\nSzenario: Neu\n  Wenn x\n\n"))
+        assertThat(
+                        AcceptanceCriteria.gherkinBlock(
+                                "## Refine\n\n```gherkin\nSzenario: Neu\n  Wenn x\n\n"))
                 .contains("Szenario: Neu\n  Wenn x");
     }
 }

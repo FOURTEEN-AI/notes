@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** The bar of a preview app. Outside a preview app everything here is 404, except the GET, which is 204. */
+/**
+ * The bar of a preview app. Outside a preview app everything here is 404, except the GET, which is
+ * 204.
+ */
 @RestController
 @RequestMapping("/api/preview")
 class PreviewController {
@@ -54,18 +57,19 @@ class PreviewController {
         // 204 instead of 404: the browser logs every 404, and every production page asks.
         if (!preview.isPreview()) return ResponseEntity.noContent().build();
         PreviewService.Preview p = preview.get();
-        return ResponseEntity.ok(new PreviewResponse(
-                p.number(),
-                p.title(),
-                p.state(),
-                p.deployedSha(),
-                p.build(),
-                p.review(),
-                p.acceptance(),
-                p.mergeable(),
-                p.demo().stream().map(DemoStepResponse::of).toList(),
-                p.issue(),
-                p.proposal()));
+        return ResponseEntity.ok(
+                new PreviewResponse(
+                        p.number(),
+                        p.title(),
+                        p.state(),
+                        p.deployedSha(),
+                        p.build(),
+                        p.review(),
+                        p.acceptance(),
+                        p.mergeable(),
+                        p.demo().stream().map(DemoStepResponse::of).toList(),
+                        p.issue(),
+                        p.proposal()));
     }
 
     @PostMapping(path = "/feedback", consumes = MediaType.APPLICATION_JSON_VALUE)

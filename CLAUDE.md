@@ -7,6 +7,7 @@ is in [docs/process.md](docs/process.md): update it at the end of every step.
 - Stack: Spring Boot 4 (Java 25, Gradle) serves a React app (Vite, pnpm) from `frontend/`.
   PostgreSQL. Fly.io.
 - Build and test: `./gradlew build` (needs Docker for the Testcontainers database).
+- Format: `./gradlew format` fixes Java (Spotless) and frontend (Prettier); `./gradlew build` fails on unformatted code.
 - Run locally: `./gradlew bootTestRun` (port 8080, login dev/dev), and for frontend work also
   `pnpm dev` in `frontend/` (port 5173, proxies `/api`).
 - Deploy: every push to `main` is built, tested and deployed by `.github/workflows/ci.yml`.

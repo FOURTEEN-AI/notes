@@ -29,7 +29,13 @@ const statusLabels: Record<Status, string> = {
 
 // One input at the bottom of a chat: Enter sends, Shift+Enter adds a line. The text stays if
 // sending fails.
-function MessageForm({ placeholder, onSend }: { placeholder: string; onSend: (text: string) => Promise<boolean> }) {
+function MessageForm({
+  placeholder,
+  onSend,
+}: {
+  placeholder: string;
+  onSend: (text: string) => Promise<boolean>;
+}) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -175,7 +181,9 @@ export function Ideas() {
     setMessages((current) => [...current, message]);
     // The agent starts now; show it right away instead of waiting for the next poll.
     setIdeas((current) =>
-      (current ?? []).map((idea) => (idea.number === selected ? { ...idea, status: 'REFINING' } : idea)),
+      (current ?? []).map((idea) =>
+        idea.number === selected ? { ...idea, status: 'REFINING' } : idea,
+      ),
     );
     return true;
   }
@@ -189,7 +197,9 @@ export function Ideas() {
       return;
     }
     setIdeas((current) =>
-      (current ?? []).map((idea) => (idea.number === selected ? { ...idea, status: 'AGENT_WORKING' } : idea)),
+      (current ?? []).map((idea) =>
+        idea.number === selected ? { ...idea, status: 'AGENT_WORKING' } : idea,
+      ),
     );
   }
 
@@ -227,7 +237,9 @@ export function Ideas() {
               #{current.number} {current.title}
             </h2>
             <p className="idea-status">
-              <span className={`status ${current.status.toLowerCase()}`}>{statusLabels[current.status]}</span>
+              <span className={`status ${current.status.toLowerCase()}`}>
+                {statusLabels[current.status]}
+              </span>
               {current.previewUrl && !current.previewReady && (
                 <span className="status"> · Preview wird vorbereitet</span>
               )}
@@ -268,9 +280,16 @@ export function Ideas() {
               </details>
             )}
             {error && <p className="error">{error}</p>}
-            {current.status === 'WAITING_FOR_ANSWER' && messages.at(-1)?.author === 'agent' &&
+            {current.status === 'WAITING_FOR_ANSWER' &&
+              messages.at(-1)?.author === 'agent' &&
               messages.at(-1)?.text.includes('```gherkin') && (
-                <button type="button" className="approve" onClick={() => approve().catch(() => setError('Idee konnte nicht freigegeben werden.'))}>
+                <button
+                  type="button"
+                  className="approve"
+                  onClick={() =>
+                    approve().catch(() => setError('Idee konnte nicht freigegeben werden.'))
+                  }
+                >
                   Freigeben
                 </button>
               )}
@@ -280,7 +299,9 @@ export function Ideas() {
           </>
         ) : (
           <>
-            <p className="hint">Schreib deine Idee als Nachricht: Sie wird ein Issue, ein Agent setzt sie um.</p>
+            <p className="hint">
+              Schreib deine Idee als Nachricht: Sie wird ein Issue, ein Agent setzt sie um.
+            </p>
             <ul className="idea-list">
               {(ideas ?? []).map((idea) => (
                 <li key={idea.number}>
@@ -288,7 +309,9 @@ export function Ideas() {
                     <span>
                       #{idea.number} {idea.title}
                     </span>
-                    <span className={`status ${idea.status.toLowerCase()}`}>{statusLabels[idea.status]}</span>
+                    <span className={`status ${idea.status.toLowerCase()}`}>
+                      {statusLabels[idea.status]}
+                    </span>
                   </button>
                 </li>
               ))}

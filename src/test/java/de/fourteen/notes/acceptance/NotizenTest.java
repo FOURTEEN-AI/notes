@@ -5,15 +5,17 @@ import com.tngtech.jgiven.annotation.Pending;
 import com.tngtech.jgiven.junit5.ScenarioTest;
 import org.junit.jupiter.api.Test;
 
-/** Acceptance tests of the notes. The description is the scenario title (the report shows it, not the method name). */
+/**
+ * Acceptance tests of the notes. The description is the scenario title (the report shows it, not
+ * the method name).
+ */
 class NotizenTest extends ScenarioTest<NotizenStage, NotizenStage, NotizenStage> {
 
     @Test
     @Description("Eine Notiz speichern")
     void eine_Notiz_speichern() {
         when().ich_speichere_die_Notiz_$("Milch kaufen");
-        then()
-                .die_Liste_zeigt_die_Notizen_$_in_dieser_Reihenfolge("Milch kaufen")
+        then().die_Liste_zeigt_die_Notizen_$_in_dieser_Reihenfolge("Milch kaufen")
                 .and()
                 .die_Notiz_hat_einen_Zeitstempel();
     }

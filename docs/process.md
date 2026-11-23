@@ -66,6 +66,8 @@ a workflow or count as approval.
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
 | `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) |
 
+`build` also checks formatting (`check`): Spotless (google-java-format AOSP style, 4 spaces, unused imports removed, imports sorted) for Java and Prettier (`frontend/.prettierrc.json`) for `frontend/src` and its config files. `./gradlew format` fixes both (`pnpm run format` only the frontend).
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

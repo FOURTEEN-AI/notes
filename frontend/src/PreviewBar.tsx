@@ -113,7 +113,9 @@ export function PreviewBar() {
         <span className={`check ${preview.acceptance.toLowerCase()}`}>
           acceptance {checkLabels[preview.acceptance]}
         </span>
-        {preview.state !== 'open' && <span>{preview.state === 'merged' ? 'gemergt' : 'geschlossen'}</span>}
+        {preview.state !== 'open' && (
+          <span>{preview.state === 'merged' ? 'gemergt' : 'geschlossen'}</span>
+        )}
       </span>
       {newVersion && (
         <p>

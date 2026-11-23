@@ -25,7 +25,9 @@ class OnionArchitectureTest {
     void domain_uses_only_the_jdk() throws IOException {
         assertThat(imports("domain"))
                 .allSatisfy(
-                        i -> assertThat(i).matches("(java\\.|de\\.fourteen\\.notes\\.domain\\.).*"));
+                        i ->
+                                assertThat(i)
+                                        .matches("(java\\.|de\\.fourteen\\.notes\\.domain\\.).*"));
     }
 
     @Test
@@ -51,7 +53,8 @@ class OnionArchitectureTest {
 
     @Test
     void web_does_not_reach_into_infrastructure() throws IOException {
-        assertThat(imports("web")).noneMatch(i -> i.startsWith("de.fourteen.notes.infrastructure."));
+        assertThat(imports("web"))
+                .noneMatch(i -> i.startsWith("de.fourteen.notes.infrastructure."));
     }
 
     @Test

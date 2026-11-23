@@ -29,7 +29,9 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Ideas and preview bar against a fake GitHub API. This app plays the preview of pull request 7. */
+/**
+ * Ideas and preview bar against a fake GitHub API. This app plays the preview of pull request 7.
+ */
 @SpringBootTest(
         properties = {
             "spring.security.user.name=test",
@@ -162,7 +164,8 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$[3].description").value(""))
                 .andExpect(jsonPath("$[2].status").value("REVIEW_RUNNING"))
                 .andExpect(
-                        jsonPath("$[2].previewUrl").value("https://notes-fourteen-it-issue-16.fly.dev"))
+                        jsonPath("$[2].previewUrl")
+                                .value("https://notes-fourteen-it-issue-16.fly.dev"))
                 .andExpect(jsonPath("$[2].previewReady").value(false))
                 .andExpect(jsonPath("$[3].number").value(14))
                 .andExpect(jsonPath("$[3].status").value("AGENT_WORKING"))
@@ -171,7 +174,8 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$[4].number").value(12))
                 .andExpect(jsonPath("$[4].status").value("READY_FOR_DEMO"))
                 .andExpect(
-                        jsonPath("$[4].previewUrl").value("https://notes-fourteen-it-issue-12.fly.dev"))
+                        jsonPath("$[4].previewUrl")
+                                .value("https://notes-fourteen-it-issue-12.fly.dev"))
                 .andExpect(jsonPath("$[4].previewReady").value(true));
     }
 
@@ -273,7 +277,9 @@ class GitHubApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].title").value("Eine Notiz speichern"))
-                .andExpect(jsonPath("$[0].steps[0]").value("Wenn ich speichere die Notiz \"Milch kaufen\""))
+                .andExpect(
+                        jsonPath("$[0].steps[0]")
+                                .value("Wenn ich speichere die Notiz \"Milch kaufen\""))
                 .andExpect(jsonPath("$[0].steps[1]").value("Dann die Liste zeigt die Notiz"))
                 .andExpect(jsonPath("$[0].steps[2]").value("Und sie hat einen Zeitstempel"))
                 .andExpect(jsonPath("$[0].steps.length()").value(3));
@@ -509,7 +515,8 @@ class GitHubApiTest {
 
     private static String withBody(String pullRequest, String body) {
         return pullRequest.replace(
-                "\"state\"", "\"body\": " + JsonMapper.shared().writeValueAsString(body) + ", \"state\"");
+                "\"state\"",
+                "\"body\": " + JsonMapper.shared().writeValueAsString(body) + ", \"state\"");
     }
 
     private static String checkRuns(String build, String review) {

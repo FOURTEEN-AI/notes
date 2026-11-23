@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.2.0'
 	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
+	id 'com.diffplug.spotless' version '8.2.1'
 }
 
 group = 'de.fourteen.notes'
@@ -77,4 +78,38 @@ tasks.named('processResources') {
 	from(tasks.named('frontendBuild')) {
 		into 'static'
 	}
+}
+
+// Formatting: `./gradlew build` fails on unformatted code, `./gradlew format` fixes Java and frontend.
+spotless {
+	java {
+		googleJavaFormat().aosp()
+		removeUnusedImports()
+		importOrder()
+	}
+}
+
+tasks.register('prettierCheck', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'format:check'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
+			frontendDir.file('.prettierrc.json'), frontendDir.file('index.html'),
+			frontendDir.file('tsconfig.json'), frontendDir.file('vite.config.ts'))
+	inputs.dir(frontendDir.dir('src'))
+	outputs.upToDateWhen { true }
+}
+
+tasks.register('prettierApply', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'format'
+}
+
+tasks.register('format') {
+	dependsOn 'spotlessApply', 'prettierApply'
+}
+
+tasks.named('check') {
+	dependsOn 'prettierCheck'
 }
