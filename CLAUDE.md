@@ -23,6 +23,9 @@ project are in [docs/plan.md](docs/plan.md). Read it before you start.
   implement. Conventional Commits. Commit directly to `main` in a
   local session (admins are exempt from the branch protection). Agents in GitHub Actions never
   push to `main`: they work on a branch `agent/issue-<n>` and open a pull request.
+- Coding agent on a pull request, two phases: first only the acceptance tests, stages, fakes and
+  compiling stubs; after a green `acceptance` the production code, with those files unchanged. A
+  commit that must change them ends its message with the line `Phase: 1`.
 - GitHub org FOURTEEN-AI: use `GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh …`. Never print the token.
 
 ## Demo tour

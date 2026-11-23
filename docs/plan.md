@@ -275,7 +275,11 @@ versions of changed scenarios), the deterministic comparison of approved delta a
 `## Acceptance criteria`, tests of `main` and of the pull request, the comment
 `## Acceptance round <n>`, which starts the coding agent, at most 3 rounds), `acceptance` as a
 required check in branch protection and for the merge button (preview bar lists it), the judgement
-per stage and fake method (Jev, Haiku in between; needs the secret `TYPESAFE_API_KEY`). Open: the two phases of the coding agent, late conflicts, the old versions in the idea chat.
+per stage and fake method (Jev, Haiku in between; needs the secret `TYPESAFE_API_KEY`), the two phases of the coding agent
+(`agent.yml` prompts per phase; green `acceptance` in phase 1 posts `## Acceptance checked <sha>`
+and starts phase 2; `.github/acceptance/phase.mjs` fails a phase 2 that changes the acceptance
+tests against that commit, a commit with the line `Phase: 1` goes back; `review` fails until phase 2
+has pushed). Open: late conflicts, the old versions in the idea chat.
 
 **Done when**
 

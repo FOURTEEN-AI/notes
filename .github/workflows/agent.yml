@@ -1,5 +1,8 @@
 name: Agent
 
+# Works in two phases (see docs/plan.md, step 6). Phase 1, the labelled issue and every fix before
+# `acceptance` has checked the tests: only acceptance tests, stages, fakes and compiling stubs. Phase 2,
+# started by `acceptance` when it is green: the production code, the checked tests stay unchanged.
 # Takes a labelled issue to a pull request, fixes the findings of a failed review or acceptance
 # check, or implements a comment on a pull request that starts with "## Human feedback" (from the preview bar or
 # written on GitHub; no round limit). Needs the Claude GitHub App (so that the agent's pushes
@@ -54,6 +57,20 @@ jobs:
             echo "::error::Human feedback is only implemented on agent/* branches, not $branch"
             exit 1
           fi
+      # The phase of a pull request: 2 once `acceptance` has recorded a checked commit that the
+      # branch still agrees with (script from `main`, not from the branch).
+      - name: Find the phase
+        id: phase
+        if: github.event_name != 'issues'
+        run: |
+          git show origin/main:.github/acceptance/phase.mjs > "$RUNNER_TEMP/phase.mjs"
+          checked=$(gh pr view "$PR" --json comments --jq \
+            '[.comments[] | select(.body | startswith("## Acceptance checked "))] | last | .body // "" | split(" ") | .[3] // ""')
+          node "$RUNNER_TEMP/phase.mjs" "$(git rev-parse HEAD)" "$checked" "$RUNNER_TEMP/phase-findings.md" \
+            | tee -a "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr || github.event.issue.number }}
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -83,10 +100,18 @@ jobs:
 
             - Work on the new branch `agent/issue-${{ github.event.issue.number }}`. Never push
               to `main`.
-            - Do only what the issue asks. Add tests that cover the behaviour you add or change.
-            - Run `./gradlew build` and make it pass before you push.
+            - This is phase 1 of 2. The approved scenarios are the latest comment on the issue
+              that starts with "## Acceptance criteria". Write only the JGiven acceptance tests
+              for them (port to port, see docs/plan.md and the existing tests in
+              `src/test/java/de/fourteen/notes/acceptance`), the stages, the in-memory fakes and
+              compiling stubs of the production code (new port methods included; a stub throws
+              `UnsupportedOperationException`). Scenarios tagged `@ui` get no test. No
+              production code: a check compares the tests with the scenarios first, and only then
+              does phase 2 write the code.
+            - Make `./gradlew compileTestJava` pass; the acceptance tests are red against the
+              stubs, that is expected.
             - Commit with a Conventional Commit message, push the branch and open a pull request
-              with `gh pr create`. The description says what changed, contains the demo tour
+              with `gh pr create`. The description says what is planned, contains the demo tour
               (see "Demo tour" in CLAUDE.md), and ends with "Closes #${{ github.event.issue.number }}".
             - Do not touch anything under `.github/`.
       - name: Fix the review or acceptance findings
@@ -107,9 +132,24 @@ jobs:
 
             - You are on the branch of the pull request. Fix exactly the findings of that comment
               and nothing else.
+            - The phase is ${{ steps.phase.outputs.phase }}. The pull request has two phases:
+              - Phase 1 (the acceptance tests are not checked yet): you may change only the
+                acceptance tests, stages, fakes and stubs, no production code. Make
+                `./gradlew compileTestJava` pass instead of `./gradlew build`; red acceptance
+                tests are expected.
+              - Phase 2 (`acceptance` has checked the tests): the files under
+                `src/test/java/de/fourteen/notes/acceptance` must stay as they are. Implement the
+                production code until `./gradlew build` passes. If the finding or the code needs a
+                change in the tests, stages or fakes, do not make it here: commit only that change
+                (plus stubs) with the line `Phase: 1` at the end of the commit message and push.
+                That sends the pull request back to phase 1. If there is no newer comment than the
+                last "## Acceptance checked ...", this is the start of phase 2: write the
+                production code for the pull request.
+              - The check of phase 2 failed if it says that the acceptance tests changed: restore
+                them from the checked commit named in the finding (`git checkout <sha> -- <path>`).
             - If the fix changes what the human sees, update the demo tour in the description
               with `gh pr edit` before you push (see "Demo tour" in CLAUDE.md).
-            - Run `./gradlew build` and make it pass before you push.
+            - In phase 2 run `./gradlew build` and make it pass before you push.
             - Commit with a Conventional Commit message and push to this branch. Never push to
               `main`, and do not touch anything under `.github/`.
       - name: Implement the human feedback
@@ -132,7 +172,9 @@ jobs:
             read CLAUDE.md and docs/plan.md.
 
             - You are on the branch of the pull request. Implement exactly that feedback and
-              nothing else. Add or adjust tests that cover the behaviour you change.
+              nothing else. Add or adjust tests that cover the behaviour you change. Do not
+              change the files under `src/test/java/de/fourteen/notes/acceptance` (checked
+              commit, see docs/plan.md); feedback that needs it is not implemented here.
             - Update the demo tour in the description with `gh pr edit` before you push, so that
               it shows the change as it is now (see "Demo tour" in CLAUDE.md).
             - Run `./gradlew build` and make it pass before you push.

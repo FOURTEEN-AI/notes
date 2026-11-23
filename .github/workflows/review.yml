@@ -2,7 +2,9 @@ name: Review
 
 # A second agent reviews every pull request with fresh context. Its verdict is the required
 # check "review". When it fails on an agent branch, the coding agent is asked to fix the
-# findings, at most 3 rounds.
+# findings, at most 3 rounds. On an agent branch it runs only after phase 2 (see docs/plan.md,
+# step 6): until `acceptance` has checked the tests and the coding agent has pushed on top of the
+# checked commit, the check fails without a review.
 
 on:
   pull_request:
@@ -24,6 +26,31 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Wait for phase 2
+        id: phase
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+          BRANCH: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$BRANCH" != agent/* ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          checked=$(gh pr view "$PR" --json comments --jq \
+            '[.comments[] | select(.body | startswith("## Acceptance checked "))] | last | .body // "" | split(" ") | .[3] // ""')
+          git show origin/main:.github/acceptance/phase.mjs > "$RUNNER_TEMP/phase.mjs"
+          out=$(node "$RUNNER_TEMP/phase.mjs" "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md")
+          if [ -n "$checked" ] && [ "$checked" != "$HEAD_SHA" ] && grep -qx 'phase=2' <<< "$out" \
+              && grep -qx 'violation=false' <<< "$out"; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Not after phase 2
+        if: steps.phase.outputs.ready != 'true'
+        run: |
+          echo "::error::Phase 2 has not produced the production code yet; the review waits."
+          exit 1
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

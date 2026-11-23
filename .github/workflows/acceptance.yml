@@ -6,6 +6,10 @@ name: Acceptance
 # implement its step in every scenario that uses it (Jev, Haiku in between)? A failure is posted as "## Acceptance round <n>", at most 3
 # rounds, then the pull request waits for the human. Each round starts the coding agent. Pull requests that are not from an
 # `agent/issue-<n>` branch have no criteria and pass.
+#
+# It also drives the two phases of the coding agent (`.github/acceptance/phase.mjs`). Green in phase 1
+# records the checked commit in a comment "## Acceptance checked <sha>" and starts phase 2. In phase 2
+# the acceptance tests, stages and fakes must equal that commit, otherwise this is a finding.
 
 on:
   pull_request:
@@ -25,6 +29,7 @@ jobs:
       actions: write
     env:
       GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
       PR: ${{ github.event.number }}
       BRANCH: ${{ github.head_ref }}
     steps:
@@ -48,6 +53,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
+          fetch-depth: 0
       - uses: actions/setup-java@v5
         if: steps.issue.outputs.number
         with:
@@ -58,14 +64,32 @@ jobs:
         if: steps.issue.outputs.number
         with:
           node-version-file: base/.node-version
-      - name: Run the acceptance tests of both
+      - name: Find the phase
+        id: phase
         if: steps.issue.outputs.number
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          for dir in base head; do
-            (cd "$dir" && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks)
-          done
+          checked=$(gh pr view "$PR" --json comments --jq \
+            '[.comments[] | select(.body | startswith("## Acceptance checked "))] | last | .body // "" | split(" ") | .[3] // ""')
+          cd head
+          node ../base/.github/acceptance/phase.mjs "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md" \
+            | tee -a "$GITHUB_OUTPUT"
+      # Phase 2 changed the checked tests: nothing else to compare, the finding goes to the agent.
+      - name: Phase violation
+        if: steps.phase.outputs.violation == 'true'
+        run: |
+          cp "$RUNNER_TEMP/phase-findings.md" "$RUNNER_TEMP/findings.md"
+          echo 1 > "$RUNNER_TEMP/exit_code"
+      # In phase 1 the tests are red against the stubs; only the report matters.
+      - name: Run the acceptance tests of both
+        if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
+        run: |
+          (cd base && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks)
+          (cd head && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks) \
+            || [ "${{ steps.phase.outputs.phase }}" = 1 ]
       - name: Compare with the approved scenarios
-        if: steps.issue.outputs.number
+        if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
         env:
           ISSUE: ${{ steps.issue.outputs.number }}
         run: |
@@ -87,7 +111,7 @@ jobs:
       # Only when the tests match the scenarios. The key and the token are only here; the step
       # reads the Java files of the pull request as text and runs none of its code.
       - name: Judge the changed stage and fake methods
-        if: steps.issue.outputs.number
+        if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -100,11 +124,18 @@ jobs:
               && code=0 || code=$?
             echo "$code" > "$RUNNER_TEMP/exit_code"
           fi
-      - name: Report the findings
+      - name: Report the findings, or start phase 2
         if: steps.issue.outputs.number
         run: |
           exit_code=$(cat "$RUNNER_TEMP/exit_code")
-          [ "$exit_code" = 0 ] && exit 0
+          if [ "$exit_code" = 0 ]; then
+            # Green: in phase 1 the tests are checked now, and phase 2 starts.
+            if [ "${{ steps.phase.outputs.phase }}" = 1 ]; then
+              gh pr comment "$PR" --body "## Acceptance checked ${{ github.event.pull_request.head.sha }}"
+              gh workflow run agent.yml -f pr="$PR"
+            fi
+            exit 0
+          fi
           [ "$exit_code" = 1 ] || { echo "The acceptance check itself failed."; exit 1; }
 
           rounds=$(gh pr view "$PR" --json comments \
