@@ -1,1 +1,1 @@
-org.springframework.boot.EnvironmentPostProcessor=de.fourteen.notes.DatabaseUrlEnvironmentPostProcessor
+org.springframework.boot.EnvironmentPostProcessor=de.fourteen.notes.infrastructure.DatabaseUrlEnvironmentPostProcessor

@@ -1,4 +1,4 @@
-package de.fourteen.notes;
+package de.fourteen.notes.web;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

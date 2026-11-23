@@ -1,4 +1,4 @@
-package de.fourteen.notes;
+package de.fourteen.notes.infrastructure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

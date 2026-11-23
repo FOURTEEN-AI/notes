@@ -1,8 +1,8 @@
-package de.fourteen.notes;
+package de.fourteen.notes.domain;
 
-import static de.fourteen.notes.CheckState.FAILURE;
-import static de.fourteen.notes.CheckState.PENDING;
-import static de.fourteen.notes.CheckState.SUCCESS;
+import static de.fourteen.notes.domain.CheckState.FAILURE;
+import static de.fourteen.notes.domain.CheckState.PENDING;
+import static de.fourteen.notes.domain.CheckState.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;

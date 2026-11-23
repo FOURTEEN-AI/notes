@@ -1,9 +1,10 @@
-package de.fourteen.notes;
+package de.fourteen.notes.web;
 
+import de.fourteen.notes.application.NoteService;
+import de.fourteen.notes.domain.Note;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/notes")
@@ -20,17 +20,15 @@ class NoteController {
 
     record NewNote(String text) {}
 
-    private final JdbcClient jdbc;
+    private final NoteService notes;
 
-    NoteController(JdbcClient jdbc) {
-        this.jdbc = jdbc;
+    NoteController(NoteService notes) {
+        this.notes = notes;
     }
 
     @GetMapping
     List<Note> list() {
-        return jdbc.sql("select id, text, created_at from note order by created_at desc, id desc")
-                .query(Note.class)
-                .list();
+        return notes.list();
     }
 
     // JSON only: a cross-site form cannot send it, which is the CSRF protection (see
@@ -38,20 +36,12 @@ class NoteController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     Note create(@RequestBody NewNote note) {
-        if (note.text() == null || note.text().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "text must not be blank");
-        }
-        return jdbc.sql("insert into note (text) values (:text) returning id, text, created_at")
-                .param("text", note.text())
-                .query(Note.class)
-                .single();
+        return notes.create(note.text());
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@PathVariable long id) {
-        if (jdbc.sql("delete from note where id = :id").param("id", id).update() == 0) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "note not found");
-        }
+        notes.delete(id);
     }
 }

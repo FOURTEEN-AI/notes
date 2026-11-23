@@ -1,4 +1,4 @@
-package de.fourteen.notes;
+package de.fourteen.notes.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

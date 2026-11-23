@@ -9,6 +9,14 @@ project are in [docs/plan.md](docs/plan.md). Read it before you start.
 - Run locally: `./gradlew bootTestRun` (port 8080, login dev/dev), and for frontend work also
   `pnpm dev` in `frontend/` (port 5173, proxies `/api`).
 - Deploy: every push to `main` is built, tested and deployed by `.github/workflows/ci.yml`.
+- Backend in onion rings under `de.fourteen.notes`; dependencies point inwards only, and
+  `OnionArchitectureTest` checks it:
+  - `domain`: models, rules and ports (`NoteRepository`, `GitHub`), plain Java only. Failures are
+    a `DomainException` with a kind.
+  - `application`: one service per use case area, validates input and works only on the ports.
+  - `infrastructure`: implements the ports (JDBC, GitHub REST) and the configuration around them.
+  - `web`: thin controllers, request/response records, security, and the mapping of a
+    `DomainException` kind to an HTTP status.
 - Add only what the current step needs. No tool, layer or abstraction "for later".
 - English for code, docs and commit messages. Conventional Commits. Commit directly to `main` in a
   local session (admins are exempt from the branch protection). Agents in GitHub Actions never

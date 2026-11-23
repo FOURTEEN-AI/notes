@@ -1,4 +1,4 @@
-package de.fourteen.notes;
+package de.fourteen.notes.infrastructure;
 
 import java.net.URI;
 import java.net.URLDecoder;

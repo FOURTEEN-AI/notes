@@ -1,5 +1,12 @@
-package de.fourteen.notes;
+package de.fourteen.notes.infrastructure;
 
+import de.fourteen.notes.domain.CheckState;
+import de.fourteen.notes.domain.Checks;
+import de.fourteen.notes.domain.Comment;
+import de.fourteen.notes.domain.DomainException;
+import de.fourteen.notes.domain.GitHub;
+import de.fourteen.notes.domain.Issue;
+import de.fourteen.notes.domain.PullRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -8,28 +15,15 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.JsonNode;
 
-/**
- * The few calls to the GitHub REST API that the app needs. GitHub stays the source of truth: the
- * app stores nothing about issues or pull requests itself.
- */
+/** The port {@link GitHub} on the GitHub REST API. */
 @Component
-class GitHub {
-
-    /** refining: the label `refine` is still set, so the refine agent has not released the idea. */
-    record Issue(int number, String title, String body, boolean refining) {}
-
-    record Comment(String body) {}
-
-    record PullRequest(
-            int number, String title, String body, String url, String branch, String sha, String state) {}
+class GitHubClient implements GitHub {
 
     // run-name of agent.yml: "Agent #<issue or pull request number>", of refine.yml: "Refine #<issue>".
     private static final Pattern AGENT_RUN = Pattern.compile("^Agent #(\\d+)$");
@@ -38,7 +32,7 @@ class GitHub {
     private final GitHubProperties properties;
     private final RestClient rest;
 
-    GitHub(GitHubProperties properties, RestClient.Builder builder) {
+    GitHubClient(GitHubProperties properties, RestClient.Builder builder) {
         this.properties = properties;
         this.rest =
                 builder.baseUrl(properties.apiUrl() + "/repos/" + properties.repository())
@@ -53,8 +47,8 @@ class GitHub {
                         .build();
     }
 
-    /** Creates an issue with the label `refine`, which starts the refine agent. */
-    Issue createIssue(String title, String body) {
+    @Override
+    public Issue createIssue(String title, String body) {
         JsonNode issue =
                 call(
                         () ->
@@ -70,8 +64,8 @@ class GitHub {
         return toIssue(issue);
     }
 
-    /** Open issues with the label `refine` or `agent`, newest first. */
-    List<Issue> openIdeaIssues() {
+    @Override
+    public List<Issue> openIdeaIssues() {
         JsonNode items =
                 call(
                         () ->
@@ -83,11 +77,12 @@ class GitHub {
                 // The issues endpoint lists pull requests too.
                 .filter(item -> !item.has("pull_request"))
                 .filter(item -> hasLabel(item, "refine") || hasLabel(item, "agent"))
-                .map(GitHub::toIssue)
+                .map(GitHubClient::toIssue)
                 .toList();
     }
 
-    List<PullRequest> openPullRequests() {
+    @Override
+    public List<PullRequest> openPullRequests() {
         JsonNode items =
                 call(
                         () ->
@@ -95,10 +90,11 @@ class GitHub {
                                         .uri("/pulls?state=open&per_page=100")
                                         .retrieve()
                                         .body(JsonNode.class));
-        return items.values().stream().map(GitHub::toPullRequest).toList();
+        return items.values().stream().map(GitHubClient::toPullRequest).toList();
     }
 
-    PullRequest pullRequest(int number) {
+    @Override
+    public PullRequest pullRequest(int number) {
         return toPullRequest(
                 call(
                         () ->
@@ -108,18 +104,18 @@ class GitHub {
                                         .body(JsonNode.class)));
     }
 
-    /** The numbers (issue or pull request) for which the coding agent runs or is queued. */
-    Set<Integer> activeAgentRuns() {
+    @Override
+    public Set<Integer> activeAgentRuns() {
         return activeRuns("agent.yml", AGENT_RUN);
     }
 
-    /** The numbers of the issues for which the refine agent runs or is queued. */
-    Set<Integer> activeRefineRuns() {
+    @Override
+    public Set<Integer> activeRefineRuns() {
         return activeRuns("refine.yml", REFINE_RUN);
     }
 
-    /** The comments of an issue, oldest first. */
-    List<Comment> comments(int number) {
+    @Override
+    public List<Comment> comments(int number) {
         JsonNode items =
                 call(
                         () ->
@@ -150,8 +146,8 @@ class GitHub {
         return numbers;
     }
 
-    /** The latest runs of the checks `build`, `review` and `preview` on a commit. */
-    Checks checks(String sha) {
+    @Override
+    public Checks checks(String sha) {
         JsonNode runs =
                 call(
                         () ->
@@ -163,7 +159,8 @@ class GitHub {
                 checkState(runs, "build"), checkState(runs, "review"), checkState(runs, "preview"));
     }
 
-    void comment(int number, String body) {
+    @Override
+    public void comment(int number, String body) {
         call(
                 () ->
                         rest.post()
@@ -173,8 +170,8 @@ class GitHub {
                                 .toBodilessEntity());
     }
 
-    /** Squash-merges, but only if the head is still the given commit. */
-    void merge(int number, String sha) {
+    @Override
+    public void merge(int number, String sha) {
         call(
                 () ->
                         rest.put()
@@ -229,20 +226,21 @@ class GitHub {
 
     private <T> T call(Supplier<T> request) {
         if (!properties.configured()) {
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE, "GitHub is not configured");
+            throw new DomainException(DomainException.Kind.UNAVAILABLE, "GitHub is not configured");
         }
         try {
             return request.get();
         } catch (RestClientResponseException e) {
             // 405: not mergeable, 409: the head changed. Both mean "look again".
             if (e.getStatusCode().value() == 405 || e.getStatusCode().value() == 409) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "GitHub refused");
+                throw new DomainException(DomainException.Kind.CONFLICT, "GitHub refused");
             }
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GitHub request failed");
+            throw new DomainException(
+                    DomainException.Kind.UPSTREAM_FAILED, "GitHub request failed");
         } catch (RestClientException e) {
             // Never pass GitHub's response on: it is not meant for the browser.
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GitHub request failed");
+            throw new DomainException(
+                    DomainException.Kind.UPSTREAM_FAILED, "GitHub request failed");
         }
     }
 }
