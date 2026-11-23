@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -23,8 +24,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * The port {@link ScenarioReport} on the JGiven HTML report in the jar. Its data files
- * ({@code jgivenReport.addZippedScenarios('<base64 of gzipped JSON>')}) hold the scenarios.
+ * The port {@link ScenarioReport} on the JGiven HTML report in the jar. Its data files ({@code
+ * jgivenReport.addZippedScenarios('<base64 of gzipped JSON>')}) hold the scenarios.
  */
 @Component
 class JGivenReport implements ScenarioReport {
@@ -58,7 +59,8 @@ class JGivenReport implements ScenarioReport {
         List<Scenario> scenarios = new ArrayList<>();
         try {
             for (Resource file : new PathMatchingResourcePatternResolver().getResources(location)) {
-                String data = new String(file.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                String data =
+                        new String(file.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
                 Matcher zipped = ZIPPED.matcher(data);
                 while (zipped.find()) {
                     try (InputStream in =
@@ -90,11 +92,15 @@ class JGivenReport implements ScenarioReport {
             StringBuilder line =
                     new StringBuilder(
                             KEYWORDS.getOrDefault(
-                                    words.path(0).path("value").asString("").toLowerCase(),
+                                    words.path(0)
+                                            .path("value")
+                                            .asString("")
+                                            .toLowerCase(Locale.ROOT),
                                     words.path(0).path("value").asString("")));
             for (int i = 1; i < words.size(); i++) {
                 String value = words.get(i).path("value").asString("");
-                line.append(' ').append(words.get(i).has("argumentInfo") ? "\"" + value + "\"" : value);
+                line.append(' ')
+                        .append(words.get(i).has("argumentInfo") ? "\"" + value + "\"" : value);
             }
             steps.add(line.toString());
         }

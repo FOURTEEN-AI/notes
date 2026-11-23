@@ -1,5 +1,7 @@
 package de.fourteen.notes.domain;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * A feature idea: a GitHub issue with the label `refine` (the refine agent asks back) or `agent`
  * (the coding agent works on it). The chat of an idea starts with its description. previewUrl is
@@ -10,5 +12,5 @@ public record Idea(
         String title,
         String description,
         IdeaStatus status,
-        String previewUrl,
+        @Nullable String previewUrl,
         boolean previewReady) {}

@@ -93,6 +93,16 @@ export function buildQuestions({ scenarios, base, head }) {
       const touched = [...keys].filter((key) => changed.has(key));
       if (touched.length === 0) continue;
       const called = Object.fromEntries([...keys].filter((key) => key !== method.key).map((key) => [key, byKey.get(key).source]));
+      // The other steps of the scenario (and what they call): a "then" step reads state that an
+      // earlier step set, so without them nobody can tell where that state comes from.
+      const others = {};
+      for (const other of scenario.steps) {
+        const otherMethod = other === step ? undefined : methods.find((m) => m.file.includes(ACCEPTANCE) && m.text === other.text);
+        if (!otherMethod) continue;
+        for (const key of reached(otherMethod)) {
+          if (key !== method.key && !(key in called)) others[key] = byKey.get(key).source;
+        }
+      }
       questions.push({
         label: `"${showStep(step)}" in "${scenario.title}"`,
         method: method.key,
@@ -102,6 +112,7 @@ export function buildQuestions({ scenarios, base, head }) {
           step: showStep(step),
           method: { name: method.key, source: method.source },
           called,
+          others,
         },
       });
     }

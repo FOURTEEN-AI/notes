@@ -3,8 +3,8 @@ package de.fourteen.notes.domain;
 import java.util.Optional;
 
 /**
- * A message in the chat of an idea: an issue comment that starts with one of two markers. author
- * is "me" (the human) or "agent" (the refine agent).
+ * A message in the chat of an idea: an issue comment that starts with one of two markers. author is
+ * "me" (the human) or "agent" (the refine agent).
  */
 public record ChatMessage(String author, String text) {
 

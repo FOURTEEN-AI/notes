@@ -1,5 +1,7 @@
 package de.fourteen.notes.domain;
 
+import org.jspecify.annotations.Nullable;
+
 /** Where an idea (an open issue with the label `refine` or `agent`) stands, derived from GitHub. */
 public enum IdeaStatus {
     REFINING,
@@ -15,10 +17,12 @@ public enum IdeaStatus {
     }
 
     /**
+     * The status of an idea that has been released to the coding agent.
+     *
      * @param agentRuns whether the coding agent runs or is queued for the issue or its pull request
      * @param checks the checks of the pull request, or null if there is none yet
      */
-    public static IdeaStatus of(boolean agentRuns, Checks checks) {
+    public static IdeaStatus of(boolean agentRuns, @Nullable Checks checks) {
         if (agentRuns) {
             return AGENT_WORKING;
         }

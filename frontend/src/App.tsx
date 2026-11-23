@@ -60,7 +60,7 @@ export function App() {
           <h1>Notizen</h1>
           <Ideas />
         </header>
-        <form onSubmit={save}>
+        <form onSubmit={(event) => void save(event)}>
           <textarea
             value={text}
             onChange={(event) => setText(event.target.value)}
@@ -78,13 +78,11 @@ export function App() {
         <ul>
           {notes.map((note) => (
             <li key={note.id}>
-              <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString('de-DE')}</time>
+              <time dateTime={note.createdAt}>
+                {new Date(note.createdAt).toLocaleString('de-DE')}
+              </time>
               <p>{note.text}</p>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => remove(note.id)}
-              >
+              <button type="button" className="icon-button" onClick={() => void remove(note.id)}>
                 <svg
                   width="18"
                   height="18"

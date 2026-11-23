@@ -256,8 +256,9 @@ app, is the living documentation.
   fits the current `main` (a parallel pull request was merged), sends the idea back to the idea
   chat: the coding agent proposes an amended delta in a `## Refine` comment and the label goes
   back to `refine`. The new `## Acceptance criteria` replaces the previous one as a full delta, and
-  phase 1 starts again. Human feedback from the preview that changes approved behaviour takes the
-  same path; the preview bar shows the proposal and links to the idea chat in production, where it is
+  phase 1 starts again. Human feedback from the preview that changes approved behaviour or adds a
+  requirement the scenarios do not describe (every visible or functional change, however small)
+  takes the same path; only feedback without a visible or functional effect is implemented directly; the preview bar shows the proposal and links to the idea chat in production, where it is
   released with the old versions in view.
 - The review agent runs only after phase 2. Branch protection and the merge button require
   `build`, `review` and `acceptance`.

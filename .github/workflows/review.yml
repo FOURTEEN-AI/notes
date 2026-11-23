@@ -23,9 +23,10 @@ jobs:
       actions: write
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Wait for phase 2
         id: phase
         env:
@@ -51,7 +52,7 @@ jobs:
         run: |
           echo "::error::Phase 2 has not produced the production code yet; the review waits."
           exit 1
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@acfe7992852970efb4fee683d63d628e3e52df67 # v1.0.286
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: claude
@@ -84,7 +85,10 @@ jobs:
             It starts with the line `## Review round`, followed by PASS or FAIL and, for FAIL,
             a numbered list of findings. Each finding names the file and says what is wrong and
             what is expected, so that another agent can fix it without asking.
-            Then write the single word PASS or FAIL to `${{ runner.temp }}/verdict`.
+            Then write the single word PASS or FAIL to `${{ runner.temp }}/verdict` with the Write
+            tool, in a call of its own after the comment. Not with a shell redirection in the same
+            command as `gh pr comment`: a Bash command may not write outside the checkout, and a
+            denied command also loses the comment.
       - name: Verdict
         env:
           GH_TOKEN: ${{ github.token }}

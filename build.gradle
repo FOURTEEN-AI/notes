@@ -2,6 +2,11 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.2.0'
 	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
+	id 'com.diffplug.spotless' version '8.2.1'
+	id 'net.ltgt.errorprone' version '5.2.0'
+	id 'pmd'
+	id 'info.solidsoft.pitest' version '1.19.0'
+	id 'org.cyclonedx.bom' version '3.6.1'
 }
 
 group = 'de.fourteen.notes'
@@ -23,8 +28,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+	implementation 'org.jspecify:jspecify:1.0.1'
 	runtimeOnly 'org.postgresql:postgresql'
+	errorprone 'com.google.errorprone:error_prone_core:2.53.0'
+	errorprone 'com.uber.nullaway:nullaway:0.14.4'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
@@ -32,11 +41,31 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'com.tngtech.jgiven:jgiven-junit5:3.0.0'
+	testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
+	testImplementation 'net.jqwik:jqwik:1.10.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Compiler: all javac lints are errors, Error Prone finds bug patterns, NullAway checks null-safety
+// (JSpecify @NullMarked per package, see package-info.java) in main sources.
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs += ['-Xlint:all', '-Werror']
+	options.errorprone {
+		option('NullAway:OnlyNullMarked', 'true')
+		if (name == 'compileJava') {
+			check('NullAway', net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+		} else {
+			disable('NullAway') // tests are not @NullMarked: Mockito, JGiven and fakes make it noise
+		}
+	}
+	if (name == 'compileTestJava') {
+		// JGiven 3 deprecates ScenarioTest, which the (protected) acceptance tests extend.
+		options.compilerArgs += '-Xlint:-deprecation'
+	}
 }
 
 
@@ -77,4 +106,101 @@ tasks.named('processResources') {
 	from(tasks.named('frontendBuild')) {
 		into 'static'
 	}
+}
+
+// Formatting: `./gradlew build` fails on unformatted code, `./gradlew format` fixes Java and frontend.
+spotless {
+	java {
+		googleJavaFormat().aosp()
+		removeUnusedImports()
+		importOrder()
+	}
+}
+
+// Static analysis of main sources: a small PMD ruleset (config/pmd/ruleset.xml) with complexity
+// limits. Tests are not linted: JGiven stages and fakes are written for readability.
+pmd {
+	toolVersion = '7.29.0'
+	ruleSetFiles = files('config/pmd/ruleset.xml')
+	ruleSets = []
+	consoleOutput = true
+	sourceSets = [sourceSets.main]
+}
+
+tasks.register('prettierCheck', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'format:check'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
+			frontendDir.file('.prettierrc.json'), frontendDir.file('index.html'),
+			frontendDir.file('tsconfig.json'), frontendDir.file('vite.config.ts'))
+	inputs.dir(frontendDir.dir('src'))
+	outputs.upToDateWhen { true }
+}
+
+tasks.register('frontendLint', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'lint'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
+			frontendDir.file('eslint.config.js'), frontendDir.file('knip.json'),
+			frontendDir.file('tsconfig.json'), frontendDir.file('vite.config.ts'),
+			frontendDir.file('index.html'))
+	inputs.dir(frontendDir.dir('src'))
+	outputs.upToDateWhen { true }
+}
+
+tasks.register('prettierApply', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'format'
+}
+
+tasks.register('format') {
+	dependsOn 'spotlessApply', 'prettierApply'
+}
+
+// Mutation testing of the pure rules in domain and application, with the plain unit tests only
+// (no Spring, no Testcontainers, no acceptance tests). `check` fails below the threshold.
+pitest {
+	pitestVersion = '1.30.2'
+	junit5PluginVersion = '1.2.3'
+	targetClasses = ['de.fourteen.notes.domain.*', 'de.fourteen.notes.application.*']
+	targetTests = ['de.fourteen.notes.domain.*', 'de.fourteen.notes.application.*']
+	mutationThreshold = 95
+	threads = 4
+	outputFormats = ['HTML', 'XML']
+	timestampedReports = false
+}
+
+// End-to-end tests (Playwright: chromium, firefox, webkit) against the built jar with a PostgreSQL
+// container and a GitHub stub, see frontend/e2e/stack.mjs. Not part of `check`: needs Docker and
+// the browsers (`pnpm exec playwright install --with-deps` once). The visual regression runs in the
+// pinned Playwright Docker image (frontend/e2e/visual.sh), where its snapshots were made.
+tasks.register('e2eTest', Exec) {
+	group = 'verification'
+	dependsOn 'bootJar'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'e2e'
+	outputs.upToDateWhen { false }
+}
+
+tasks.register('e2eVisualTest', Exec) {
+	group = 'verification'
+	dependsOn 'frontendBuild'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'e2e:visual'
+	outputs.upToDateWhen { false }
+}
+
+tasks.named('check') {
+	dependsOn 'prettierCheck', 'frontendLint', 'pitest'
+}
+
+// SBOM of the runtime dependencies (what the jar contains), scanned by .github/supply-chain.sh.
+tasks.named('cyclonedxDirectBom') {
+	includeConfigs = ['runtimeClasspath']
+	projectType = 'application'
+	jsonOutput = layout.buildDirectory.file('sbom/java.cdx.json')
+	xmlOutput.unsetConvention()
 }

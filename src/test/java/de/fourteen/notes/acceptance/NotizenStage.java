@@ -18,7 +18,8 @@ import java.util.List;
  */
 public class NotizenStage extends Stage<NotizenStage> {
 
-    @ProvidedScenarioState private final NoteService notizen = new NoteService(new InMemoryNoteRepository());
+    @ProvidedScenarioState
+    private final NoteService notizen = new NoteService(new InMemoryNoteRepository());
 
     @ScenarioState private Note zuletztGespeichert;
     @ScenarioState private DomainException fehler;

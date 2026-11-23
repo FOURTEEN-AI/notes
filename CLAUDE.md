@@ -7,6 +7,7 @@ is in [docs/process.md](docs/process.md): update it at the end of every step.
 - Stack: Spring Boot 4 (Java 25, Gradle) serves a React app (Vite, pnpm) from `frontend/`.
   PostgreSQL. Fly.io.
 - Build and test: `./gradlew build` (needs Docker for the Testcontainers database).
+- Format: `./gradlew format` fixes Java (Spotless) and frontend (Prettier); `./gradlew build` fails on unformatted code.
 - Run locally: `./gradlew bootTestRun` (port 8080, login dev/dev), and for frontend work also
   `pnpm dev` in `frontend/` (port 5173, proxies `/api`).
 - Deploy: every push to `main` is built, tested and deployed by `.github/workflows/ci.yml`.
@@ -56,3 +57,8 @@ JSON list of steps, in the order a human tries the change:
 Skills live in `.claude/skills/`. Add a skill here in the same change that creates it.
 
 - `grill-me`: interviews the user about a plan or design until shared understanding is reached.
+- `modularity-review`, `modularity-design` (with the helpers `balanced-coupling` and
+  `modularity-document`): review or design modularity with the Balanced Coupling model. Copied
+  from [vladikk/modularity](https://github.com/vladikk/modularity) by Vlad Khononov with his
+  permission, CC BY-NC-SA 4.0 ([license](.claude/skills/MODULARITY-LICENSE)); changed only the
+  skill names.

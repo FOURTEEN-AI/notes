@@ -25,7 +25,8 @@ import tools.jackson.databind.JsonNode;
 @Component
 class GitHubClient implements GitHub {
 
-    // run-name of agent.yml: "Agent #<issue or pull request number>", of refine.yml: "Refine #<issue>".
+    // run-name of agent.yml: "Agent #<issue or pull request number>", of refine.yml: "Refine
+    // #<issue>".
     private static final Pattern AGENT_RUN = Pattern.compile("^Agent #(\\d+)$");
     private static final Pattern REFINE_RUN = Pattern.compile("^Refine #(\\d+)$");
 
@@ -133,7 +134,9 @@ class GitHubClient implements GitHub {
                 call(
                         () ->
                                 rest.get()
-                                        .uri("/actions/workflows/{workflow}/runs?per_page=30", workflow)
+                                        .uri(
+                                                "/actions/workflows/{workflow}/runs?per_page=30",
+                                                workflow)
                                         .retrieve()
                                         .body(JsonNode.class));
         Set<Integer> numbers = new HashSet<>();
@@ -157,6 +160,7 @@ class GitHubClient implements GitHub {
                                         .body(JsonNode.class));
         return new Checks(
                 checkState(runs, "build"),
+                checkState(runs, "e2e"),
                 checkState(runs, "review"),
                 checkState(runs, "acceptance"),
                 checkState(runs, "preview"));
@@ -244,6 +248,11 @@ class GitHubClient implements GitHub {
                 pr.path("merged").asBoolean(false) ? "merged" : pr.get("state").asString());
     }
 
+    private static boolean isConflict(RestClientResponseException e) {
+        int status = e.getStatusCode().value();
+        return status == 405 || status == 409;
+    }
+
     private <T> T call(Supplier<T> request) {
         if (!properties.configured()) {
             throw new DomainException(DomainException.Kind.UNAVAILABLE, "GitHub is not configured");
@@ -252,7 +261,7 @@ class GitHubClient implements GitHub {
             return request.get();
         } catch (RestClientResponseException e) {
             // 405: not mergeable, 409: the head changed. Both mean "look again".
-            if (e.getStatusCode().value() == 405 || e.getStatusCode().value() == 409) {
+            if (isConflict(e)) {
                 throw new DomainException(DomainException.Kind.CONFLICT, "GitHub refused");
             }
             throw new DomainException(

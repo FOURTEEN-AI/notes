@@ -1,8 +1,8 @@
 package de.fourteen.notes.application;
 
+import de.fourteen.notes.domain.AcceptanceCriteria;
 import de.fourteen.notes.domain.ChatMessage;
 import de.fourteen.notes.domain.CheckState;
-import de.fourteen.notes.domain.AcceptanceCriteria;
 import de.fourteen.notes.domain.Checks;
 import de.fourteen.notes.domain.Comment;
 import de.fourteen.notes.domain.DomainException;

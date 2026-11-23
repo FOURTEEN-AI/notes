@@ -5,8 +5,8 @@ import java.util.Set;
 
 /**
  * The few things the app needs from GitHub. GitHub stays the source of truth: the app stores
- * nothing about issues or pull requests itself. Every call fails with a {@link DomainException}
- * of kind UNAVAILABLE without a token, CONFLICT if GitHub refuses, and UPSTREAM_FAILED otherwise.
+ * nothing about issues or pull requests itself. Every call fails with a {@link DomainException} of
+ * kind UNAVAILABLE without a token, CONFLICT if GitHub refuses, and UPSTREAM_FAILED otherwise.
  */
 public interface GitHub {
 
@@ -29,7 +29,10 @@ public interface GitHub {
     /** The comments of an issue, oldest first. */
     List<Comment> comments(int number);
 
-    /** The latest runs of the checks `build`, `review`, `acceptance` and `preview` on a commit. */
+    /**
+     * The latest runs of the checks `build`, `e2e`, `review`, `acceptance` and `preview` on a
+     * commit.
+     */
     Checks checks(String sha);
 
     void comment(int number, String body);

@@ -117,6 +117,7 @@ class NotesApiTest {
     void health_check_is_public() throws Exception {
         mvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("UP"));
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.components").doesNotExist());
     }
 }

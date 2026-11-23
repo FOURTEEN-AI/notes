@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modularity Review</title>
+<style>
+  :root {
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    --max-width: 820px;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eef1f5;
+    --text: #1a1a1a;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --border: #e2e8f0;
+    --accent: #2b6cb0;
+    --accent-light: #ebf4ff;
+    --severity-critical: #c53030;
+    --severity-critical-bg: #fff5f5;
+    --severity-significant: #c05621;
+    --severity-significant-bg: #fffaf0;
+    --severity-minor: #2b6cb0;
+    --severity-minor-bg: #ebf8ff;
+    --table-stripe: #f7fafc;
+    --link: #2b6cb0;
+    --link-hover: #1a4971;
+    --shadow: rgba(0, 0, 0, 0.06);
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-tertiary: #2e2e2e;
+    --text: #e2e2e2;
+    --text-secondary: #a0a0a0;
+    --text-muted: #717171;
+    --border: #333333;
+    --accent: #b0b0b0;
+    --accent-light: #2a2a2a;
+    --severity-critical: #fc8181;
+    --severity-critical-bg: #2d1b1b;
+    --severity-significant: #f6ad55;
+    --severity-significant-bg: #2d2415;
+    --severity-minor: #a0a0a0;
+    --severity-minor-bg: #282828;
+    --table-stripe: #222222;
+    --link: #e0c97f;
+    --link-hover: #f0dca0;
+    --shadow: rgba(0, 0, 0, 0.2);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    margin: 0;
+    padding: 2rem 1.5rem;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--text);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    z-index: 100;
+  }
+
+  .theme-toggle:hover {
+    background: var(--bg-tertiary);
+  }
+
+  /* Typography */
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem 0;
+    color: var(--text);
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 2.5rem 0 1rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.8rem 0 0.6rem 0;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+
+  a:hover {
+    color: var(--link-hover);
+    border-bottom-color: var(--link-hover);
+  }
+
+  /* Metadata */
+  .meta {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .meta strong {
+    color: var(--text-secondary);
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  tr:nth-child(even) td {
+    background: var(--table-stripe);
+  }
+
+  /* Severity badges */
+  .severity {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .severity-critical {
+    color: var(--severity-critical);
+    background: var(--severity-critical-bg);
+  }
+
+  .severity-significant {
+    color: var(--severity-significant);
+    background: var(--severity-significant-bg);
+  }
+
+  .severity-minor {
+    color: var(--severity-minor);
+    background: var(--severity-minor-bg);
+  }
+
+  /* Issue cards */
+  .issue {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 1px 3px var(--shadow);
+  }
+
+  .issue h2 {
+    margin-top: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .issue h3 {
+    font-size: 1rem;
+  }
+
+  .issue-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  /* Lists */
+  ul, ol {
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+  }
+
+  li {
+    margin-bottom: 0.35rem;
+  }
+
+  /* Code */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--bg-tertiary);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+  }
+
+  /* Horizontal rule */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 3rem 0 1.5rem 0;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .footer a {
+    color: var(--text-muted);
+    border-bottom-color: var(--border);
+  }
+
+  .footer a:hover {
+    color: var(--link);
+  }
+
+  /* Print */
+  @media print {
+    .theme-toggle { display: none; }
+    body { padding: 0; }
+    .issue { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+  <span id="theme-icon"></span>
+</button>
+
+<div class="container">
+  <h1>Modularity Review</h1>
+<div class="meta"><p><strong>Scope</strong>: Entire codebase: backend <code>src/main/java</code> (Spring Boot, onion rings), frontend <code>frontend/src</code> (React), and the agent workflows in <code>.github/</code> (<code>workflows/*.yml</code>, <code>acceptance/*.mjs</code>) as far as they couple to the app.<br>
+<strong>Date</strong>: 2026-11-23</p></div>
+<h2>Executive Summary</h2>
+<p>The project is a notes app (write, list, delete notes) that has grown a second, much larger purpose: a self-hosting software loop in which the human submits ideas in the app, a refine agent and a coding agent work on GitHub issues and pull requests, and the preview apps let the human demo, give feedback and merge. Inside the Spring Boot jar the <a href="https://coupling.dev/posts/core-concepts/modularity/">modularity</a> is healthy: the onion rings are enforced by a test, the <code>GitHub</code> and <code>ScenarioReport</code> ports hide the REST client, and the notes code is tiny and cohesive. The status is "needs attention", and the attention belongs at a boundary that no compiler or architecture test sees. The app and the workflows (YAML, <code>jq</code>, Node scripts) cooperate through a string protocol (comment markers, labels, run names, check names, branch and app names, the Gherkin tag syntax) that is duplicated in at least four places and two languages. That is implicit <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">functional coupling</a> in the <a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">core subdomain</a> of the product (the agentic process changes with nearly every step), so it is the most important finding.</p>
+<h2>Coupling Overview Table</h2>
+<table><thead><tr><th>Integration</th><th><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Strength</a></th><th><a href="https://coupling.dev/posts/dimensions-of-coupling/distance/">Distance</a></th><th><a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">Volatility</a></th><th><a href="https://coupling.dev/posts/core-concepts/balance/">Balanced?</a></th></tr></thead><tbody>
+<tr><td>App (domain, <code>GitHubClient</code>) &lt;-&gt; workflows (comment markers, labels, run names, check names, branch/app names)</td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a>, implicit, duplicated strings</td><td>High (other language, other runtime, GitHub-hosted, no shared type)</td><td>High (core: the process changes every step)</td><td>No (Issue 1)</td></tr>
+<tr><td>Gherkin and proposal rules: <code>AcceptanceCriteria.java</code> &lt;-&gt; <code>gherkin.mjs</code> / <code>criteria.mjs</code> &lt;-&gt; <code>Ideas.tsx</code></td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a>, duplicated algorithm</td><td>High (3 languages, 2 runtimes)</td><td>High (core)</td><td>No (Issue 2)</td></tr>
+<tr><td>Coding agent (prompt, CLAUDE.md) -&gt; <code>PreviewService</code> / <code>Tour.tsx</code> (demo block, selectors)</td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a> / <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Model</a>, implicit, prose contract</td><td>Medium-high (agent output parsed at runtime)</td><td>Medium-high (UI changes every step)</td><td>No (Issue 3)</td></tr>
+<tr><td><code>JGivenReport</code> -&gt; JGiven HTML report data in the jar</td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Intrusive</a> (private file format)</td><td>Medium (build output consumed by the running app)</td><td>Low (pinned library, generic)</td><td>Tolerable (Issue 4)</td></tr>
+<tr><td>Notes &lt;-&gt; Ideas/Preview in one app (<code>App.tsx</code>, one <code>web</code>/<code>application</code> package set)</td><td>Low</td><td>Low</td><td>Notes low, Ideas high</td><td>Low cohesion, minor (Issue 5)</td></tr>
+<tr><td>Controllers &lt;-&gt; application records &lt;-&gt; TypeScript types (<code>PreviewResponse</code> = <code>Preview</code>, hand-written <code>Idea</code>, <code>Preview</code>)</td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a> (JSON), hand-copied</td><td>Medium</td><td>Medium-high</td><td>Yes, with copy cost (Issue 5)</td></tr>
+<tr><td><code>IdeaService</code> / <code>PreviewService</code> -&gt; <code>GitHub</code> port</td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a> (port), but port is workflow-shaped</td><td>High (external service, synchronous)</td><td>Low for GitHub itself, high for what is asked of it</td><td>Yes (Issue 6, minor)</td></tr>
+<tr><td><code>NoteService</code> -&gt; <code>NoteRepository</code> -&gt; <code>JdbcNoteRepository</code></td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a></td><td>Low</td><td>Low (supporting)</td><td>Yes</td></tr>
+<tr><td><code>web</code> -&gt; <code>application</code> -&gt; <code>domain</code> (onion rings, <code>OnionArchitectureTest</code>)</td><td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a> / <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Model</a></td><td>Low</td><td>Medium</td><td>Yes (cohesion)</td></tr>
+</tbody></table>
+<h3>How the domain was classified</h3>
+<ul>
+<li><strong>Core subdomain</strong> (the part that is the actual competitive edge; the "interesting problems"): the agentic idea-to-merge loop: idea chat, acceptance criteria, phases, review, demo tour, merge guard. It is the stated purpose of <code>docs/plan.md</code> and grows in every step, so it has the highest <a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">volatility</a>. Confidence: high.</li>
+<li><strong>Supporting subdomain</strong> (needed, but no differentiator, simple CRUD): the notes (<code>Note</code>, <code>NoteService</code>, <code>JdbcNoteRepository</code>, the list/save/delete UI). Low volatility; pragmatic shortcuts are fine. Confidence: high.</li>
+<li><strong>Generic subdomain</strong> (solved problem, off-the-shelf): GitHub as backlog and CI, Spring Security HTTP Basic, Fly.io, PostgreSQL, JGiven. Functional volatility is low; implementation volatility is low too (GitHub is declared the source of truth and switching it is unlikely), so heavy encapsulation of them is not needed. Confidence: medium.</li>
+</ul>
+<h3>Distance and organisation</h3>
+<p>One human (product owner) plus AI agents, no teams, one deployable, one repository. There is no socio-technical distance between people, but AI agents work with a fresh context each run and read only what is written down, which makes implicit knowledge costlier than it would be for a person who remembers. Within the jar, the highest distance at the module level is the ring or package boundary (low). The workflows are the largest distance: another language, another runtime, run on GitHub's servers, and tested separately (Node tests in <code>.github/acceptance</code>, no shared types with Java).</p>
+<div class="issue">
+<h2>Issue: The workflow protocol is a set of duplicated strings shared between the app and the workflows</h2>
+<div class="issue-meta"><p><strong>Integration</strong>: Java app (<code>GitHubClient</code>, <code>Issue</code>, <code>PullRequest</code>, <code>ChatMessage</code>, <code>AcceptanceCriteria</code>, <code>PreviewService</code>, <code>Checks</code>) &lt;-&gt; GitHub workflows (<code>agent.yml</code>, <code>refine.yml</code>, <code>acceptance.yml</code>, <code>review.yml</code>, <code>ci.yml</code>, <code>preview-cleanup.yml</code>, <code>.github/acceptance/*.mjs</code>) and the frontend
+<br><strong>Severity</strong>: <span class="severity severity-critical">Critical</span></p></div>
+<h3>Knowledge Leakage</h3>
+<p>The app and the workflows are two halves of one process, and they agree through conventions that exist only as string literals, never as a shared definition. Reading the code, the same knowledge is spelled out several times:</p>
+<ul>
+<li>Comment markers: <code>## Idea chat</code> (<code>ChatMessage.HUMAN_MARKER</code>, <code>refine.yml</code>, <code>AcceptanceCriteria.pendingProposal</code>), <code>## Refine</code> (<code>ChatMessage</code>, <code>IdeaService.previousScenarios</code>, <code>AcceptanceCriteria</code>, <code>refine.yml</code>, <code>agent.yml</code>), <code>## Acceptance criteria</code> (<code>AcceptanceCriteria.MARKER</code>, <code>criteria.mjs</code>, <code>acceptance.yml</code>, <code>agent.yml</code>), <code>## Human feedback</code> (<code>PreviewService.FEEDBACK_MARKER</code>, <code>agent.yml</code>), <code>## Acceptance checked/reset/round</code>, <code>## Review round</code> (only in YAML/jq, and counted by regexes in <code>ci.yml</code>, <code>review.yml</code>, <code>agent.yml</code>, <code>acceptance.yml</code>).</li>
+<li>Labels <code>refine</code> and <code>agent</code> (<code>GitHubClient.createIssue/release/openIdeaIssues</code>, the workflow triggers).</li>
+<li>Run names <code>Agent #&lt;n&gt;</code> and <code>Refine #&lt;n&gt;</code> (<code>run-name</code> in the YAML, regexes <code>AGENT_RUN</code>/<code>REFINE_RUN</code> in <code>GitHubClient</code>): the app reads a workflow's display title as if it were an API. This is close to <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">intrusive coupling</a>: it relies on a detail the workflow author considers cosmetic.</li>
+<li>Check names <code>build</code>, <code>review</code>, <code>acceptance</code>, <code>preview</code> (<code>GitHubClient.checks</code>, <code>Checks</code>, job names in YAML, branch protection).</li>
+<li>Branch <code>agent/issue-&lt;n&gt;</code> (<code>Issue.branch</code>, <code>PullRequest.AGENT_BRANCH</code>, <code>ci.yml</code>, <code>acceptance.yml</code>, <code>agent.yml</code>) and the preview app name <code>notes-fourteen-it-issue-&lt;n&gt;</code> (<code>Issue.PREVIEW_URL</code>, <code>ci.yml</code>, <code>preview-cleanup.yml</code>); the production URL again in <code>PreviewBar.tsx</code>.</li>
+<li>Environment contract <code>PULL_REQUEST</code> / <code>PULL_REQUEST_SHA</code> (<code>ci.yml</code> sets, <code>PreviewService</code> reads).</li>
+<li>Who counts as a human: <code>OWNER/MEMBER/COLLABORATOR</code> in <code>criteria.mjs</code> and YAML versus "any comment" in the Java code.</li>
+</ul>
+<p><code>docs/process.md</code> documents these, which is good, but a document is not a contract: nothing fails when a name drifts. The marker strings are also embedded in agent prompts, so the knowledge is shared with a third party (the LLM) that reproduces it from prose.</p>
+<h3>Complexity Impact</h3>
+<p>A developer (or agent) changing one marker has to find every occurrence by grep across Java, YAML, <code>jq</code> expressions, JavaScript and prompts, and cannot know when it is done: there are more than 4 +/- 1 places to keep in mind, in 4 notations. The outcome of a change is only visible in hindsight (a workflow silently not triggering, an idea stuck in "Wartet auf dich", a status badge that never turns green). That is the definition of <a href="https://coupling.dev/posts/core-concepts/complexity/">complexity</a>. The failure mode is also quiet: <code>GitHubClient.checkState</code> returns <code>PENDING</code> for a missing check name, so a renamed check shows "läuft" forever instead of failing loudly.</p>
+<h3>Cascading Changes</h3>
+<ul>
+<li>Renaming a check or adding a required one (the plan already added <code>acceptance</code> after <code>build</code>/<code>review</code>) requires <code>Checks</code> (and its <code>green()</code>/<code>pending()</code>), <code>GitHubClient.checks</code>, <code>PreviewResponse</code>, <code>PreviewBar.tsx</code>, the frontend types, <code>process.md</code>, branch protection, and the YAML job names, all at once.</li>
+<li>Adding a new label or phase (e.g. discarding an idea, listed as "not in this step" in the plan) touches <code>GitHubClient</code>, <code>IdeaStatus</code>, <code>Idea</code>, the three frontend types/labels and at least two workflows.</li>
+<li>Changing a workflow <code>run-name</code> breaks the "agent working" status without any test failing.</li>
+<li>The steps in the plan show this is the hot path: the loop was reworked in steps 3, 4 and later (refine agent, phases, acceptance), each time touching both sides.</li>
+</ul>
+<p>With high strength (shared functional knowledge, implicit), high <a href="https://coupling.dev/posts/dimensions-of-coupling/distance/">distance</a> (other language and runtime, no compiler or architecture test in between) and the highest volatility in the system, this is the textbook unbalanced case of the <a href="https://coupling.dev/posts/core-concepts/balance/">balance rule</a>.</p>
+<h3>Recommended Improvement</h3>
+<p>Do not separate further; rather make the shared knowledge explicit and singular, and reduce distance where cheap.</p>
+<ul>
+<li>Introduce one machine-readable definition of the protocol in the repo (for example <code>.github/protocol.json</code> with markers, labels, check names, run-name prefixes, branch pattern, app-name pattern) that both sides read: the YAML/<code>.mjs</code> side at run time, the Java side through a small <code>infrastructure</code> properties class (the domain keeps its constants by receiving them through the port, so the onion stays intact). This turns implicit <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">functional coupling</a> into explicit <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract coupling</a>.</li>
+<li>Where a file is not feasible, add a drift test (Java or Node) that parses the workflows and asserts that every marker, label, check name and run-name pattern used by the Java side appears in them. It is cheap and fails loudly instead of quietly.</li>
+<li>Replace the <code>display_title</code> regex with something the workflow owns on purpose (a dedicated check name or a label on the run), or at least cover it with the drift test.</li>
+<li>Make a missing check an explicit <code>MISSING</code> state instead of <code>PENDING</code>.</li>
+</ul>
+<p>Trade-offs: one more artefact to maintain, and a small indirection when reading the Java constants. Worth it because this is the area the product exists to change, and AI agents (which do not remember conventions between runs) benefit most from a single, checkable source.</p>
+</div>
+<div class="issue">
+<h2>Issue: Gherkin and "pending proposal" rules are implemented in Java, Node and TypeScript</h2>
+<div class="issue-meta"><p><strong>Integration</strong>: <code>domain/AcceptanceCriteria.java</code> &lt;-&gt; <code>.github/acceptance/gherkin.mjs</code>, <code>criteria.mjs</code>, <code>conflict.mjs</code> &lt;-&gt; <code>frontend/src/Ideas.tsx</code>
+<br><strong>Severity</strong>: <span class="severity severity-significant">Significant</span></p></div>
+<h3>Knowledge Leakage</h3>
+<p>The syntax of the approved delta (German <code>Szenario:</code>/<code>Szenariogrundriss:</code> headers, tags <code>@ersetzt("&lt;old title&gt;")</code>, <code>@entfällt</code>, <code>@manuell</code>) is parsed twice: <code>AcceptanceCriteria.oldTitles</code> in Java (to show the previous scenarios in the idea chat) and <code>parseGherkin</code> in <code>gherkin.mjs</code> (to compare tests with the delta). Both are independent regex implementations of one language: duplicated algorithmic knowledge, the strongest form of <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">functional coupling</a>. The "proposal block" rule is a third copy: the first gherkin code fence fence (<code>AcceptanceCriteria.BLOCK</code>, with its tolerance for an unclosed block) is re-implemented in <code>Ideas.tsx</code> as a <code>text.includes(...)</code> check for the gherkin fence, which decides whether the "Freigeben" button appears and whether previous scenarios are fetched. The backend (<code>pendingProposal</code>) is the real authority; the frontend only guesses, and the two can disagree (for example a fence that is blank, or a message that is not the pending one).</p>
+<h3>Complexity Impact</h3>
+<p>A syntax extension (a new tag, English keywords, <code>Hintergrund</code>) must be made in at least two parsers with different regex flavours and different test suites (<code>AcceptanceCriteriaTest</code>, <code>criteria.test.mjs</code>/<code>stages.test.mjs</code>). Nobody can tell from either file that the other exists, so a divergence shows up only as a confusing symptom, such as the chat showing the wrong "Bisher" scenarios while <code>acceptance</code> judges against others.</p>
+<h3>Cascading Changes</h3>
+<p>Any change to the tag language (the plan already evolved it through <code>@ersetzt</code>, <code>@entfällt</code>, <code>@manuell</code>) forces a coordinated edit in Java and Node (and the refine agent prompt that teaches the syntax). A change to what counts as a pending proposal forces a change in <code>AcceptanceCriteria.pendingProposal</code>, the preview bar's <code>proposal</code> field and the frontend heuristic. Distance is high (different runtimes, no shared code), volatility high (core), so the imbalance is real, but it is smaller in scope than Issue 1.</p>
+<h3>Recommended Improvement</h3>
+<ul>
+<li>Let the backend say it. Add a <code>canApprove</code> (or <code>proposal</code>) flag to the idea chat response, derived from <code>pendingProposal</code>, and delete the <code>includes</code> heuristic from <code>Ideas.tsx</code>. That removes one copy and lowers strength to contract coupling.</li>
+<li>For Java vs Node, pick one owner of the tag syntax. The Java side only needs old titles; either let the workflow publish them (the acceptance job already parses the delta and could post the replaced titles) or add a shared fixture file of Gherkin examples with expected results, run by both test suites. A shared fixture is the smaller step and keeps both parsers honest.</li>
+<li>Do not merge the Java and Node runtimes just to share code.</li>
+</ul>
+<p>Trade-off: an extra field in the API and a shared fixture to maintain, in exchange for one definition of "what the human can approve" and a test that fails on drift.</p>
+</div>
+<div class="issue">
+<h2>Issue: The demo tour is an unwritten contract between the coding agent, the Java parser and the page markup</h2>
+<div class="issue-meta"><p><strong>Integration</strong>: Coding agent (prompt in <code>agent.yml</code>, rule in <code>CLAUDE.md</code>) -&gt; <code>PreviewService.demo</code> / <code>DemoStep</code> -&gt; <code>PreviewController</code> -&gt; <code>Tour.tsx</code> (selectors against the live DOM)
+<br><strong>Severity</strong>: <span class="severity severity-significant">Significant</span></p></div>
+<h3>Knowledge Leakage</h3>
+<p>The format of the demo code fence block (JSON list with <code>do</code>, <code>expect</code>, <code>selector</code>) is defined in prose in <code>CLAUDE.md</code>, restated in the agent prompt, parsed by <code>PreviewService</code> (a private <code>WrittenStep</code> record, the regex <code>DEMO_BLOCK</code>), copied to <code>DemoStep</code> and <code>DemoStepResponse</code> (with <code>@JsonProperty("do")</code> repeated), and typed again in <code>Tour.tsx</code>. More importantly, <code>selector</code> is a CSS selector written by an agent "from the code as it is after the change": the tour is coupled to the rendered markup and class names of the frontend (<code>main form textarea</code>, <code>main li .icon-button</code>) without any contract. Invalid input is swallowed on purpose (<code>catch (JacksonException) -&gt; List.of()</code>; unmatched selectors highlight nothing), so breakage is silent.</p>
+<h3>Complexity Impact</h3>
+<p>A frontend refactoring (renaming a class, moving a form) cannot be recognised as breaking demos: no test, type or build step relates selectors to markup. A malformed block gives an empty tour, which looks the same as "this change has no demo". The developer has to remember a rule that lives in a prose file and a prompt. Also, <code>PreviewService</code> in the <code>application</code> ring imports Jackson annotations and does text parsing for a format that is really an integration contract with an LLM: a small leak of a delivery detail into the inner rings.</p>
+<h3>Cascading Changes</h3>
+<p>Each UI step changes markup (this is the most volatile part of the frontend: every feature touches it), so every pending pull request's selectors can go stale after a merge to <code>main</code> or after human feedback. Adding a field to a demo step (for example a <code>url</code> or <code>screenshot</code>) needs edits in CLAUDE.md, the prompt, <code>WrittenStep</code>, <code>DemoStep</code>, <code>DemoStepResponse</code>, <code>PreviewResponse</code> and <code>Tour.tsx</code>. Since the demo is the human's only look at the change (the plan: "the human sees no code, only the demo"), a quiet failure here removes the safety net for core functionality.</p>
+<h3>Recommended Improvement</h3>
+<ul>
+<li>Move the parse of the demo block out of <code>application</code> into a small adapter (the same place the <code>GitHub</code> port lives), so that Jackson and the fence format stay outside the domain rules; the application only handles <code>DemoStep</code>.</li>
+<li>Make failures visible: when a demo code fence block exists but is invalid, return a flag or a message ("Demo konnte nicht gelesen werden") and show it in the bar; make the tour mark a step "Element nicht gefunden".</li>
+<li>Add one test that renders the page and checks the selectors of the demo block of a sample pull request description; or have the review agent verify selectors against the markup (the review already reads the diff).</li>
+<li>Prefer stable hooks (<code>data-demo="..."</code> attributes) over structural selectors, and say so in CLAUDE.md. This trades a little markup noise for a contract that survives styling changes.</li>
+</ul>
+<p>Trade-off: a few attributes in the markup and one more state in the bar; the gain is that the highest-leverage human checkpoint stops failing silently.</p>
+</div>
+<div class="issue">
+<h2>Issue: <code>JGivenReport</code> reads the private file format of a test report</h2>
+<div class="issue-meta"><p><strong>Integration</strong>: <code>infrastructure/JGivenReport</code> -&gt; JGiven HTML report data in the jar (<code>static/jgiven/data/*.js</code>)
+<br><strong>Severity</strong>: <span class="severity severity-minor">Minor</span></p></div>
+<h3>Knowledge Leakage</h3>
+<p>The adapter extracts scenarios through <code>addZippedScenarios('&lt;base64 of gzipped JSON&gt;')</code> and walks <code>scenarios[].scenarios[].scenarioCases[0].steps[].words[]</code>, including <code>depth</code>, <code>argumentInfo</code>, and the German keywords map. That is JGiven's undocumented report layout, <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">intrusive coupling</a> on a build artefact. The knowledge of how the report gets into the jar sits in the build files, the notion that its scenarios equal <code>main</code>'s scenarios in <code>ScenarioReport</code>'s Javadoc.</p>
+<h3>Complexity Impact</h3>
+<p>A JGiven upgrade could change the format and the effect would only be a missing "Bisher" panel (and a <code>UPSTREAM_FAILED</code> for an unreadable file). Because the report only exists in a real build, the unit and local runs ("Without a report (tests, bootTestRun) there is nothing to show") do not exercise the parser at all, so a break is first seen in production.</p>
+<h3>Cascading Changes</h3>
+<p>Only a library upgrade or a change of the report mechanism. JGiven is pinned and generic, so volatility is low, and the blast radius is a convenience feature of the idea chat. Unbalanced but tolerable.</p>
+<h3>Recommended Improvement</h3>
+<p>Accept it, but add one parser test against a small captured fixture of a real report file so the upgrade breaks the build rather than the chat. Optionally, have the Gradle build export a plain <code>scenarios.json</code> (via a JGiven JSON report or a tiny task) so that the adapter reads a format the project owns. Trade-off: a fixture to refresh on upgrades.</p>
+</div>
+<div class="issue">
+<h2>Issue: Notes and the idea/preview machinery share one app, one frontend entry and hand-copied DTO layers</h2>
+<div class="issue-meta"><p><strong>Integration</strong>: <code>NoteController</code>/<code>NoteService</code> and <code>App.tsx</code> &lt;-&gt; <code>IdeaController</code>/<code>IdeaService</code>/<code>PreviewController</code>/<code>PreviewService</code>, <code>Ideas.tsx</code>, <code>PreviewBar.tsx</code>
+<br><strong>Severity</strong>: <span class="severity severity-minor">Minor</span></p></div>
+<h3>Knowledge Leakage</h3>
+<p>The two features share no knowledge (the only common code is <code>DomainException</code> and the security config), which is <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">low strength</a> at low <a href="https://coupling.dev/posts/dimensions-of-coupling/distance/">distance</a>: a mild case of <a href="https://coupling.dev/posts/core-concepts/balance/">low cohesion</a>. Layers are organised by technical ring, not by subdomain, so <code>application/</code> and <code>web/</code> mix a supporting subdomain (notes) with the volatile core (ideas, preview). In the frontend, <code>Ideas.tsx</code> (303 lines) decides whether it runs in production or a preview by calling <code>/api/preview</code> and checking for 200 (a hidden mode switch), and <code>PreviewBar</code> hard-codes the production URL. Mode (production versus preview) is a deployment fact that leaks into two components and into the backend's <code>isPreview()</code> semantics (204 instead of 404 to keep the browser console quiet).</p>
+<p>The DTO layers are copied by hand: <code>PreviewService.Preview</code> and <code>PreviewController.PreviewResponse</code> have identical components; <code>Idea</code>, <code>ChatMessage</code>, <code>Scenario</code> records are serialised directly while the TypeScript types are written by hand. This is correct <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract coupling</a>, only without a generator or a contract test, so drift is possible (for example a new <code>IdeaStatus</code> value unknown to <code>statusLabels</code>).</p>
+<h3>Complexity Impact</h3>
+<p>Small today (about 1,000 lines of production code in total). The cost appears when the core grows: every step adds to <code>Ideas.tsx</code> and the <code>IdeaService</code>, in the same package and files that hold the note logic, and the 4 +/- 1 limit is reached sooner in a 300-line component with polling, dialog, chat, approval and list state.</p>
+<h3>Cascading Changes</h3>
+<p>Adding a field to the preview needs three edits (<code>Preview</code>, <code>PreviewResponse</code>, TS type). Adding a status needs <code>IdeaStatus</code>, <code>statusLabels</code>, CSS classes. These are cheap because distance is low, which is why this stays Minor.</p>
+<h3>Recommended Improvement</h3>
+<p>Not a split into services (that would raise distance for no gain). Cheaper moves, when the next step touches the area anyway: split <code>Ideas.tsx</code> into list, chat and <code>useIdeas</code> hook files; group the frontend by feature folders (<code>notes/</code>, <code>ideas/</code>, <code>preview/</code>); expose the mode (<code>production</code> or <code>preview</code>) once from a single <code>/api/mode</code> or config endpoint instead of probing; and let the controller return the application record (or a mapping with a test) instead of a field-for-field copy. Do this opportunistically.</p>
+</div>
+<div class="issue">
+<h2>Issue: The <code>GitHub</code> port is shaped like the workflow, and lists are assembled with synchronous per-item calls</h2>
+<div class="issue-meta"><p><strong>Integration</strong>: <code>IdeaService</code>, <code>PreviewService</code> -&gt; <code>domain.GitHub</code> -&gt; <code>GitHubClient</code>
+<br><strong>Severity</strong>: <span class="severity severity-minor">Minor</span></p></div>
+<h3>Knowledge Leakage</h3>
+<p>The port is a good boundary: the REST client and JSON are hidden, and the error kinds are mapped. But the port is named and shaped after this particular process: <code>release</code> means "swap label <code>refine</code> for <code>agent</code>", <code>activeAgentRuns</code> means "runs of <code>agent.yml</code> whose title matches", <code>openIdeaIssues</code> means "labelled <code>refine</code> or <code>agent</code>", <code>checks</code> means "the four fixed checks". Workflow knowledge (Issue 1) therefore sits partly in the domain (which was meant to be plain business rules) and partly in the adapter, with the split between them following no clear rule. For a generic subdomain with low switching probability (GitHub is declared the source of truth), that is acceptable.</p>
+<h3>Complexity Impact</h3>
+<p><code>IdeaService.list</code> calls GitHub 4 times plus one <code>checks</code> call per idea, and the frontend polls every 10 seconds while the dialog is open (and the preview bar every 10 seconds per open preview): the runtime coupling is synchronous and chatty, bounded by the GitHub rate limit of the single shared token. With one user it is fine; it is a latent scaling and failure-cascade point, not a design flaw at this size.</p>
+<h3>Cascading Changes</h3>
+<p>Moving workflow semantics (a new label, a second workflow) means changing a domain interface and its implementation together. Since both are in the same module and the same team (human plus agents), that is cheap.</p>
+<h3>Recommended Improvement</h3>
+<p>Keep the port. When Issue 1 is addressed, let the protocol constants live next to the adapter, and keep the port to intent-level verbs (<code>submitIdea</code>, <code>releaseIdea</code>, <code>statusOf</code>). If rate limits or latency show up, fetch the statuses on the server on a timer and serve the cached result. No action needed before that.</p>
+</div>
+<hr>
+<div class="footer"><p><em>This analysis was performed using the <a href="https://coupling.dev">Balanced Coupling</a> model by <a href="https://vladikk.com">Vlad Khononov</a>.</em></p></div>
+</div>
+
+<script>
+  function getDefaultTheme() {
+    const hour = new Date().getHours();
+    return (hour >= 7 && hour < 19) ? 'light' : 'dark';
+  }
+
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('modularity-review-theme', theme);
+    document.getElementById('theme-icon').textContent = theme === 'light' ? '☾' : '☀';
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    setTheme(current === 'light' ? 'dark' : 'light');
+  }
+
+  const saved = localStorage.getItem('modularity-review-theme');
+  setTheme(saved || getDefaultTheme());
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -37,15 +38,17 @@ public class PreviewService {
             String state,
             String deployedSha,
             CheckState build,
+            CheckState e2e,
             CheckState review,
             CheckState acceptance,
             boolean mergeable,
             List<DemoStep> demo,
-            Integer issue,
-            String proposal) {}
+            @Nullable Integer issue,
+            @Nullable String proposal) {}
 
     /** A step as the coding agent writes it in the ```demo block (format in CLAUDE.md). */
-    private record WrittenStep(@JsonProperty("do") String action, String expect, String selector) {}
+    private record WrittenStep(
+            @JsonProperty("do") String action, String expect, @Nullable String selector) {}
 
     // The coding agent starts on comments with this marker (agent.yml).
     private static final String FEEDBACK_MARKER = "## Human feedback";
@@ -83,6 +86,7 @@ public class PreviewService {
                 pr.state(),
                 deployedSha,
                 checks.build(),
+                checks.e2e(),
                 checks.review(),
                 checks.acceptance(),
                 pr.open() && checks.green(),
@@ -110,7 +114,7 @@ public class PreviewService {
         if (!pr.open() || !github.checks(pr.sha()).green()) {
             throw new DomainException(
                     DomainException.Kind.CONFLICT,
-                    "build, review and acceptance must be green on an open pull request");
+                    "build, e2e, review and acceptance must be green on an open pull request");
         }
         github.merge(pr.number(), pr.sha());
     }
@@ -123,7 +127,11 @@ public class PreviewService {
         }
         try {
             return Arrays.stream(json.readValue(block.group(1), WrittenStep[].class))
-                    .filter(step -> step != null && step.action() != null && !step.action().isBlank())
+                    .filter(
+                            step ->
+                                    step != null
+                                            && step.action() != null
+                                            && !step.action().isBlank())
                     .map(step -> new DemoStep(step.action(), step.expect(), step.selector()))
                     .toList();
         } catch (JacksonException e) {

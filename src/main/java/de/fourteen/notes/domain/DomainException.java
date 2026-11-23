@@ -2,6 +2,7 @@ package de.fourteen.notes.domain;
 
 /** A request that cannot be served. The web layer maps the kind to an HTTP status. */
 public class DomainException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
 
     public enum Kind {
         INVALID,
