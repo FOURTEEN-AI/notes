@@ -55,6 +55,10 @@ tasks.named('test') {
 			.withPropertyName('documentedExamples')
 	// OpenApiContractTest compares docs/openapi.json with the controllers; the API tests check against it.
 	inputs.files('docs/openapi.json').withPropertyName('apiContract')
+	// GitHubContract checks the GitHub fakes against the trimmed GitHub API description; the stub of the
+	// end-to-end tests is one of them.
+	inputs.files('config/github-openapi/api.github.com.json', 'frontend/e2e/github-stub.mjs')
+			.withPropertyName('gitHubContract')
 	// SchemaMigrationTest compares schema.sql with the one of origin/main; rerun when that moves.
 	// Empty without git or origin/main (the test itself fails then, but other runs are unaffected).
 	inputs.property('mainSchema', providers.exec {

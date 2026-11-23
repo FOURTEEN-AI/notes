@@ -43,7 +43,7 @@ import tools.jackson.databind.json.JsonMapper;
         })
 @AutoConfigureMockMvc
 @AutoConfigureMockRestServiceServer
-@Import({TestcontainersConfiguration.class, OpenApiContract.class})
+@Import({TestcontainersConfiguration.class, OpenApiContract.class, GitHubContract.class})
 class GitHubApiTest {
 
     private static final String LOGIN =
@@ -71,12 +71,14 @@ class GitHubApiTest {
                                         """
                                         {"title": "Edit notes", "body": "Click a note to edit it.", "labels": ["refine"]}
                                         """))
+                // GitHub answers 201 to a created issue.
                 .andRespond(
-                        withSuccess(
-                                """
-                                {"number": 12, "title": "Edit notes"}
-                                """,
-                                MediaType.APPLICATION_JSON));
+                        withStatus(HttpStatus.CREATED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(
+                                        """
+                                        {"number": 12, "title": "Edit notes"}
+                                        """));
 
         mvc.perform(
                         post("/api/ideas")

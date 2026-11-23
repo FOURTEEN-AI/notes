@@ -206,16 +206,22 @@ class OpenApiContract {
         if (media.isMissingNode()) {
             throw new AssertionError(what + ": content type " + type + " not in the contract");
         }
-        // The schema with the components next to it, so that its $refs resolve.
-        ObjectNode root = JSON.createObjectNode();
-        root.set("components", contract.path("components"));
-        root.putArray("allOf").add(media.path("schema"));
-        List<Error> errors =
-                SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
-                        .getSchema(JSON.writeValueAsString(root), InputFormat.JSON)
-                        .validate(body, InputFormat.JSON);
+        List<Error> errors = validate(contract.path("components"), media.path("schema"), body);
         if (!errors.isEmpty()) {
             throw new AssertionError(what + ": body does not match the contract: " + errors);
         }
+    }
+
+    /**
+     * The errors of a JSON body against a schema, which may $ref the given components (the schema
+     * with the components next to it, so that its $refs resolve).
+     */
+    static List<Error> validate(JsonNode components, JsonNode schema, String body) {
+        ObjectNode root = JSON.createObjectNode();
+        root.set("components", components);
+        root.putArray("allOf").add(schema);
+        return SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
+                .getSchema(JSON.writeValueAsString(root), InputFormat.JSON)
+                .validate(body, InputFormat.JSON);
     }
 }
