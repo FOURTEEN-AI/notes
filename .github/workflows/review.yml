@@ -79,7 +79,32 @@ jobs:
             - The description of a pull request from an `agent/*` branch has no demo tour (see
               "Demo tour" in CLAUDE.md), the block is not a valid JSON list of steps, a step
               does not match the change, or a selector matches no element in the code.
+            - A security finding from the security pass below.
             Style preferences are not findings.
+
+            Security pass, on every pull request, before the verdict. Check the change, not the
+            whole app, for:
+            - The OWASP Top 10 (2021) as far as the change touches it: broken access control
+              (an endpoint or action without the login or the right check), injection (SQL,
+              command, HTML, prompt), insecure design, security misconfiguration (open CORS,
+              exposed actuator or error details, weak headers), vulnerable or outdated
+              components, authentication failures, integrity failures (unpinned actions,
+              unverified downloads), missing logging of security events, SSRF.
+            - Untrusted input reaching an agent: the text of issues, comments, pull request
+              titles and descriptions, branch names and file contents of a pull request, used in
+              a prompt, a `run:` block, a shell command or an `--allowedTools` entry without
+              being treated as data. A workflow must pass such text through `env:`, never
+              as a GitHub expression written into a script.
+            - Token handling by "Secrets per job" in docs/process.md: a secret or a wider
+              `permissions:` for a job than the table lists, a secret in a job that runs code of
+              the pull request, a token printed, logged, committed, put in a URL or an artifact,
+              `persist-credentials` left on, a secret given to a step that does not need it.
+            - New dependencies (`build.gradle`, `frontend/package.json`, Docker images, actions):
+              needed by the change, maintained, from the expected publisher (typosquatting),
+              pinned like the others, and without a known vulnerability that you can name.
+            A finding needs a concrete path from the change to the harm; say which input reaches
+            which sink. A hunch without one is not a finding. Findings of the pass are numbered
+            like all others and fail the review.
 
             Post exactly one comment with `gh pr comment ${{ github.event.number }} --body ...`.
             It starts with the line `## Review round`, followed by PASS or FAIL and, for FAIL,
