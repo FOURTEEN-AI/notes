@@ -49,4 +49,10 @@ class AcceptanceCriteriaTest {
                                 List.of(PROPOSAL, new Comment("Preview: https://..."))))
                 .contains("Szenario: Neu");
     }
+
+    @Test
+    void a_gherkin_block_without_closing_fence_runs_to_the_end() {
+        assertThat(AcceptanceCriteria.gherkinBlock("## Refine\n\n```gherkin\nSzenario: Neu\n  Wenn x\n\n"))
+                .contains("Szenario: Neu\n  Wenn x");
+    }
 }

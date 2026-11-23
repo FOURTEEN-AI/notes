@@ -14,7 +14,7 @@ public final class AcceptanceCriteria {
 
     private static final String MARKER = "## Acceptance criteria";
     private static final Pattern BLOCK =
-            Pattern.compile("```gherkin\\R(.*?)\\R```", Pattern.DOTALL);
+            Pattern.compile("```gherkin\\R(.*?)(?:\\R```|\\s*\\z)", Pattern.DOTALL);
 
     private static final Pattern REPLACES = Pattern.compile("@ersetzt\\(\"(.*)\"\\)");
     private static final Pattern SCENARIO =
@@ -22,7 +22,10 @@ public final class AcceptanceCriteria {
 
     private AcceptanceCriteria() {}
 
-    /** The content of the first ```gherkin block of a text, if it has a non-blank one. */
+    /**
+     * The content of the first ```gherkin block of a text, if it has a non-blank one. A block the
+     * agent left unclosed runs to the end of the text, so the button the chat shows for it works.
+     */
     public static Optional<String> gherkinBlock(String text) {
         Matcher matcher = BLOCK.matcher(text);
         return matcher.find() && !matcher.group(1).isBlank()
