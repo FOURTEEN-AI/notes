@@ -135,10 +135,11 @@ export function Ideas() {
     return () => clearInterval(timer);
   }, [open, selected]);
 
-  // The newest message is at the bottom, like in a chat.
+  // The newest message is at the bottom, like in a chat. Only a new message (or another chat)
+  // scrolls: a poll that brings the same messages must not pull the reader down again.
   useEffect(() => {
     chat.current?.scrollTo({ top: chat.current.scrollHeight });
-  }, [ideas, open, selected, messages]);
+  }, [ideas === null, open, selected, messages.length]);
 
   if (ideas === null && error === null) return null;
 
