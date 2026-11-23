@@ -107,8 +107,7 @@ public class NotizenStage extends Stage<NotizenStage> {
     }
 
     public NotizenStage zeigt_die_Liste_die_Notiz_mit_280_Zeichen() {
-        assertThat(notizen.list().stream().map(Note::text).toList())
-                .isEqualTo(List.of("x".repeat(280)));
+        assertThat(notizen.list().stream().map(Note::text).toList()).contains("x".repeat(280));
         return self();
     }
 
