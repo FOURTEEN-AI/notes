@@ -1,6 +1,7 @@
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.2.0'
+	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
 }
 
 group = 'de.fourteen.notes'
@@ -30,6 +31,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
+	testImplementation 'com.tngtech.jgiven:jgiven-junit5:3.0.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -37,12 +39,17 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+
 // One executable jar with a fixed name, which the Dockerfile copies.
 tasks.named('jar') {
 	enabled = false
 }
 tasks.named('bootJar') {
 	archiveFileName = 'notes.jar'
+	dependsOn 'jgivenTestReport'
+	from(layout.buildDirectory.dir('reports/jgiven/test/html')) {
+		into 'BOOT-INF/classes/static/jgiven'
+	}
 }
 
 // The React frontend is built with pnpm and served by Spring Boot from classpath:/static.

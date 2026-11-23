@@ -11,7 +11,7 @@ public class NoteService {
 
     private final NoteRepository notes;
 
-    NoteService(NoteRepository notes) {
+    public NoteService(NoteRepository notes) {
         this.notes = notes;
     }
 
