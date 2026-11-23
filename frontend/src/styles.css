@@ -50,6 +50,11 @@ time {
   color: light-dark(#c62828, #ef9a9a);
 }
 
+.counter {
+  align-self: flex-end;
+  font-size: 0.85rem;
+}
+
 input {
   font: inherit;
   padding: 0.5rem;

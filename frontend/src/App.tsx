@@ -28,7 +28,12 @@ export function App() {
       body: JSON.stringify({ text }),
     });
     if (!response.ok) {
-      setError('Notiz konnte nicht gespeichert werden.');
+      const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
+      setError(
+        response.status === 400 && problem?.detail
+          ? problem.detail
+          : 'Notiz konnte nicht gespeichert werden.',
+      );
       return;
     }
     const note = (await response.json()) as Note;
@@ -61,6 +66,9 @@ export function App() {
             placeholder="Neue Notiz"
             rows={4}
           />
+          <span className={text.trim().length > 280 ? 'counter error' : 'counter'}>
+            {text.trim().length}/280
+          </span>
           <button type="submit" disabled={text.trim() === ''}>
             Speichern
           </button>
