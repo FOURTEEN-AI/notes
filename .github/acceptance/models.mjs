@@ -12,7 +12,7 @@ export async function askHaiku({ state }) {
     'not, if it has no assertion, compares a value with itself or with what the method just set, ' +
     'accepts any value (only "not null" or "not empty"), swallows an exception, or only reads from ' +
     'the fake and never from what the service produced. It also does not, if it checks more than ' +
-    'the step says. A parameter of the step (shown in brackets) stands for the value the method ' +
+    'the step says. A step reads state that the other steps of the scenario set: their methods are in `others`, what the method itself calls is in `called`. A parameter of the step (shown in brackets) stands for the value the method ' +
     'receives. Answer with YES or NO on the first line. After NO give up to three short ' +
     'sentences: what exactly differs between the step and the method, and what to change in the ' +
     'method so that it fits.\n\n' +

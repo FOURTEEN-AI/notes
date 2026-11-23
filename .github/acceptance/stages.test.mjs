@@ -71,6 +71,14 @@ test('a changed fake method reaches the steps that call it, with the called sour
   assert.equal(question.state.scenario.title, 'Speichern');
 });
 
+test('the methods of the other steps of the scenario are part of the question', () => {
+  const head = { ...base, 'src/test/java/x/acceptance/NotizenStage.java': stage('last = notizen.create(text);').replace('isEmpty()', 'isNull()') };
+  const [question] = buildQuestions({ scenarios, base, head });
+  assert.equal(question.method, 'NotizenStage.die_Liste_ist_leer');
+  assert.deepEqual(Object.keys(question.state.others), ['NotizenStage.ich_speichere_die_Notiz_$', 'NoteService.create', 'InMemoryNoteRepository.add']);
+  assert.deepEqual(question.state.called, {});
+});
+
 test('a step that no stage method stands for is a finding, not skipped', () => {
   assert.deepEqual(unmatchedSteps({ scenarios, head: base }), []);
   // A parameter without `$` in the name: JGiven appends its value, the texts differ.
