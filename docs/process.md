@@ -87,7 +87,7 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 |-----|---------|-------------------|-------------------------------|
 | `build` | none | default | yes |
 | `acceptance tests` | none | contents: read | yes (acceptance tests only), no cache |
-| `acceptance` | `TYPESAFE_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | pull-requests: write, actions: write | no (reads files as text) |
+| `acceptance` | `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | pull-requests: write, actions: write | no (reads files as text) |
 | `review` | `CLAUDE_CODE_OAUTH_TOKEN` | pull-requests: write, actions: write | no |
 | agent `work` | `CLAUDE_CODE_OAUTH_TOKEN` | contents, pull-requests, issues: write | yes (builds and tests) |
 | refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |

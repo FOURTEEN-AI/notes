@@ -125,22 +125,16 @@ export function unmatchedSteps({ scenarios, head }) {
   );
 }
 
-// `jev(question)` returns the probability that the method implements the step, `haiku(question)`
-// decides { pass, reason } between 0.5 and 0.9. Returns findings; empty means all pass.
-export async function judge(questions, { jev, haiku }) {
+// `haiku(question)` decides { pass, reason } for each question; the reason says what is missing
+// and goes into the finding, so that the coding agent knows what to change. Returns findings;
+// empty means all pass.
+export async function judge(questions, { haiku }) {
   const findings = [];
   for (const question of questions) {
-    const p = await jev(question);
-    if (p >= 0.9) continue;
-    const where = `${question.label}: ${question.method} (changed: ${question.changed.join(', ')})`;
-    if (p < 0.5) {
-      findings.push(`The method does not implement its step, Jev p=${p.toFixed(2)}. ${where}`);
-      continue;
-    }
     const verdict = await haiku(question);
-    if (!verdict.pass) {
-      findings.push(`The method does not implement its step, Jev p=${p.toFixed(2)}, Haiku: ${verdict.reason}. ${where}`);
-    }
+    if (verdict.pass) continue;
+    const where = `${question.label}: ${question.method} (changed: ${question.changed.join(', ')})`;
+    findings.push(`The method does not implement its step. ${where}. Reason: ${verdict.reason}`);
   }
   return findings;
 }
@@ -150,7 +144,7 @@ export async function judge(questions, { jev, haiku }) {
 if (import.meta.main) {
   const { readFileSync, readdirSync } = await import('node:fs');
   const { join } = await import('node:path');
-  const { askJev, askHaiku } = await import('./models.mjs');
+  const { askHaiku } = await import('./models.mjs');
   const [base, head, headReport] = process.argv.slice(2);
   const javaFiles = (root) => {
     const sources = {};
@@ -167,7 +161,7 @@ if (import.meta.main) {
     const questions = buildQuestions({ scenarios, ...sources });
     const findings = [
       ...unmatchedSteps({ scenarios, head: sources.head }),
-      ...(await judge(questions, { jev: askJev, haiku: askHaiku })),
+      ...(await judge(questions, { haiku: askHaiku })),
     ];
     console.error(`${questions.length} step(s) judged.`);
     for (const finding of findings) console.log(`- ${finding}`);
