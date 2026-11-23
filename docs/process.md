@@ -9,7 +9,7 @@ only the current state. Derived from `.github/workflows/*.yml`, `.github/accepta
 | # | Who | What | Trigger / result |
 |---|-----|------|------------------|
 | 1 | Human | Submits title and description in production | Issue with label `refine` |
-| 2 | Refine agent (`refine.yml`) | Asks at most 3 short questions per round, or proposes a German Gherkin delta against `main` | Comment `## Refine`; runs on label `refine` and on every `## Idea chat` comment |
+| 2 | Refine agent (`refine.yml`) | Asks at most 3 short questions per round, or proposes a German Gherkin delta against `main`; speaks the language of the domain, no technical terms | Comment `## Refine`; runs on label `refine` and on every `## Idea chat` comment |
 | 3 | Human | Answers in the idea chat (new round), or presses "Freigeben" | Comment `## Idea chat`, or comment `## Acceptance criteria` (copy of the proposal) and label `refine` -> `agent` |
 | 4 | Coding agent, phase 1 (`agent.yml`) | Writes only JGiven acceptance tests, stages, fakes, compiling stubs; opens the pull request `agent/issue-<n>` with the demo tour | Label `agent` |
 | 5 | `acceptance` | Compares tests with the approved delta, judges changed stage/fake methods | Green: comment `## Acceptance checked <sha>`, starts phase 2. Red: `## Acceptance round <n>`, starts the agent |

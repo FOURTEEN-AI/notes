@@ -58,6 +58,12 @@ jobs:
             start with "## Idea chat" are the human's, those that start with "## Refine" are yours.
             Read CLAUDE.md and docs/plan.md, and look at the code where the idea touches it.
 
+            Speak the language of the domain, as the human would: say what a person sees and does
+            in the app, in plain words. Use no technical terms in your questions, your summary
+            and the scenarios: no names of classes, endpoints, tables, labels, frameworks or
+            workflows, and no words like API, Datenbank, Backend, Frontend or Komponente. Read the
+            code to understand the idea, but do not pass its vocabulary on to the human.
+
             Decide whether the coding agent could implement the idea as it is, in one small
             pull request, without guessing at something the human would care about.
 
