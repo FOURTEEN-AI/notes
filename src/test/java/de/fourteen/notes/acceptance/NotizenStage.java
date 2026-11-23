@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.As;
+import com.tngtech.jgiven.annotation.Pending;
 import com.tngtech.jgiven.annotation.ProvidedScenarioState;
 import com.tngtech.jgiven.annotation.ScenarioState;
 import de.fourteen.notes.application.NoteService;
@@ -86,6 +87,11 @@ public class NotizenStage extends Stage<NotizenStage> {
     public NotizenStage die_Notiz_wird_nicht_gefunden() {
         assertThat(fehler).isNotNull();
         assertThat(fehler.kind()).isEqualTo(DomainException.Kind.NOT_FOUND);
+        return self();
+    }
+
+    @Pending
+    public NotizenStage das_Eingabefeld_ist_leer() {
         return self();
     }
 }

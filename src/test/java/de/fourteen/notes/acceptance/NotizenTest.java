@@ -1,6 +1,7 @@
 package de.fourteen.notes.acceptance;
 
 import com.tngtech.jgiven.annotation.Description;
+import com.tngtech.jgiven.annotation.Pending;
 import com.tngtech.jgiven.junit5.ScenarioTest;
 import org.junit.jupiter.api.Test;
 
@@ -45,5 +46,14 @@ class NotizenTest extends ScenarioTest<NotizenStage, NotizenStage, NotizenStage>
     void eine_unbekannte_Notiz_loeschen() {
         when().ich_loesche_eine_unbekannte_Notiz();
         then().die_Notiz_wird_nicht_gefunden();
+    }
+
+    @Test
+    @Pending
+    @Manuell("Nur das Frontend zeigt das Eingabefeld")
+    @Description("Das Eingabefeld ist nach dem Speichern leer")
+    void das_Eingabefeld_ist_nach_dem_Speichern_leer() {
+        when().ich_speichere_die_Notiz_$("Milch kaufen");
+        then().das_Eingabefeld_ist_leer();
     }
 }

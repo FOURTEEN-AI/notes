@@ -300,8 +300,11 @@ checked commit and the rounds; the preview bar shows a pending proposal and link
 chat in production (`?idee=<n>`), the only place with the report of `main`; feedback that changes approved
 behaviour takes the same path), the old versions in the idea chat (`GET /api/ideas/{n}/previous-scenarios`
 reads title and steps of every `@ersetzt` and `@entfällt` scenario from the JGiven data of the
-running build, which is `main` in production; a preview shows its own build's report). Open:
-pending scenarios instead of `@ui`, the description of the current process.
+running build, which is `main` in production; a preview shows its own build's report),
+pending scenarios instead of `@ui` (the tag is `@manuell("<reason>")`; the test is `@Pending` with
+the annotation `@Manuell("<reason>")`, `report.mjs` reads status and reason from the JGiven JSON,
+`check.mjs` compares them with the delta, `stages.mjs` skips pending scenarios; first example:
+"Das Eingabefeld ist nach dem Speichern leer"). Open: the description of the current process.
 
 **Done when**
 

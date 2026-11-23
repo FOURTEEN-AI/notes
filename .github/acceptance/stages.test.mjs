@@ -89,3 +89,9 @@ test('Jev decides at 0.9 and 0.5, Haiku in between', async () => {
   assert.deepEqual(await run(0.5, true), []);
   assert.match((await run(0.7, false))[0], /Jev p=0.70, Haiku: because/);
 });
+
+test('a pending scenario is skipped, its steps do not run', () => {
+  const head = files('last = null;', 'return null;');
+  const pending = scenarios.map((scenario) => ({ ...scenario, pending: true }));
+  assert.deepEqual(buildQuestions({ scenarios: pending, base, head }), []);
+});

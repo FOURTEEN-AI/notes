@@ -21,8 +21,8 @@ export function parameterize(text) {
   return { text: replaced.trim(), params };
 }
 
-// Returns scenarios: { title, tags: { ui, removed, replaces }, steps: [{ keyword, text, params }] }.
-// `replaces` is the old title of a changed scenario (`@ersetzt("<old title>")`), else null.
+// Returns scenarios: { title, tags: { manual, removed, replaces }, steps: [{ keyword, text, params }] }.
+// `manual` is the reason of `@manuell("<reason>")`, else null. `replaces` is the old title of a changed scenario (`@ersetzt("<old title>")`), else null.
 export function parseGherkin(source) {
   const scenarios = [];
   let tags = [];
@@ -52,8 +52,9 @@ export function parseGherkin(source) {
 
 function readTags(tags) {
   const replaces = tags.find((tag) => tag.startsWith('@ersetzt('));
+  const manual = tags.find((tag) => tag.startsWith('@manuell'));
   return {
-    ui: tags.includes('@ui'),
+    manual: manual ? manual.match(/^@manuell\("(.*)"\)$/)?.[1] ?? '' : null,
     removed: tags.includes('@entfällt'),
     replaces: replaces ? replaces.match(/^@ersetzt\("(.*)"\)$/)?.[1] ?? null : null,
   };

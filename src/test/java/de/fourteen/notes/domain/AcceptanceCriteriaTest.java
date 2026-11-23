@@ -20,7 +20,7 @@ class AcceptanceCriteriaTest {
                   Szenario: Eine Notiz mit Titel speichern
                     Wenn ich speichere
 
-                  @ui @ersetzt("Alt ändern")
+                  @manuell("Nur das Frontend") @ersetzt("Alt ändern")
                   Szenario: Geändert
 
                   @entfällt

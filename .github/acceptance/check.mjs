@@ -28,7 +28,7 @@ export function check({ criteria, base, head }) {
   const expectedAdded = new Set();
   const expectedGone = new Set();
   for (const scenario of approved) {
-    const { ui, removed, replaces } = scenario.tags;
+    const { manual, removed, replaces } = scenario.tags;
     if (removed) {
       if (!before.has(scenario.title)) findings.push(`"${scenario.title}" is removed but does not exist on main`);
       expectedGone.add(scenario.title);
@@ -41,14 +41,16 @@ export function check({ criteria, base, head }) {
     } else if (before.has(scenario.title)) {
       findings.push(`"${scenario.title}" is new but exists on main already`);
     }
-    if (ui) {
-      if (after.has(scenario.title)) findings.push(`"${scenario.title}" is @ui and must have no test`);
-      continue;
-    }
     expectedAdded.add(scenario.title);
     const test = after.get(scenario.title);
     if (!test) {
       findings.push(`"${scenario.title}" has no test`);
+    } else if (manual !== null && !test.pending) {
+      findings.push(`"${scenario.title}" is @manuell and its test must be @Pending`);
+    } else if (manual !== null && test.reason !== manual) {
+      findings.push(`The reason of "${scenario.title}" is "${manual}", the test says "${test.reason ?? ''}"`);
+    } else if (manual === null && test.pending) {
+      findings.push(`The test "${scenario.title}" is pending, but the scenario is not @manuell`);
     } else if (!sameSteps(scenario.steps, test.steps)) {
       findings.push(
         `The steps of "${scenario.title}" differ from the approved ones.\n` +
@@ -68,6 +70,8 @@ export function check({ criteria, base, head }) {
       findings.push(`The test "${title}" was removed outside the approved delta`);
     } else if (!sameSteps(scenario.steps, after.get(title).steps)) {
       findings.push(`The steps of "${title}" changed outside the approved delta`);
+    } else if (Boolean(scenario.pending) !== Boolean(after.get(title).pending) || scenario.reason !== after.get(title).reason) {
+      findings.push(`The test "${title}" became ${after.get(title).pending ? 'pending' : 'not pending'} outside the approved delta`);
     }
   }
   return findings;

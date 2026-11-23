@@ -74,7 +74,9 @@ jobs:
               tests in src/test/java/de/fourteen/notes/acceptance (the display name of a test is
               the scenario title): a new scenario has no tag, a changed one is tagged
               `@ersetzt("<old title>")`, a removed one is a title only, tagged `@entfällt`.
-              Scenarios that only the frontend can show are tagged `@ui`. Do not repeat
+              A scenario that gets no acceptance test, because only the frontend shows it or for
+              another reason, is tagged `@manuell("<reason in German>")`; the demo tour covers it.
+              Do not repeat
               scenarios that stay as they are. The delta is always the full one against `main`; a
               new "## Acceptance criteria" in the chat replaces the previous one. Never release
               the idea yourself: only the human does, with a button in the app. A text answer

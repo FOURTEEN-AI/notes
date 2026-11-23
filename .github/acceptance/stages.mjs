@@ -85,6 +85,7 @@ export function buildQuestions({ scenarios, base, head }) {
 
   const questions = [];
   for (const scenario of scenarios) {
+    if (scenario.pending) continue; // its steps do not run
     for (const step of scenario.steps) {
       const method = methods.find((m) => m.file.includes(ACCEPTANCE) && m.text === step.text);
       if (!method) continue;

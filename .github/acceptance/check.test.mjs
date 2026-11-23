@@ -53,9 +53,45 @@ test('a test removed or changed outside the delta fails', () => {
   assert.match(check({ criteria: gherkin(''), base, head: changed })[0], /changed outside/);
 });
 
-test('a test that is not approved fails, a @ui scenario must have none', () => {
+test('a test that is not approved fails', () => {
   const extra = { title: 'Heimlich', steps: save };
   assert.match(check({ criteria: gherkin(''), base, head: [...base, extra] })[0], /not an approved/);
-  const criteria = gherkin('@ui\nSzenario: Der Knopf ist blau\n  Dann ist er blau');
-  assert.deepEqual(check({ criteria, base, head: base }), []);
+});
+
+test('a @manuell scenario needs a pending test with the approved reason', () => {
+  const criteria = gherkin('@manuell("Nur das Frontend")\nSzenario: Der Knopf ist blau\n  Dann ist er blau');
+  assert.equal(parseGherkin(criteria)[0].tags.manual, 'Nur das Frontend');
+  const test = { title: 'Der Knopf ist blau', steps: [step('then', 'ist er blau')], pending: true, reason: 'Nur das Frontend' };
+  assert.deepEqual(check({ criteria, base, head: [...base, test] }), []);
+  assert.match(check({ criteria, base, head: base })[0], /has no test/);
+  assert.match(check({ criteria, base, head: [...base, { ...test, pending: false }] })[0], /must be @Pending/);
+  assert.match(check({ criteria, base, head: [...base, { ...test, reason: 'Anders' }] })[0], /reason/);
+});
+
+test('a pending test without @manuell fails, and so does an old test that becomes pending', () => {
+  const criteria = gherkin('Szenario: Der Knopf ist blau\n  Dann ist er blau');
+  const test = { title: 'Der Knopf ist blau', steps: [step('then', 'ist er blau')], pending: true, reason: null };
+  assert.match(check({ criteria, base, head: [...base, test] })[0], /not @manuell/);
+  const pendingOld = [{ ...base[0], pending: true, reason: null }, base[1]];
+  assert.match(check({ criteria: gherkin(''), base, head: pendingOld })[0], /became pending outside/);
+});
+
+test('the report reader finds the pending status and the reason of the @Manuell tag', async () => {
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { readReport } = await import('./report.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'report-'));
+  const scenario = (description, status, tagIds) => ({
+    description,
+    tagIds,
+    scenarioCases: [{ status, steps: [] }],
+  });
+  const tagMap = { t: { name: 'manuell', value: 'Nur das Frontend' } };
+  writeFileSync(
+    join(dir, 'a.json'),
+    JSON.stringify({ tagMap, scenarios: [scenario('A', 'SCENARIO_PENDING', ['t']), scenario('B', 'SUCCESS')] }),
+  );
+  const [a, b] = readReport(dir);
+  assert.deepEqual([a.pending, a.reason, b.pending, b.reason], [true, 'Nur das Frontend', false, null]);
 });
