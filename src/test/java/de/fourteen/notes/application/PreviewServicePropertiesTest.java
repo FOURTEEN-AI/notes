@@ -67,6 +67,7 @@ class PreviewServicePropertiesTest {
                                 CheckState.PENDING,
                                 CheckState.PENDING,
                                 CheckState.PENDING,
+                                CheckState.PENDING,
                                 CheckState.PENDING));
         return new PreviewService(github, JSON, 1, "sha").get().demo();
     }

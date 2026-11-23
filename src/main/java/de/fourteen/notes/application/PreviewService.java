@@ -38,6 +38,7 @@ public class PreviewService {
             String state,
             String deployedSha,
             CheckState build,
+            CheckState e2e,
             CheckState review,
             CheckState acceptance,
             boolean mergeable,
@@ -85,6 +86,7 @@ public class PreviewService {
                 pr.state(),
                 deployedSha,
                 checks.build(),
+                checks.e2e(),
                 checks.review(),
                 checks.acceptance(),
                 pr.open() && checks.green(),
@@ -112,7 +114,7 @@ public class PreviewService {
         if (!pr.open() || !github.checks(pr.sha()).green()) {
             throw new DomainException(
                     DomainException.Kind.CONFLICT,
-                    "build, review and acceptance must be green on an open pull request");
+                    "build, e2e, review and acceptance must be green on an open pull request");
         }
         github.merge(pr.number(), pr.sha());
     }
