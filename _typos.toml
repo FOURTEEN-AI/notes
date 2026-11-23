@@ -1,0 +1,26 @@
+# Config of .github/spell.sh (typos). Not a spell check of German: typos only knows English
+# misspellings, so these German words (UI strings, the JGiven acceptance tests, the scenario
+# tags `@manuell` and `@ersetzt`) are the ones that happen to collide with an English one.
+# Add a word here as `word = "word"` (lower case, it matches every case), never a whole folder.
+
+[files]
+# Vendored third-party skills, changed only in their names.
+extend-exclude = [".claude/skills"]
+
+[default.extend-words]
+als = "als"
+deine = "deine"
+ein = "ein"
+februar = "februar"
+ist = "ist"
+manuell = "manuell"
+passt = "passt"
+produktion = "produktion"
+sie = "sie"
+szenario = "szenario"
+titel = "titel"
+vor = "vor"
+
+[default]
+# "PNGs" is split into the word "PN" and a plural.
+extend-ignore-re = ["PNGs"]

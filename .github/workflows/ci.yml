@@ -62,6 +62,8 @@ jobs:
       - run: .github/security-static.sh
       # Markdown lint and offline link check, Docker images pinned in the script; also in phase 1.
       - run: .github/docs.sh
+      # Spell check (typos from its PyPI wheel in a pinned Python image); also in phase 1.
+      - run: .github/spell.sh
       - run: ./gradlew compileTestJava
         if: steps.phase.outputs.phase1 == 'true'
       - run: ./gradlew build
