@@ -8,6 +8,7 @@ type Status =
   | 'READY_FOR_DEMO'
   | 'WAITING_FOR_HUMAN';
 type Message = { author: 'me' | 'agent'; text: string };
+type Scenario = { title: string; steps: string[] };
 type Idea = {
   number: number;
   title: string;
@@ -68,6 +69,7 @@ function MessageForm({ placeholder, onSend }: { placeholder: string; onSend: (te
 export function Ideas() {
   const [ideas, setIdeas] = useState<Idea[] | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [previous, setPrevious] = useState<Scenario[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   // The idea whose chat is shown; null shows the list of all ideas.
@@ -106,10 +108,20 @@ export function Ideas() {
   // The messages of the chat that is open, polled like the ideas.
   useEffect(() => {
     setMessages([]);
+    setPrevious([]);
     if (!open || selected === null) return;
     async function loadMessages() {
       const response = await fetch(`/api/ideas/${selected}/messages`);
-      if (response.ok) setMessages((await response.json()) as Message[]);
+      if (!response.ok) return;
+      const loaded = (await response.json()) as Message[];
+      setMessages(loaded);
+      // The old versions of the scenarios that the last proposal changes or removes.
+      const last = loaded.at(-1);
+      const old =
+        last?.author === 'agent' && last.text.includes('```gherkin')
+          ? await fetch(`/api/ideas/${selected}/previous-scenarios`)
+          : null;
+      setPrevious(old?.ok ? ((await old.json()) as Scenario[]) : []);
     }
     loadMessages().catch(() => {});
     const timer = setInterval(() => loadMessages().catch(() => {}), 10000);
@@ -232,6 +244,21 @@ export function Ideas() {
                 </li>
               )}
             </ul>
+            {previous.length > 0 && (
+              <details className="previous" open>
+                <summary>Bisher (aus dem Report von main)</summary>
+                {previous.map((scenario) => (
+                  <section key={scenario.title}>
+                    <h3>{scenario.title}</h3>
+                    <ul>
+                      {scenario.steps.map((step, index) => (
+                        <li key={index}>{step}</li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </details>
+            )}
             {error && <p className="error">{error}</p>}
             {current.status === 'WAITING_FOR_ANSWER' && messages.at(-1)?.author === 'agent' &&
               messages.at(-1)?.text.includes('```gherkin') && (

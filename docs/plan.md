@@ -269,7 +269,7 @@ old scenario shows only after phase 2, when phase 1, `acceptance` and phase 2 ha
 checked against the old one. Jev costs its own budget, Haiku the subscription limit.
 
 **Progress:** done so far: JGiven tests of the notes (title = `@Description`, the report shows
-it), the report in the jar (`/jgiven/`), proposal and the button "Freigeben" (without the old
+it), the report in the jar (`/jgiven/`), proposal and the button "Freigeben" (with the old
 versions of changed scenarios), the deterministic comparison of approved delta and report
 (`.github/acceptance/`, tested in `ci.yml`), the workflow `acceptance` around it (latest
 `## Acceptance criteria`, tests of `main` and of the pull request, the comment
@@ -286,7 +286,9 @@ the delta leaves alone is red after phase 2, or when it has findings while the b
 old one, and phase 1 repeats on the same branch after a `## Acceptance reset` comment that voids the
 checked commit and the rounds; the preview bar shows a pending proposal with the button
 "Freigeben", which calls the approval endpoint of the idea chat; feedback that changes approved
-behaviour takes the same path). Open: the old versions in the idea chat.
+behaviour takes the same path), the old versions in the idea chat (`GET /api/ideas/{n}/previous-scenarios`
+reads title and steps of every `@ersetzt` and `@entfällt` scenario from the JGiven data of the
+running build, which is `main` in production; a preview shows its own build's report).
 
 **Done when**
 

@@ -11,6 +11,8 @@ import de.fourteen.notes.domain.Idea;
 import de.fourteen.notes.domain.IdeaStatus;
 import de.fourteen.notes.domain.Issue;
 import de.fourteen.notes.domain.PullRequest;
+import de.fourteen.notes.domain.Scenario;
+import de.fourteen.notes.domain.ScenarioReport;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,9 +26,11 @@ import org.springframework.stereotype.Service;
 public class IdeaService {
 
     private final GitHub github;
+    private final ScenarioReport report;
 
-    IdeaService(GitHub github) {
+    IdeaService(GitHub github, ScenarioReport report) {
         this.github = github;
+        this.report = report;
     }
 
     public List<Idea> list() {
@@ -89,6 +93,22 @@ public class IdeaService {
         ChatMessage message = ChatMessage.fromHuman(text.strip());
         github.comment(number, message.toComment());
         return message;
+    }
+
+    /**
+     * The old versions, from the report of {@code main}, of the scenarios that the newest proposal
+     * of the refine agent changes or removes.
+     */
+    public List<Scenario> previousScenarios(int number) {
+        return github.comments(number).stream()
+                .map(Comment::body)
+                .filter(body -> body.startsWith("## Refine"))
+                .reduce((first, second) -> second)
+                .flatMap(AcceptanceCriteria::gherkinBlock)
+                .stream()
+                .flatMap(gherkin -> AcceptanceCriteria.oldTitles(gherkin).stream())
+                .flatMap(title -> report.find(title).stream())
+                .toList();
     }
 
     /**

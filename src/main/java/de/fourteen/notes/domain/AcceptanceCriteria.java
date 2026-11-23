@@ -1,5 +1,6 @@
 package de.fourteen.notes.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -14,6 +15,10 @@ public final class AcceptanceCriteria {
     private static final String MARKER = "## Acceptance criteria";
     private static final Pattern BLOCK =
             Pattern.compile("```gherkin\\R(.*?)\\R```", Pattern.DOTALL);
+
+    private static final Pattern REPLACES = Pattern.compile("@ersetzt\\(\"(.*)\"\\)");
+    private static final Pattern SCENARIO =
+            Pattern.compile("^(?:Szenario|Szenariogrundriss):\\s*(.+)$", Pattern.CASE_INSENSITIVE);
 
     private AcceptanceCriteria() {}
 
@@ -41,6 +46,35 @@ public final class AcceptanceCriteria {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * The titles of the scenarios of {@code main} that a delta changes or removes: the title in
+     * {@code @ersetzt("<old title>")}, and the title of a scenario tagged {@code @entfällt}.
+     */
+    public static List<String> oldTitles(String gherkin) {
+        List<String> titles = new ArrayList<>();
+        String replaced = null;
+        boolean removed = false;
+        for (String raw : gherkin.split("\\R")) {
+            String line = raw.strip();
+            Matcher replaces = REPLACES.matcher(line);
+            if (replaces.find()) {
+                replaced = replaces.group(1);
+            }
+            removed |= line.startsWith("@") && line.contains("@entfällt");
+            Matcher header = SCENARIO.matcher(line);
+            if (header.find()) {
+                if (replaced != null) {
+                    titles.add(replaced);
+                } else if (removed) {
+                    titles.add(header.group(1).strip());
+                }
+                replaced = null;
+                removed = false;
+            }
+        }
+        return titles;
     }
 
     public static String toComment(String gherkin) {

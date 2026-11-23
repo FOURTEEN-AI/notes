@@ -36,7 +36,8 @@ import tools.jackson.databind.json.JsonMapper;
             "spring.security.user.password=secret",
             "github.token=test-token",
             "pull-request=7",
-            "pull-request-sha=abc123"
+            "pull-request-sha=abc123",
+            "notes.report-data=classpath*:jgiven-test/*.js"
         })
 @AutoConfigureMockMvc
 @AutoConfigureMockRestServiceServer
@@ -253,6 +254,29 @@ class GitHubApiTest {
 
         mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void changed_and_removed_scenarios_show_their_old_version_from_the_report() throws Exception {
+        github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
+                .andRespond(
+                        json(
+                                """
+                                [
+                                  {"body": "## Refine\\n\\n```gherkin\\nSzenario: Neu\\n\\n@ersetzt(\\"Eine Notiz speichern\\")\\nSzenario: Geändert\\n\\n@ersetzt(\\"Unbekannt\\")\\nSzenario: X\\n```"}
+                                ]
+                                """));
+
+        mvc.perform(
+                        get("/api/ideas/19/previous-scenarios")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Eine Notiz speichern"))
+                .andExpect(jsonPath("$[0].steps[0]").value("Wenn ich speichere die Notiz \"Milch kaufen\""))
+                .andExpect(jsonPath("$[0].steps[1]").value("Dann die Liste zeigt die Notiz"))
+                .andExpect(jsonPath("$[0].steps[2]").value("Und sie hat einen Zeitstempel"))
+                .andExpect(jsonPath("$[0].steps.length()").value(3));
     }
 
     @Test

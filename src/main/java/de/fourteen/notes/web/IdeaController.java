@@ -3,6 +3,7 @@ package de.fourteen.notes.web;
 import de.fourteen.notes.application.IdeaService;
 import de.fourteen.notes.domain.ChatMessage;
 import de.fourteen.notes.domain.Idea;
+import de.fourteen.notes.domain.Scenario;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,6 +44,11 @@ class IdeaController {
     @GetMapping("/{number}/messages")
     List<ChatMessage> messages(@PathVariable int number) {
         return ideas.messages(number);
+    }
+
+    @GetMapping("/{number}/previous-scenarios")
+    List<Scenario> previousScenarios(@PathVariable int number) {
+        return ideas.previousScenarios(number);
     }
 
     @PostMapping(value = "/{number}/messages", consumes = MediaType.APPLICATION_JSON_VALUE)
