@@ -60,7 +60,7 @@ public class NotizenStage extends Stage<NotizenStage> {
         }
     }
 
-    public NotizenStage die_Liste_zeigt_die_Notiz_mit_$_Zeichen(int anzahl) {
+    public NotizenStage zeigt_die_Liste_die_Notiz_mit_$_Zeichen(int anzahl) {
         assertThat(notizen.list().stream().map(Note::text).toList()).containsExactly("x".repeat(anzahl));
         return self();
     }
@@ -107,6 +107,10 @@ public class NotizenStage extends Stage<NotizenStage> {
         return self();
     }
 
+    public NotizenStage wird_die_Eingabe_abgelehnt() {
+        return die_Eingabe_wird_abgelehnt();
+    }
+
     public NotizenStage die_Notiz_wird_nicht_gefunden() {
         assertThat(fehler).isNotNull();
         assertThat(fehler.kind()).isEqualTo(DomainException.Kind.NOT_FOUND);
@@ -136,7 +140,7 @@ public class NotizenStage extends Stage<NotizenStage> {
     }
 
     @Pending
-    public NotizenStage die_App_zeigt_eine_verstaendliche_Fehlermeldung() {
+    public NotizenStage zeigt_die_App_eine_verstaendliche_Fehlermeldung() {
         return self();
     }
 }

@@ -61,21 +61,21 @@ class NotizenTest extends ScenarioTest<NotizenStage, NotizenStage, NotizenStage>
     @Description("Eine Notiz mit genau 280 Zeichen wird gespeichert")
     void eine_Notiz_mit_genau_280_Zeichen_wird_gespeichert() {
         when().ich_eine_Notiz_mit_$_Zeichen_speichere(280);
-        then().die_Liste_zeigt_die_Notiz_mit_$_Zeichen(280);
+        then().zeigt_die_Liste_die_Notiz_mit_$_Zeichen(280);
     }
 
     @Test
     @Description("Eine zu lange Notiz wird abgelehnt")
     void eine_zu_lange_Notiz_wird_abgelehnt() {
         when().ich_eine_Notiz_mit_$_Zeichen_speichere(281);
-        then().die_Eingabe_wird_abgelehnt().and().die_Liste_ist_leer();
+        then().wird_die_Eingabe_abgelehnt().and().die_Liste_ist_leer();
     }
 
     @Test
     @Description("Eine nur aus Leerzeichen bestehende Notiz bleibt leer")
     void eine_nur_aus_Leerzeichen_bestehende_Notiz_bleibt_leer() {
         when().ich_eine_Notiz_mit_$_Leerzeichen_speichere(300);
-        then().die_Eingabe_wird_abgelehnt().and().die_Liste_ist_leer();
+        then().wird_die_Eingabe_abgelehnt().and().die_Liste_ist_leer();
     }
 
     @Test
@@ -93,6 +93,6 @@ class NotizenTest extends ScenarioTest<NotizenStage, NotizenStage, NotizenStage>
     @Description("Die App meldet eine zu lange Notiz verständlich")
     void die_App_meldet_eine_zu_lange_Notiz_verstaendlich() {
         when().ich_eine_zu_lange_Notiz_speichern_moechte();
-        then().die_App_zeigt_eine_verstaendliche_Fehlermeldung();
+        then().zeigt_die_App_eine_verstaendliche_Fehlermeldung();
     }
 }
