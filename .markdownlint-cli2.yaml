@@ -1,0 +1,9 @@
+# markdownlint-cli2 config, used by .github/docs.sh. Defaults, except for the repo's style:
+# prose lines are not wrapped (process.md has paragraphs of a few hundred characters) and tables
+# are not column-aligned.
+config:
+  MD013: false # line length
+  MD060: false # table column style
+  MD024: # duplicate headings
+    siblings_only: true # the generated modularity review repeats headings under different parents
+  MD036: false # emphasis as heading: plan.md labels "Scope" and "Done when" in bold

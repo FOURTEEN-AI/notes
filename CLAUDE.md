@@ -36,7 +36,7 @@ Every pull request description of the coding agent contains a guided demo for it
 which the preview bar shows step by step. It is a fenced block with the info string `demo` and a
 JSON list of steps, in the order a human tries the change:
 
-````
+````markdown
 ```demo
 [
   {"do": "Write a note and save it", "expect": "It appears at the top of the list", "selector": "main form textarea"},

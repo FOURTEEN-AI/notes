@@ -60,6 +60,8 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       # Docker images pinned in the script; also useful in phase 1, so no phase condition.
       - run: .github/security-static.sh
+      # Markdown lint and offline link check, Docker images pinned in the script; also in phase 1.
+      - run: .github/docs.sh
       - run: ./gradlew compileTestJava
         if: steps.phase.outputs.phase1 == 'true'
       - run: ./gradlew build

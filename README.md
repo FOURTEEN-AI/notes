@@ -44,7 +44,7 @@ extra one with `fly machines list --app notes-fourteen-it` and `fly machines des
 
 ### Custom domain
 
-The app is served at https://notes.fourteen-it.de. At the DNS provider (IONOS) add a `CNAME`
+The app is served at <https://notes.fourteen-it.de>. At the DNS provider (IONOS) add a `CNAME`
 record `notes` → `notes-fourteen-it.fly.dev`, then:
 
 ```sh
@@ -87,7 +87,7 @@ The app talks to GitHub with a token, so the whole loop runs without opening Git
 Without `GITHUB_TOKEN` the ideas are hidden; without `PULL_REQUEST` the bar is.
 
 One-time setup: create a fine-grained personal access token at
-https://github.com/settings/personal-access-tokens/new, resource owner `FOURTEEN-AI`, only the
+<https://github.com/settings/personal-access-tokens/new>, resource owner `FOURTEEN-AI`, only the
 repository `FOURTEEN-AI/notes`, permissions Issues, Pull requests and Contents: read and write.
 The repository is public, so reading check runs and workflow runs needs no further permission.
 
