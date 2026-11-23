@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildQuestions, judge, parseMethods } from './stages.mjs';
+import { buildQuestions, judge, parseMethods, unmatchedSteps } from './stages.mjs';
 
 const service = `package x;
 public class NoteService {
@@ -69,6 +69,15 @@ test('a changed fake method reaches the steps that call it, with the called sour
   assert.deepEqual(question.changed, ['InMemoryNoteRepository.add']);
   assert.deepEqual(Object.keys(question.state.called), ['NoteService.create', 'InMemoryNoteRepository.add']);
   assert.equal(question.state.scenario.title, 'Speichern');
+});
+
+test('a step that no stage method stands for is a finding, not skipped', () => {
+  assert.deepEqual(unmatchedSteps({ scenarios, head: base }), []);
+  // A parameter without `$` in the name: JGiven appends its value, the texts differ.
+  const appended = [{ title: 'Anhängen', steps: [step('eine Notiz existiert $')] }];
+  const head = { ...base, 'src/test/java/x/acceptance/MehrStage.java': 'class MehrStage {\n    public MehrStage eine_Notiz_existiert(String text) {\n        return self();\n    }\n}' };
+  const [finding] = unmatchedSteps({ scenarios: appended, head });
+  assert.match(finding, /No stage method stands for "when eine Notiz existiert \$" in "Anhängen"/);
 });
 
 test('Jev decides at 0.9 and 0.5, Haiku in between', async () => {

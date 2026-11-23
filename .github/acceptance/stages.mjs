@@ -108,6 +108,22 @@ export function buildQuestions({ scenarios, base, head }) {
   return questions;
 }
 
+// Steps of the report that no stage method stands for (e.g. a parameter without `$` in the name,
+// whose value JGiven appends, or a method the parser does not see). They could not be judged, so
+// each is a finding instead of being skipped.
+export function unmatchedSteps({ scenarios, head }) {
+  const texts = new Set(parseAll(head).filter((m) => m.file.includes(ACCEPTANCE)).map((m) => m.text));
+  return scenarios.flatMap((scenario) =>
+    scenario.steps
+      .filter((step) => !texts.has(step.text))
+      .map(
+        (step) =>
+          `No stage method stands for "${showStep(step)}" in "${scenario.title}", so it cannot be judged. ` +
+          'Name the method like the step, with `$` where a parameter goes, or give it an `@As` with that text.',
+      ),
+  );
+}
+
 // `jev(question)` returns the probability that the method implements the step, `haiku(question)`
 // decides { pass, reason } between 0.5 and 0.9. Returns findings; empty means all pass.
 export async function judge(questions, { jev, haiku }) {
@@ -145,12 +161,13 @@ if (import.meta.main) {
     return sources;
   };
   try {
-    const questions = buildQuestions({
-      scenarios: readReport(headReport),
-      base: javaFiles(base),
-      head: javaFiles(head),
-    });
-    const findings = await judge(questions, { jev: askJev, haiku: askHaiku });
+    const scenarios = readReport(headReport);
+    const sources = { base: javaFiles(base), head: javaFiles(head) };
+    const questions = buildQuestions({ scenarios, ...sources });
+    const findings = [
+      ...unmatchedSteps({ scenarios, head: sources.head }),
+      ...(await judge(questions, { jev: askJev, haiku: askHaiku })),
+    ];
     console.error(`${questions.length} step(s) judged.`);
     for (const finding of findings) console.log(`- ${finding}`);
     process.exit(findings.length === 0 ? 0 : 1);
