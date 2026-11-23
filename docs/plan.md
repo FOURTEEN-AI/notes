@@ -178,7 +178,7 @@ changes, which the coding agent may not make.
 - [x] The next agent issue ("reverse the sort order", #6) arrives with a tour that the human walks through
   without reading the pull request description
 
-## Step 5: a refine agent asks back before coding
+## Step 5: a refine agent asks back before coding (done)
 
 **Result:** an idea is cleared up in its chat before the coding agent starts. The refine agent asks
 short questions, the human answers in the chat, and the agent releases the idea when it is clear.
@@ -201,6 +201,82 @@ coding agent started (that is the preview bar's feedback).
 
 **Risks:** the idea and the chat are untrusted text for an agent that can edit labels; it has no
 write access to code, and the coding agent's own limits stay as they are.
+
+## Step 6: approved acceptance criteria come before the code
+
+**Result:** an idea leaves its refinement with Gherkin scenarios that the human has approved. The
+coding agent first turns them into JGiven acceptance tests, a check proves that the tests match
+the scenarios, and only then is the production code written. The JGiven report, served by the
+app, is the living documentation.
+
+**Scope**
+
+- Refinement: after at most 3 rounds of questions the refine agent proposes the acceptance
+  criteria as a ` ```gherkin ` block in German (`# language: de`) in its `## Refine` comment. The
+  proposal is a delta against `main`, as far as the agent can see it from the acceptance tests:
+  new scenarios have no tag, changed ones `@ersetzt("<old title>")`, removed ones are a title stub
+  with `@entfällt`. Scenarios that only the frontend can show are tagged `@ui`; the demo tour
+  covers them, not a test.
+- Approval: only the human approves; the release after 3 rounds goes away. The idea chat shows a
+  button "Freigeben" and, for every changed or removed scenario, its old version from the report
+  of `main`. A text answer starts another round instead. The button makes the app post a comment
+  `## Acceptance criteria` with the copied block, then swap `refine` for `agent`. The scenarios
+  never land in the repository.
+- Acceptance tests in JGiven, port to port: the When step calls an application service,
+  `NoteRepository` and `GitHub` are in-memory fakes, no Spring, no database. Stage methods are
+  named in German like the steps, an exception to "English for code" that goes into CLAUDE.md.
+  The scenario title is the test's title and its identity, unique across the report. No origin
+  tag; the history is in git.
+- The coding agent works in two phases. Phase 1 writes only the acceptance tests, stages, fakes
+  and compiling stubs (new port methods included) and pushes. Phase 2 starts only when
+  `acceptance` is green and writes the production code; the test classes, stages and fakes must
+  stay unchanged against the checked commit. Needing a change there means back to phase 1.
+- A new workflow `acceptance`, a required check and the only job with the decision model's key.
+  It reads the latest `## Acceptance criteria` and the JGiven JSON report from `build`, and
+  compares it with the report of the current `main`:
+  - Deterministic: the scenarios added, changed and removed against `main` are exactly the
+    approved delta, and every scenario without `@ui` has one test whose steps match word for word
+    (keyword, order, text, parameters as placeholders).
+  - Per stage method: every stage and fake method that changed against `main` is judged in every
+    scenario that uses it, not only in the delta. The state is the scenario, the step text, the
+    method's source and the fake and service methods it calls; the question is whether the method
+    implements exactly this step. Jev (TypeSafe, own budget and key) decides: from p ≥ 0.9 it
+    passes, below 0.5 it fails, in between Haiku decides (`claude -p --model claude-haiku-5-5`
+    with the existing OAuth token).
+  - A failure goes back to the coding agent as a comment `## Acceptance round <n>`, at most 3
+    rounds, then the pull request waits for the human.
+- Late conflicts: an old acceptance test that is red after phase 2, or a delta that no longer
+  fits the current `main` (a parallel pull request was merged), sends the idea back to the idea
+  chat: the coding agent proposes an amended delta in a `## Refine` comment and the label goes
+  back to `refine`. The new `## Acceptance criteria` replaces the previous one as a full delta, and
+  phase 1 starts again. Human feedback from the preview that changes approved behaviour takes the
+  same path, with the button "Freigeben" in the preview bar.
+- The review agent runs only after phase 2. Branch protection and the merge button require
+  `build`, `review` and `acceptance`.
+- The app serves the JGiven HTML report behind the login, in production and in every preview.
+- The existing behaviour of notes gets scenarios and JGiven tests. Existing tests stay.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow
+changes, which the coding agent may not make.
+
+**Not in this step:** scenarios for ideas, automated tests for `@ui` scenarios, rewriting the
+existing tests, `.feature` files.
+
+**Risks:** the decision model judges with a probability, so a test that is too weak can still
+pass; the deterministic checks only guard the wording and the delta. A hidden conflict with an
+old scenario shows only after phase 2, when phase 1, `acceptance` and phase 2 have already run.
+`@ui` scenarios leave no trace in the report, so a change of frontend-only behaviour is not
+checked against the old one. Jev costs its own budget, Haiku the subscription limit.
+
+**Done when**
+
+- [ ] The refine agent proposes scenarios, and only the button "Freigeben" releases the idea
+- [ ] `acceptance` fails a test that does not implement its step, and a test removed outside the
+  delta
+- [ ] Phase 2 starts only after a green `acceptance` and cannot change the checked tests
+- [ ] The notes' behaviour has scenarios and tests, and the report is served in production
+- [ ] An agent issue went from approved scenarios to production, with at least one finding of
+  `acceptance` on the way
 
 ## Candidates for later steps
 
