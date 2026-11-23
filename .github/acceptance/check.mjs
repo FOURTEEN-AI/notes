@@ -36,7 +36,8 @@ export function check({ criteria, base, head }) {
     }
     if (replaces) {
       if (!before.has(replaces)) findings.push(`"${replaces}" is replaced but does not exist on main`);
-      expectedGone.add(replaces);
+      // A scenario that keeps its title and only changes its steps replaces itself.
+      if (replaces !== scenario.title) expectedGone.add(replaces);
     } else if (before.has(scenario.title)) {
       findings.push(`"${scenario.title}" is new but exists on main already`);
     }
@@ -60,6 +61,7 @@ export function check({ criteria, base, head }) {
     if (!before.has(title) && !expectedAdded.has(title)) findings.push(`The test "${title}" is not an approved scenario`);
   }
   for (const [title, scenario] of before) {
+    if (expectedAdded.has(title)) continue; // changed in place, compared with the approved steps above
     if (expectedGone.has(title)) {
       if (after.has(title)) findings.push(`The test "${title}" must be gone`);
     } else if (!after.has(title)) {

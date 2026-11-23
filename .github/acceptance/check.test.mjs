@@ -40,6 +40,13 @@ test('a changed scenario replaces the old one, a removed one is gone', () => {
   assert.deepEqual(check({ criteria, base, head }), []);
 });
 
+test('a changed scenario may keep its title', () => {
+  const criteria = gherkin('@ersetzt("Eine Notiz löschen")\nSzenario: Eine Notiz löschen\n  Wenn ich speichere "Brot"');
+  const head = [base[0], { title: 'Eine Notiz löschen', steps: [step('when', 'ich speichere $', ['Brot'])] }];
+  assert.deepEqual(check({ criteria, base, head }), []);
+  assert.match(check({ criteria, base, head: base })[0], /differ from the approved/);
+});
+
 test('a test removed or changed outside the delta fails', () => {
   assert.match(check({ criteria: gherkin(''), base, head: [base[0]] })[0], /removed outside/);
   const changed = [{ ...base[0], steps: [save[0]] }, base[1]];
