@@ -351,7 +351,13 @@ export function Ideas() {
       >
         Ideen{ideas && ideas.length > 0 && ` (${ideas.length})`}
       </button>
-      <dialog ref={dialog} className="ideas" closedby="any" onClose={() => setOpen(false)}>
+      <dialog
+        ref={dialog}
+        className="ideas"
+        aria-label="Ideen"
+        closedby="any"
+        onClose={() => setOpen(false)}
+      >
         <div className="ideas-header">
           {current ? (
             <button type="button" className="icon-button back" onClick={() => setSelected(null)}>

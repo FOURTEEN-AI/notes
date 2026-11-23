@@ -173,6 +173,26 @@ pitest {
 	timestampedReports = false
 }
 
+// End-to-end tests (Playwright: chromium, firefox, webkit) against the built jar with a PostgreSQL
+// container and a GitHub stub, see frontend/e2e/stack.mjs. Not part of `check`: needs Docker and
+// the browsers (`pnpm exec playwright install --with-deps` once). The visual regression runs in the
+// pinned Playwright Docker image (frontend/e2e/visual.sh), where its snapshots were made.
+tasks.register('e2eTest', Exec) {
+	group = 'verification'
+	dependsOn 'bootJar'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'e2e'
+	outputs.upToDateWhen { false }
+}
+
+tasks.register('e2eVisualTest', Exec) {
+	group = 'verification'
+	dependsOn 'frontendBuild'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'e2e:visual'
+	outputs.upToDateWhen { false }
+}
+
 tasks.named('check') {
 	dependsOn 'prettierCheck', 'frontendLint', 'pitest'
 }

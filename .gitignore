@@ -14,3 +14,7 @@ frontend/dist/
 .vscode/
 .jqwik-database
 bin/
+frontend/playwright-report/
+frontend/playwright-report-visual/
+frontend/test-results/
+frontend/test-results-visual/

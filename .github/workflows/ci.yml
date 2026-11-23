@@ -64,6 +64,31 @@ jobs:
         if: steps.phase.outputs.phase1 == 'true'
       - run: ./gradlew build
         if: steps.phase.outputs.phase1 != 'true'
+      # End-to-end tests against the jar just built: Postgres in Docker, a GitHub stub, three
+      # browsers (frontend/e2e). The browsers are cached by Playwright version; the system
+      # libraries are installed each time.
+      - id: playwright
+        run: echo "version=$(node -p "require('./frontend/package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+        if: steps.phase.outputs.phase1 != 'true'
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        if: steps.phase.outputs.phase1 != 'true'
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+        working-directory: frontend
+        if: steps.phase.outputs.phase1 != 'true'
+      - run: ./gradlew e2eTest e2eVisualTest
+        if: steps.phase.outputs.phase1 != 'true'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure() && steps.phase.outputs.phase1 != 'true'
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/playwright-report-visual
+            frontend/test-results
+            frontend/test-results-visual
       # Needs the jar and node_modules of the build above: SBOMs, Trivy on them and on the image.
       - run: .github/supply-chain.sh
         if: steps.phase.outputs.phase1 != 'true'

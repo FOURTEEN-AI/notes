@@ -7,8 +7,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "format": "prettier --write src *.ts *.json index.html",
-    "format:check": "prettier --check src *.ts *.json index.html",
+    "format": "prettier --write src e2e *.ts *.json index.html",
+    "format:check": "prettier --check src e2e *.ts *.json index.html",
+    "e2e": "playwright test",
+    "e2e:visual": "e2e/visual.sh",
     "lint": "eslint . && knip"
   },
   "dependencies": {
@@ -16,7 +18,9 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
