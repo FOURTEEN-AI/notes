@@ -48,6 +48,9 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// DocumentedExamplesTest reads the docs and the frontend sources from the repository root.
+	inputs.files(fileTree(dir: '.', includes: ['CLAUDE.md', 'README.md', 'docs/**/*.md', 'frontend/src/**']))
+			.withPropertyName('documentedExamples')
 }
 
 // Compiler: all javac lints are errors, Error Prone finds bug patterns, NullAway checks null-safety
