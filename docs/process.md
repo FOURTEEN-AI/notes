@@ -72,6 +72,8 @@ a workflow or count as approval.
 
 `build` also runs PMD 7 on main sources (`config/pmd/ruleset.xml`: a few errorprone and bestpractices rules, no style rules; tests are not linted). Complexity limits: cyclomatic 10 per method (80 per class), cognitive 15 per method; today's code is below them. `ArchitectureRulesTest` (ArchUnit, compiled classes) adds to `OnionArchitectureTest`: controllers live in `web` and do not use the ports, `NoteRepository` and `GitHub` are interfaces in `domain` implemented only in `infrastructure`, no cycles between rings, `domain` and `application` throw no exception but `DomainException`.
 
+`build` also lints the frontend (`frontendLint`, `pnpm run lint` in `frontend/`): ESLint 10 flat config (`eslint.config.js`) with typescript-eslint type-aware `recommendedTypeChecked`, `react-hooks` (rules of hooks, exhaustive deps; not the React Compiler rules), `jsx-a11y` recommended, `eslint-config-prettier` (formatting stays with Prettier) and `complexity` at 10 per function (same as PMD's cyclomatic limit; JSX `&&` and `?:` count, so big components are split). knip finds unused files, exports and dependencies. `tsc --noEmit` (strict) stays in `pnpm build`. typescript-eslint does not support TypeScript 7 yet, so `typescript` in `package.json` is the TS 6 API package for the linters and `typescript7` provides the `tsc` binary; drop the alias once typescript-eslint supports TS 7.
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

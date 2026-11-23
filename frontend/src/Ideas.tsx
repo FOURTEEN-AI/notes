@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 
 type Status =
   | 'REFINING'
@@ -49,7 +49,7 @@ function MessageForm({
   }
 
   return (
-    <form className="chat-form" onSubmit={submit}>
+    <form className="chat-form" onSubmit={(event) => void submit(event)}>
       <textarea
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -66,6 +66,140 @@ function MessageForm({
         Senden
       </button>
     </form>
+  );
+}
+
+// The old versions of the scenarios that the last proposal changes or removes.
+function PreviousScenarios({ scenarios }: { scenarios: Scenario[] }) {
+  if (scenarios.length === 0) return null;
+  return (
+    <details className="previous" open>
+      <summary>Bisher (aus dem Report von main)</summary>
+      {scenarios.map((scenario) => (
+        <section key={scenario.title}>
+          <h3>{scenario.title}</h3>
+          <ul>
+            {scenario.steps.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </details>
+  );
+}
+
+// Whether the agent's message offers scenarios to release.
+function proposes(message: Message | undefined) {
+  return message?.author === 'agent' && message.text.includes('```gherkin');
+}
+
+function PreviewReady({ current }: { current: Idea }) {
+  if (!current.previewUrl || !current.previewReady) return null;
+  return (
+    <li>
+      <p className="bubble agent">
+        Die Preview ist bereit:{' '}
+        <a href={current.previewUrl} target="_blank" rel="noreferrer">
+          {current.previewUrl}
+        </a>
+      </p>
+    </li>
+  );
+}
+
+// The chat of one idea: its messages, the scenarios of the last proposal, the answer form.
+function IdeaChat({
+  current,
+  messages,
+  previous,
+  error,
+  chat,
+  onReply,
+  onApprove,
+}: {
+  current: Idea;
+  messages: Message[];
+  previous: Scenario[];
+  error: string | null;
+  chat: RefObject<HTMLUListElement | null>;
+  onReply: (text: string) => Promise<boolean>;
+  onApprove: () => void;
+}) {
+  return (
+    <>
+      <h2 className="idea-title">
+        #{current.number} {current.title}
+      </h2>
+      <p className="idea-status">
+        <span className={`status ${current.status.toLowerCase()}`}>
+          {statusLabels[current.status]}
+        </span>
+        {current.previewUrl && !current.previewReady && (
+          <span className="status"> · Preview wird vorbereitet</span>
+        )}
+      </p>
+      <ul className="chat" ref={chat}>
+        <li>
+          <p className="bubble me">{current.description || current.title}</p>
+        </li>
+        {messages.map((message, index) => (
+          <li key={index}>
+            <p className={`bubble ${message.author}`}>{message.text}</p>
+          </li>
+        ))}
+        <PreviewReady current={current} />
+      </ul>
+      <PreviousScenarios scenarios={previous} />
+      {error && <p className="error">{error}</p>}
+      {current.status === 'WAITING_FOR_ANSWER' && proposes(messages.at(-1)) && (
+        <button type="button" className="approve" onClick={onApprove}>
+          Freigeben
+        </button>
+      )}
+      {(current.status === 'REFINING' || current.status === 'WAITING_FOR_ANSWER') && (
+        <MessageForm placeholder="Antworte dem Refine-Agent …" onSend={onReply} />
+      )}
+    </>
+  );
+}
+
+// All ideas, and the form for a new one.
+function IdeaList({
+  ideas,
+  error,
+  onSelect,
+  onSubmit,
+}: {
+  ideas: Idea[];
+  error: string | null;
+  onSelect: (number: number) => void;
+  onSubmit: (text: string) => Promise<boolean>;
+}) {
+  return (
+    <>
+      <>
+        <p className="hint">
+          Schreib deine Idee als Nachricht: Sie wird ein Issue, ein Agent setzt sie um.
+        </p>
+        <ul className="idea-list">
+          {ideas.map((idea) => (
+            <li key={idea.number}>
+              <button type="button" onClick={() => onSelect(idea.number)}>
+                <span>
+                  #{idea.number} {idea.title}
+                </span>
+                <span className={`status ${idea.status.toLowerCase()}`}>
+                  {statusLabels[idea.status]}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {error && <p className="error">{error}</p>}
+        <MessageForm placeholder="Neue Idee …" onSend={onSubmit} />
+      </>
+    </>
   );
 }
 
@@ -129,11 +263,9 @@ export function Ideas() {
       const loaded = (await response.json()) as Message[];
       setMessages(loaded);
       // The old versions of the scenarios that the last proposal changes or removes.
-      const last = loaded.at(-1);
-      const old =
-        last?.author === 'agent' && last.text.includes('```gherkin')
-          ? await fetch(`/api/ideas/${selected}/previous-scenarios`)
-          : null;
+      const old = proposes(loaded.at(-1))
+        ? await fetch(`/api/ideas/${selected}/previous-scenarios`)
+        : null;
       setPrevious(old?.ok ? ((await old.json()) as Scenario[]) : []);
     }
     loadMessages().catch(() => {});
@@ -143,9 +275,10 @@ export function Ideas() {
 
   // The newest message is at the bottom, like in a chat. Only a new message (or another chat)
   // scrolls: a poll that brings the same messages must not pull the reader down again.
+  const ideasLoaded = ideas !== null;
   useEffect(() => {
     chat.current?.scrollTo({ top: chat.current.scrollHeight });
-  }, [ideas === null, open, selected, messages.length]);
+  }, [ideasLoaded, open, selected, messages.length]);
 
   if (ideas === null && error === null) return null;
 
@@ -232,93 +365,19 @@ export function Ideas() {
           </button>
         </div>
         {current ? (
-          <>
-            <h2 className="idea-title">
-              #{current.number} {current.title}
-            </h2>
-            <p className="idea-status">
-              <span className={`status ${current.status.toLowerCase()}`}>
-                {statusLabels[current.status]}
-              </span>
-              {current.previewUrl && !current.previewReady && (
-                <span className="status"> · Preview wird vorbereitet</span>
-              )}
-            </p>
-            <ul className="chat" ref={chat}>
-              <li>
-                <p className="bubble me">{current.description || current.title}</p>
-              </li>
-              {messages.map((message, index) => (
-                <li key={index}>
-                  <p className={`bubble ${message.author}`}>{message.text}</p>
-                </li>
-              ))}
-              {current.previewUrl && current.previewReady && (
-                <li>
-                  <p className="bubble agent">
-                    Die Preview ist bereit:{' '}
-                    <a href={current.previewUrl} target="_blank" rel="noreferrer">
-                      {current.previewUrl}
-                    </a>
-                  </p>
-                </li>
-              )}
-            </ul>
-            {previous.length > 0 && (
-              <details className="previous" open>
-                <summary>Bisher (aus dem Report von main)</summary>
-                {previous.map((scenario) => (
-                  <section key={scenario.title}>
-                    <h3>{scenario.title}</h3>
-                    <ul>
-                      {scenario.steps.map((step, index) => (
-                        <li key={index}>{step}</li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-              </details>
-            )}
-            {error && <p className="error">{error}</p>}
-            {current.status === 'WAITING_FOR_ANSWER' &&
-              messages.at(-1)?.author === 'agent' &&
-              messages.at(-1)?.text.includes('```gherkin') && (
-                <button
-                  type="button"
-                  className="approve"
-                  onClick={() =>
-                    approve().catch(() => setError('Idee konnte nicht freigegeben werden.'))
-                  }
-                >
-                  Freigeben
-                </button>
-              )}
-            {(current.status === 'REFINING' || current.status === 'WAITING_FOR_ANSWER') && (
-              <MessageForm placeholder="Antworte dem Refine-Agent …" onSend={reply} />
-            )}
-          </>
+          <IdeaChat
+            current={current}
+            messages={messages}
+            previous={previous}
+            error={error}
+            chat={chat}
+            onReply={reply}
+            onApprove={() =>
+              void approve().catch(() => setError('Idee konnte nicht freigegeben werden.'))
+            }
+          />
         ) : (
-          <>
-            <p className="hint">
-              Schreib deine Idee als Nachricht: Sie wird ein Issue, ein Agent setzt sie um.
-            </p>
-            <ul className="idea-list">
-              {(ideas ?? []).map((idea) => (
-                <li key={idea.number}>
-                  <button type="button" onClick={() => setSelected(idea.number)}>
-                    <span>
-                      #{idea.number} {idea.title}
-                    </span>
-                    <span className={`status ${idea.status.toLowerCase()}`}>
-                      {statusLabels[idea.status]}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {error && <p className="error">{error}</p>}
-            <MessageForm placeholder="Neue Idee …" onSend={submit} />
-          </>
+          <IdeaList ideas={ideas ?? []} error={error} onSelect={setSelected} onSubmit={submit} />
         )}
       </dialog>
     </>

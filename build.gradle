@@ -134,6 +134,18 @@ tasks.register('prettierCheck', Exec) {
 	outputs.upToDateWhen { true }
 }
 
+tasks.register('frontendLint', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'lint'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
+			frontendDir.file('eslint.config.js'), frontendDir.file('knip.json'),
+			frontendDir.file('tsconfig.json'), frontendDir.file('vite.config.ts'),
+			frontendDir.file('index.html'))
+	inputs.dir(frontendDir.dir('src'))
+	outputs.upToDateWhen { true }
+}
+
 tasks.register('prettierApply', Exec) {
 	dependsOn 'frontendInstall'
 	workingDir = frontendDir
@@ -145,5 +157,5 @@ tasks.register('format') {
 }
 
 tasks.named('check') {
-	dependsOn 'prettierCheck'
+	dependsOn 'prettierCheck', 'frontendLint'
 }

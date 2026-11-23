@@ -26,6 +26,40 @@ const checkLabels: Record<CheckState, string> = {
   FAILURE: 'rot',
 };
 
+function Checks({ preview }: { preview: Preview }) {
+  return (
+    <span className="checks">
+      <span className={`check ${preview.build.toLowerCase()}`}>
+        build {checkLabels[preview.build]}
+      </span>
+      <span className={`check ${preview.review.toLowerCase()}`}>
+        review {checkLabels[preview.review]}
+      </span>
+      <span className={`check ${preview.acceptance.toLowerCase()}`}>
+        acceptance {checkLabels[preview.acceptance]}
+      </span>
+      {preview.state !== 'open' && (
+        <span>{preview.state === 'merged' ? 'gemergt' : 'geschlossen'}</span>
+      )}
+    </span>
+  );
+}
+
+function Proposal({ preview }: { preview: Preview }) {
+  if (preview.state !== 'open' || !preview.proposal) return null;
+  return (
+    <details open>
+      <summary>Der Agent schlägt geänderte Szenarien vor</summary>
+      <pre>{preview.proposal}</pre>
+      {/* Released in production only: its idea chat shows the old versions from the report of
+              main, which this preview does not have. */}
+      <a href={`${PRODUCTION_URL}/?idee=${preview.issue}`} target="_blank" rel="noreferrer">
+        In der Idee freigeben
+      </a>
+    </details>
+  );
+}
+
 // Only shown in a preview app: there /api/preview knows its pull request, elsewhere it is 204.
 export function PreviewBar() {
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -103,20 +137,7 @@ export function PreviewBar() {
       <strong>
         Preview #{preview.number}: {preview.title}
       </strong>
-      <span className="checks">
-        <span className={`check ${preview.build.toLowerCase()}`}>
-          build {checkLabels[preview.build]}
-        </span>
-        <span className={`check ${preview.review.toLowerCase()}`}>
-          review {checkLabels[preview.review]}
-        </span>
-        <span className={`check ${preview.acceptance.toLowerCase()}`}>
-          acceptance {checkLabels[preview.acceptance]}
-        </span>
-        {preview.state !== 'open' && (
-          <span>{preview.state === 'merged' ? 'gemergt' : 'geschlossen'}</span>
-        )}
-      </span>
+      <Checks preview={preview} />
       {newVersion && (
         <p>
           Neue Version bereit.{' '}
@@ -128,19 +149,9 @@ export function PreviewBar() {
       {preview.state === 'open' && loadedSha.current && (
         <Tour steps={preview.demo} sha={loadedSha.current} onMismatch={prefillFeedback} />
       )}
-      {preview.state === 'open' && preview.proposal && (
-        <details open>
-          <summary>Der Agent schlägt geänderte Szenarien vor</summary>
-          <pre>{preview.proposal}</pre>
-          {/* Released in production only: its idea chat shows the old versions from the report of
-              main, which this preview does not have. */}
-          <a href={`${PRODUCTION_URL}/?idee=${preview.issue}`} target="_blank" rel="noreferrer">
-            In der Idee freigeben
-          </a>
-        </details>
-      )}
+      <Proposal preview={preview} />
       {preview.state === 'open' && (
-        <form onSubmit={sendFeedback}>
+        <form onSubmit={(event) => void sendFeedback(event)}>
           <textarea
             ref={feedbackField}
             value={text}
@@ -152,7 +163,11 @@ export function PreviewBar() {
             <button type="submit" disabled={busy || text.trim() === ''}>
               Feedback senden
             </button>
-            <button type="button" onClick={merge} disabled={busy || !preview.mergeable}>
+            <button
+              type="button"
+              onClick={() => void merge()}
+              disabled={busy || !preview.mergeable}
+            >
               Mergen
             </button>
           </div>
