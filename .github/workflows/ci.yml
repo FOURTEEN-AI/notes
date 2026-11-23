@@ -100,7 +100,14 @@ jobs:
           --env PULL_REQUEST_SHA=${{ github.event.pull_request.head.sha }}
       - name: Link the preview in the pull request
         run: |
-          gh pr comment "${{ github.event.number }}" --edit-last --create-if-none \
-            --body "Preview: https://$APP.fly.dev"
+          # Edit only the preview comment: the acceptance markers are comments of the same user.
+          body="Preview: https://$APP.fly.dev"
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/${{ github.event.number }}/comments" --paginate \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("Preview: ")))] | last | .id // empty')
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" > /dev/null
+          else
+            gh pr comment "${{ github.event.number }}" --body "$body"
+          fi
         env:
           GH_TOKEN: ${{ github.token }}

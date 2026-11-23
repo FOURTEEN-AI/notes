@@ -54,7 +54,7 @@ a workflow or count as approval.
 | `## Acceptance conflict` | pull request | `acceptance` | Late conflict, see above |
 | `## Review round` | pull request | Review agent | PASS or FAIL with findings |
 | `## Human feedback` | pull request | Preview bar / human | Starts the coding agent; no round limit; only on `agent/*` branches |
-| `Preview: <url>` | pull request | `ci.yml` | Link; written with `--edit-last` |
+| `Preview: <url>` | pull request | `ci.yml` | Link; the one comment starting with `Preview: ` is edited in place |
 | `Acceptance failed in <n> rounds...`, `The review failed in <n> rounds...` | pull request | Workflows | The pull request waits for the human |
 
 ## Checks
