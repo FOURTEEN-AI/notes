@@ -1,0 +1,10 @@
+# ZAP rule levels for .github/dast.sh: id, IGNORE|INFO|WARN|FAIL, name. A rule not listed is WARN.
+# Both WARN and FAIL fail the script; FAIL only marks what must never come back.
+# Security headers
+10038	FAIL	Content Security Policy (CSP) Header Not Set
+10020	FAIL	Anti-clickjacking Header
+10021	FAIL	X-Content-Type-Options Header Missing
+# The login is sent by the scan itself as an Authorization header, so ZAP "captures" it.
+10105	IGNORE	Authentication Credentials Captured
+# An information, not a weakness: the page is a single page app.
+10109	IGNORE	Modern Web Application
