@@ -67,7 +67,7 @@ header {
 }
 
 .ideas {
-  width: min(36rem, calc(100vw - 2rem));
+  width: min(64rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   padding: 1rem;
   color: inherit;
@@ -104,7 +104,7 @@ header {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-height: 50vh;
+  max-height: 65vh;
   min-height: 8rem;
   margin: 0 0 0.75rem;
   padding: 0;
@@ -133,7 +133,7 @@ header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 50vh;
+  max-height: 65vh;
   margin: 0 0 0.75rem;
   padding: 0;
   overflow-y: auto;
