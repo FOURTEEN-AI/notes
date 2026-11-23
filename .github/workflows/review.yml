@@ -84,7 +84,10 @@ jobs:
             It starts with the line `## Review round`, followed by PASS or FAIL and, for FAIL,
             a numbered list of findings. Each finding names the file and says what is wrong and
             what is expected, so that another agent can fix it without asking.
-            Then write the single word PASS or FAIL to `${{ runner.temp }}/verdict`.
+            Then write the single word PASS or FAIL to `${{ runner.temp }}/verdict` with the Write
+            tool, in a call of its own after the comment. Not with a shell redirection in the same
+            command as `gh pr comment`: a Bash command may not write outside the checkout, and a
+            denied command also loses the comment.
       - name: Verdict
         env:
           GH_TOKEN: ${{ github.token }}
