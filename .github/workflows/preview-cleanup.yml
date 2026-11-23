@@ -5,27 +5,28 @@ name: Preview cleanup
 # conflicts. Safe here: the job never checks out or runs code of the pull request.
 
 on:
-  pull_request_target:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] never checks out or runs code of the pull request, see above
     types: [closed]
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     concurrency: preview-${{ github.event.number }}
+    permissions: {}
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
     steps:
       # The preview is named after the issue of an agent branch (agent/issue-<n>), else after the
       # pull request.
       - name: Name the preview
-        run: |
+        run: | # zizmor: ignore[github-env] N is issue-<digits> or pr-<number>, nothing else can get in
           if [[ "$HEAD_REF" =~ ^agent/issue-([0-9]+)$ ]]; then N="issue-${BASH_REMATCH[1]}"; else N="pr-$PR"; fi
           echo "APP=notes-fourteen-it-$N" >> "$GITHUB_ENV"
           echo "DB=${N//-/_}" >> "$GITHUB_ENV"
         env:
           HEAD_REF: ${{ github.head_ref }}
           PR: ${{ github.event.number }}
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@98172f70657cb3e15db199af139be99bd3e61200 # master
       - name: Destroy the preview app
         run: flyctl apps destroy "$APP" --yes || true
       - name: Drop the preview database and user

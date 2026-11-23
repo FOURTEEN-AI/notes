@@ -1,0 +1,6 @@
+# actionlint config, used by security-static.sh.
+paths:
+  .github/workflows/acceptance.yml:
+    ignore:
+      # shellcheck SC2016 on the jq filter in single quotes: `$c` is a jq variable, not a shell one.
+      - 'SC2016'

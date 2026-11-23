@@ -31,7 +31,9 @@ jobs:
       issues: write
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
       # The coding agent sends an idea back with its own "## Refine" proposal and the label
       # `refine` (late conflict, feedback): then there is nothing to ask or propose yet.
       - name: Is the newest comment already a proposal
@@ -44,7 +46,7 @@ jobs:
             --jq '.comments | last | .body // "" | startswith("## Refine")')
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
       - if: steps.proposal.outputs.pending != 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@acfe7992852970efb4fee683d63d628e3e52df67 # v1.0.286
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: >-
