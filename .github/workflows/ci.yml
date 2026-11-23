@@ -8,8 +8,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      phase1: ${{ steps.phase.outputs.phase1 }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      # On an agent branch the acceptance tests are red against the stubs until phase 2 has pushed
+      # on top of the checked commit (docs/plan.md, step 6). Until then only compile; the same
+      # test as in review.yml.
+      - name: Find the phase
+        id: phase
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+          BRANCH: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$BRANCH" != agent/* ]]; then
+            echo "phase1=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          checked=$(gh pr view "$PR" --json comments --jq \
+            '[.comments[] | select(.author.login == "github-actions" and (.body | test("^## Acceptance (checked |reset)")))] | last | .body // "" | split(" ") | .[3] // ""')
+          git show origin/main:.github/acceptance/phase.mjs > "$RUNNER_TEMP/phase.mjs"
+          out=$(node "$RUNNER_TEMP/phase.mjs" "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md")
+          if [ -n "$checked" ] && [ "$checked" != "$HEAD_SHA" ] && grep -qx 'phase=2' <<< "$out" \
+              && grep -qx 'violation=false' <<< "$out"; then
+            echo "phase1=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "phase1=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -23,9 +55,13 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: ./gradlew compileTestJava
+        if: steps.phase.outputs.phase1 == 'true'
       - run: ./gradlew build
+        if: steps.phase.outputs.phase1 != 'true'
       - run: node --test .github/acceptance/criteria.test.mjs .github/acceptance/check.test.mjs .github/acceptance/stages.test.mjs .github/acceptance/phase.test.mjs .github/acceptance/conflict.test.mjs
       - uses: actions/upload-artifact@v4
+        if: steps.phase.outputs.phase1 != 'true'
         with:
           name: notes-jar
           path: build/libs/notes.jar
@@ -50,7 +86,7 @@ jobs:
   # jar built above, never the code of the pull request itself.
   preview:
     needs: build
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && needs.build.outputs.phase1 != 'true'
     runs-on: ubuntu-latest
     concurrency: preview-${{ github.event.number }}
     permissions:

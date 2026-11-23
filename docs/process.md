@@ -61,10 +61,10 @@ a workflow or count as approval.
 
 | Check | Job | Required by branch protection | Blocks merge button | Notes |
 |-------|-----|------|------|-------|
-| `build` | `ci.yml` `build` | yes | yes | `./gradlew build` (with Testcontainers) and the Node tests of `.github/acceptance` |
+| `build` | `ci.yml` `build` | yes | yes | `./gradlew build` (with Testcontainers) and the Node tests of `.github/acceptance`. On an agent branch in phase 1 only `./gradlew compileTestJava` (the new acceptance tests are red against the stubs), same phase test as `review`; then no jar |
 | `review` | `review.yml` | yes | yes | Fails without a review until phase 2 has pushed on top of the checked commit |
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
-| `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green |
+| `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) |
 
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
