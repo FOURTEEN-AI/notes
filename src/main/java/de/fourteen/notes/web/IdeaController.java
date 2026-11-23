@@ -50,4 +50,10 @@ class IdeaController {
     ChatMessage reply(@PathVariable int number, @RequestBody NewMessage message) {
         return ideas.reply(number, message.text());
     }
+
+    @PostMapping("/{number}/approval")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void approve(@PathVariable int number) {
+        ideas.approve(number);
+    }
 }

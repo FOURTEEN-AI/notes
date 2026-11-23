@@ -225,6 +225,46 @@ class GitHubApiTest {
     }
 
     @Test
+    void approval_posts_the_last_proposal_and_swaps_the_label() throws Exception {
+        github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
+                .andRespond(
+                        json(
+                                """
+                                [
+                                  {"body": "## Refine\\n\\n```gherkin\\nold\\n```"},
+                                  {"body": "## Idea chat\\n\\nNo, as CSV."},
+                                  {"body": "## Refine\\n\\nOkay:\\n```gherkin\\n# language: de\\nFunktionalität: Export\\n```"}
+                                ]
+                                """));
+        github.expect(requestTo(REPO + "/issues/19/comments"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(
+                        content()
+                                .json(
+                                        "{\"body\": \"## Acceptance criteria\\n\\n```gherkin\\n# language: de\\nFunktionalität: Export\\n```\"}"))
+                .andRespond(withStatus(HttpStatus.CREATED));
+        github.expect(requestTo(REPO + "/issues/19/labels"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().json("{\"labels\": [\"agent\"]}"))
+                .andRespond(withStatus(HttpStatus.OK));
+        github.expect(requestTo(REPO + "/issues/19/labels/refine"))
+                .andExpect(method(HttpMethod.DELETE))
+                .andRespond(withStatus(HttpStatus.OK));
+
+        mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void approval_without_a_proposal_is_refused() throws Exception {
+        github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
+                .andRespond(json("[{\"body\": \"## Refine\\n\\nWhich columns?\"}]"));
+
+        mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void preview_shows_its_pull_request_and_checks() throws Exception {
         github.expect(requestTo(REPO + "/pulls/7"))
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));

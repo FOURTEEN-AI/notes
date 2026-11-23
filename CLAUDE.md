@@ -18,7 +18,9 @@ project are in [docs/plan.md](docs/plan.md). Read it before you start.
   - `web`: thin controllers, request/response records, security, and the mapping of a
     `DomainException` kind to an HTTP status.
 - Add only what the current step needs. No tool, layer or abstraction "for later".
-- English for code, docs and commit messages. Conventional Commits. Commit directly to `main` in a
+- English for code, docs and commit messages. Exception: the JGiven acceptance tests in
+  `src/test/java/.../acceptance` (test names, stage methods) are German like the scenarios they
+  implement. Conventional Commits. Commit directly to `main` in a
   local session (admins are exempt from the branch protection). Agents in GitHub Actions never
   push to `main`: they work on a branch `agent/issue-<n>` and open a pull request.
 - GitHub org FOURTEEN-AI: use `GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh …`. Never print the token.

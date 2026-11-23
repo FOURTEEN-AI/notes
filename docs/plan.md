@@ -268,13 +268,18 @@ old scenario shows only after phase 2, when phase 1, `acceptance` and phase 2 ha
 `@ui` scenarios leave no trace in the report, so a change of frontend-only behaviour is not
 checked against the old one. Jev costs its own budget, Haiku the subscription limit.
 
+**Progress:** done so far: JGiven tests of the notes, the report in the jar (`/jgiven/`), proposal
+and the button "Freigeben" (without the old versions of changed scenarios). Open: the workflow
+`acceptance`, the two phases of the coding agent, late conflicts, `acceptance` in branch protection
+and the merge button, the old versions in the idea chat.
+
 **Done when**
 
-- [ ] The refine agent proposes scenarios, and only the button "Freigeben" releases the idea
+- [x] The refine agent proposes scenarios, and only the button "Freigeben" releases the idea
 - [ ] `acceptance` fails a test that does not implement its step, and a test removed outside the
   delta
 - [ ] Phase 2 starts only after a green `acceptance` and cannot change the checked tests
-- [ ] The notes' behaviour has scenarios and tests, and the report is served in production
+- [x] The notes' behaviour has scenarios and tests, and the report is served in production
 - [ ] An agent issue went from approved scenarios to production, with at least one finding of
   `acceptance` on the way
 

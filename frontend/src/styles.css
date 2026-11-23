@@ -295,3 +295,7 @@ header {
   box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.15);
   transition: all 0.15s ease-out;
 }
+
+.ideas .approve {
+  margin: 0.5rem 0;
+}

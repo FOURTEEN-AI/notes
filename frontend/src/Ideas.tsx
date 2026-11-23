@@ -160,6 +160,19 @@ export function Ideas() {
     return true;
   }
 
+  // The button releases the idea with the scenarios of the agent's last message, if it has any.
+  async function approve() {
+    setError(null);
+    const response = await fetch(`/api/ideas/${selected}/approval`, { method: 'POST' });
+    if (!response.ok) {
+      setError('Idee konnte nicht freigegeben werden.');
+      return;
+    }
+    setIdeas((current) =>
+      (current ?? []).map((idea) => (idea.number === selected ? { ...idea, status: 'AGENT_WORKING' } : idea)),
+    );
+  }
+
   // An idea that is closed meanwhile (merged) leaves the list; its chat then shows the list again.
   const current = ideas?.find((idea) => idea.number === selected) ?? null;
 
@@ -220,6 +233,12 @@ export function Ideas() {
               )}
             </ul>
             {error && <p className="error">{error}</p>}
+            {current.status === 'WAITING_FOR_ANSWER' && messages.at(-1)?.author === 'agent' &&
+              messages.at(-1)?.text.includes('```gherkin') && (
+                <button type="button" className="approve" onClick={() => approve().catch(() => setError('Idee konnte nicht freigegeben werden.'))}>
+                  Freigeben
+                </button>
+              )}
             {(current.status === 'REFINING' || current.status === 'WAITING_FOR_ANSWER') && (
               <MessageForm placeholder="Antworte dem Refine-Agent …" onSend={reply} />
             )}

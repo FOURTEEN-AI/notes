@@ -171,6 +171,23 @@ class GitHubClient implements GitHub {
     }
 
     @Override
+    public void release(int number) {
+        call(
+                () ->
+                        rest.post()
+                                .uri("/issues/{number}/labels", number)
+                                .body(Map.of("labels", List.of("agent")))
+                                .retrieve()
+                                .toBodilessEntity());
+        call(
+                () ->
+                        rest.delete()
+                                .uri("/issues/{number}/labels/refine", number)
+                                .retrieve()
+                                .toBodilessEntity());
+    }
+
+    @Override
     public void merge(int number, String sha) {
         call(
                 () ->

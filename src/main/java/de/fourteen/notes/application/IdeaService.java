@@ -2,7 +2,9 @@ package de.fourteen.notes.application;
 
 import de.fourteen.notes.domain.ChatMessage;
 import de.fourteen.notes.domain.CheckState;
+import de.fourteen.notes.domain.AcceptanceCriteria;
 import de.fourteen.notes.domain.Checks;
+import de.fourteen.notes.domain.Comment;
 import de.fourteen.notes.domain.DomainException;
 import de.fourteen.notes.domain.GitHub;
 import de.fourteen.notes.domain.Idea;
@@ -87,5 +89,27 @@ public class IdeaService {
         ChatMessage message = ChatMessage.fromHuman(text.strip());
         github.comment(number, message.toComment());
         return message;
+    }
+
+    /**
+     * Releases the idea with the acceptance criteria the refine agent proposed last: copies its
+     * gherkin block into a comment `## Acceptance criteria`, then swaps `refine` for `agent`. The
+     * scenarios stay in that comment; they never land in the repository.
+     */
+    public void approve(int number) {
+        List<Comment> comments = github.comments(number);
+        String proposal =
+                comments.stream()
+                        .map(Comment::body)
+                        .filter(body -> body.startsWith("## Refine"))
+                        .reduce((first, second) -> second)
+                        .flatMap(AcceptanceCriteria::gherkinBlock)
+                        .orElseThrow(
+                                () ->
+                                        new DomainException(
+                                                DomainException.Kind.CONFLICT,
+                                                "there is no proposal to approve"));
+        github.comment(number, AcceptanceCriteria.toComment(proposal));
+        github.release(number);
     }
 }

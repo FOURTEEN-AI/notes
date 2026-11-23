@@ -34,6 +34,9 @@ public interface GitHub {
 
     void comment(int number, String body);
 
+    /** Swaps the label `refine` of an idea for `agent`, which starts the coding agent. */
+    void release(int number);
+
     /** Squash-merges, but only if the head is still the given commit. */
     void merge(int number, String sha);
 }
