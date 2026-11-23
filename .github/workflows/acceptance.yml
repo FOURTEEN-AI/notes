@@ -14,6 +14,11 @@ name: Acceptance
 # Late conflicts: an old test of `main` that is red after phase 2, or findings while the branch is
 # behind `main` (a parallel pull request was merged), are no findings for the coding agent: the
 # comment "## Acceptance conflict" sends the idea back to the idea chat (agent.yml, input `conflict`).
+#
+# Two jobs, because the acceptance tests of the pull request are code under check: `tests` runs them
+# with no token, no secret and no cache, and hands over only their JGiven report. `acceptance` has
+# the token and the secrets and runs no code of the pull request; it reads its files as text. It
+# restores no Gradle cache either, since the pull request's jobs may have written one.
 
 on:
   pull_request:
@@ -24,7 +29,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tests:
+    name: acceptance tests
+    if: startsWith(github.head_ref, 'agent/issue-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      # In phase 1 the tests are red against the stubs, in phase 2 an old red test is a late
+      # conflict; only the report matters.
+      - run: ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jgiven-head
+          path: build/jgiven-results/test
+          if-no-files-found: ignore
+
   acceptance:
+    needs: tests
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,19 +76,31 @@ jobs:
           else
             echo "No agent branch, no acceptance criteria."
           fi
-      # The check code and the tests of `main` come from the base, the tests under test from the
-      # pull request. The pull request's own copy of `.github/acceptance` is never run.
+      # The check code and the tests of `main` come from the base. The pull request is checked out
+      # as text only (sources, git history); its report comes from the job `tests`.
       - uses: actions/checkout@v5
         if: steps.issue.outputs.number
         with:
           ref: ${{ github.base_ref }}
           path: base
+          persist-credentials: false
       - uses: actions/checkout@v5
         if: steps.issue.outputs.number
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
           fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        if: steps.issue.outputs.number
+        continue-on-error: true
+        with:
+          name: jgiven-head
+          path: ${{ runner.temp }}/head-report
+      # No report (the tests do not compile): every approved scenario is then without a test.
+      - name: Make sure there is a report directory
+        if: steps.issue.outputs.number
+        run: mkdir -p "$RUNNER_TEMP/head-report"
       - name: Is the branch behind main
         id: behind
         if: steps.issue.outputs.number
@@ -69,7 +112,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-          cache: gradle
       - uses: actions/setup-node@v5
         if: steps.issue.outputs.number
         with:
@@ -91,13 +133,9 @@ jobs:
         run: |
           cp "$RUNNER_TEMP/phase-findings.md" "$RUNNER_TEMP/findings.md"
           echo 1 > "$RUNNER_TEMP/exit_code"
-      # In phase 1 the tests are red against the stubs, in phase 2 an old red test is a late
-      # conflict (below); only the report matters.
-      - name: Run the acceptance tests of both
+      - name: Run the acceptance tests of main
         if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
-        run: |
-          (cd base && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks)
-          (cd head && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks) || true
+        run: cd base && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks
       - name: Compare with the approved scenarios
         if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
         env:
@@ -112,7 +150,7 @@ jobs:
             exit_code=1
           else
             node base/.github/acceptance/check.mjs "$RUNNER_TEMP/criteria.md" \
-              base/build/jgiven-results/test head/build/jgiven-results/test \
+              base/build/jgiven-results/test "$RUNNER_TEMP/head-report" \
               | tee "$RUNNER_TEMP/findings.md" && exit_code=0 || exit_code=$?
           fi
           [ "$exit_code" = 0 ] && echo "ok" > "$RUNNER_TEMP/matches"
@@ -130,7 +168,7 @@ jobs:
           if [ -f "$RUNNER_TEMP/matches" ]; then
             npm install --global @anthropic-ai/claude-code
             # Exit 1: findings for the coding agent, anything else: the check itself is broken.
-            node base/.github/acceptance/stages.mjs base head | tee "$RUNNER_TEMP/findings.md" \
+            node base/.github/acceptance/stages.mjs base head "$RUNNER_TEMP/head-report" | tee "$RUNNER_TEMP/findings.md" \
               && code=0 || code=$?
             echo "$code" > "$RUNNER_TEMP/exit_code"
           fi
@@ -140,7 +178,7 @@ jobs:
         run: |
           if [ "$(cat "$RUNNER_TEMP/exit_code")" = 0 ]; then
             node base/.github/acceptance/conflict.mjs "$RUNNER_TEMP/criteria.md" \
-              base/build/jgiven-results/test head/build/jgiven-results/test \
+              base/build/jgiven-results/test "$RUNNER_TEMP/head-report" \
               | tee "$RUNNER_TEMP/conflict.md" || true
           fi
       - name: Report the findings, or start phase 2

@@ -128,12 +128,13 @@ export async function judge(questions, { jev, haiku }) {
   return findings;
 }
 
-// node stages.mjs <repo of main> <repo of the pull request> (Java files, read as text only)
+// node stages.mjs <repo of main> <repo of the pull request> <its JGiven report dir>
+// (Java files, read as text only)
 if (import.meta.main) {
   const { readFileSync, readdirSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { askJev, askHaiku } = await import('./models.mjs');
-  const [base, head] = process.argv.slice(2);
+  const [base, head, headReport] = process.argv.slice(2);
   const javaFiles = (root) => {
     const sources = {};
     for (const dir of ['src/test/java/de/fourteen/notes/acceptance', 'src/main/java/de/fourteen/notes/application', 'src/main/java/de/fourteen/notes/domain']) {
@@ -145,7 +146,7 @@ if (import.meta.main) {
   };
   try {
     const questions = buildQuestions({
-      scenarios: readReport(join(head, 'build/jgiven-results/test')),
+      scenarios: readReport(headReport),
       base: javaFiles(base),
       head: javaFiles(head),
     });
