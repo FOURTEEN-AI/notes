@@ -11,4 +11,6 @@ node_modules/
 frontend/dist/
 .pnpm-store/
 *.tsbuildinfo
-.vscode/.jqwik-database
+.vscode/
+.jqwik-database
+bin/
