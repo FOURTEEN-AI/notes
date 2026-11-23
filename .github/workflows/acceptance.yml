@@ -1,0 +1,96 @@
+name: Acceptance
+
+# Required check `acceptance`: do the acceptance tests of an agent pull request match the
+# scenarios that the human approved (latest "## Acceptance criteria" comment on its issue), as a
+# delta against the tests of `main`? A failure is posted as "## Acceptance round <n>", at most 3
+# rounds, then the pull request waits for the human. Pull requests that are not from an
+# `agent/issue-<n>` branch have no criteria and pass.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: acceptance-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.number }}
+      BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Find the issue
+        id: issue
+        run: |
+          if [[ "$BRANCH" =~ ^agent/issue-([0-9]+)$ ]]; then
+            echo "number=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "No agent branch, no acceptance criteria."
+          fi
+      # The check code and the tests of `main` come from the base, the tests under test from the
+      # pull request. The pull request's own copy of `.github/acceptance` is never run.
+      - uses: actions/checkout@v5
+        if: steps.issue.outputs.number
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+      - uses: actions/checkout@v5
+        if: steps.issue.outputs.number
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+      - uses: actions/setup-java@v5
+        if: steps.issue.outputs.number
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: gradle
+      - uses: actions/setup-node@v5
+        if: steps.issue.outputs.number
+        with:
+          node-version-file: base/.node-version
+      - name: Run the acceptance tests of both
+        if: steps.issue.outputs.number
+        run: |
+          for dir in base head; do
+            (cd "$dir" && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks)
+          done
+      - name: Compare with the approved scenarios
+        if: steps.issue.outputs.number
+        env:
+          ISSUE: ${{ steps.issue.outputs.number }}
+        run: |
+          gh issue view "$ISSUE" --json comments --jq \
+            '[.comments[] | select(.body | startswith("## Acceptance criteria"))] | last | .body // empty' \
+            > "$RUNNER_TEMP/criteria.md"
+          if [ ! -s "$RUNNER_TEMP/criteria.md" ]; then
+            echo "Issue #$ISSUE has no approved acceptance criteria." | tee "$RUNNER_TEMP/findings.md"
+            exit_code=1
+          else
+            node base/.github/acceptance/check.mjs "$RUNNER_TEMP/criteria.md" \
+              base/build/jgiven-results/test head/build/jgiven-results/test \
+              | tee "$RUNNER_TEMP/findings.md" && exit_code=0 || exit_code=$?
+          fi
+          [ "$exit_code" = 0 ] && exit 0
+
+          rounds=$(gh pr view "$PR" --json comments \
+            --jq '[.comments[] | select(.body | startswith("## Acceptance round"))] | length')
+          if [ "$rounds" -lt 3 ]; then
+            {
+              echo "## Acceptance round $((rounds + 1))"
+              echo
+              echo "The acceptance tests do not match the approved scenarios:"
+              echo
+              cat "$RUNNER_TEMP/findings.md"
+            } | gh pr comment "$PR" --body-file -
+          else
+            gh pr comment "$PR" --body "Acceptance failed in $rounds rounds. Waiting for the human."
+          fi
+          exit 1
