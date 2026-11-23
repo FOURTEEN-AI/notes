@@ -1,9 +1,11 @@
 name: Preview cleanup
 
 # Removes the preview app and its database when a pull request is closed.
+# pull_request_target, because GitHub starts no pull_request workflow for a pull request with merge
+# conflicts. Safe here: the job never checks out or runs code of the pull request.
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
 
 jobs:
