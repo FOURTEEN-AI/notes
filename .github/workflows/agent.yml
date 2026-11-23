@@ -90,7 +90,7 @@ jobs:
         run: |
           git show origin/main:.github/acceptance/phase.mjs > "$RUNNER_TEMP/phase.mjs"
           checked=$(gh pr view "$PR" --json comments --jq \
-            '[.comments[] | select(.body | test("^## Acceptance (checked |reset)"))] | last | .body // "" | split(" ") | .[3] // ""')
+            '[.comments[] | select(.author.login == "github-actions" and (.body | test("^## Acceptance (checked |reset)")))] | last | .body // "" | split(" ") | .[3] // ""')
           node "$RUNNER_TEMP/phase.mjs" "$(git rev-parse HEAD)" "$checked" "$RUNNER_TEMP/phase-findings.md" \
             | tee -a "$GITHUB_OUTPUT"
         env:

@@ -24,7 +24,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: ./gradlew build
-      - run: node --test .github/acceptance/check.test.mjs .github/acceptance/stages.test.mjs .github/acceptance/phase.test.mjs .github/acceptance/conflict.test.mjs
+      - run: node --test .github/acceptance/criteria.test.mjs .github/acceptance/check.test.mjs .github/acceptance/stages.test.mjs .github/acceptance/phase.test.mjs .github/acceptance/conflict.test.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: notes-jar

@@ -123,7 +123,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           checked=$(gh pr view "$PR" --json comments --jq \
-            '[.comments[] | select(.body | test("^## Acceptance (checked |reset)"))] | last | .body // "" | split(" ") | .[3] // ""')
+            '[.comments[] | select(.author.login == "github-actions" and (.body | test("^## Acceptance (checked |reset)")))] | last | .body // "" | split(" ") | .[3] // ""')
           cd head
           node ../base/.github/acceptance/phase.mjs "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md" \
             | tee -a "$GITHUB_OUTPUT"
@@ -142,8 +142,8 @@ jobs:
           ISSUE: ${{ steps.issue.outputs.number }}
         run: |
           set -o pipefail
-          gh issue view "$ISSUE" --json comments --jq \
-            '[.comments[] | select(.body | startswith("## Acceptance criteria"))] | last | .body // empty' \
+          # Only a human's criteria count, not ones an agent posted (criteria.mjs).
+          gh issue view "$ISSUE" --json comments | node base/.github/acceptance/criteria.mjs \
             > "$RUNNER_TEMP/criteria.md"
           if [ ! -s "$RUNNER_TEMP/criteria.md" ]; then
             echo "Issue #$ISSUE has no approved acceptance criteria." | tee "$RUNNER_TEMP/findings.md"
