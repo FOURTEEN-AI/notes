@@ -6,6 +6,7 @@ plugins {
 	id 'net.ltgt.errorprone' version '5.2.0'
 	id 'pmd'
 	id 'info.solidsoft.pitest' version '1.19.0'
+	id 'org.cyclonedx.bom' version '3.6.1'
 }
 
 group = 'de.fourteen.notes'
@@ -174,4 +175,12 @@ pitest {
 
 tasks.named('check') {
 	dependsOn 'prettierCheck', 'frontendLint', 'pitest'
+}
+
+// SBOM of the runtime dependencies (what the jar contains), scanned by .github/supply-chain.sh.
+tasks.named('cyclonedxDirectBom') {
+	includeConfigs = ['runtimeClasspath']
+	projectType = 'application'
+	jsonOutput = layout.buildDirectory.file('sbom/java.cdx.json')
+	xmlOutput.unsetConvention()
 }
