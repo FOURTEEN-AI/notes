@@ -56,3 +56,8 @@ JSON list of steps, in the order a human tries the change:
 Skills live in `.claude/skills/`. Add a skill here in the same change that creates it.
 
 - `grill-me`: interviews the user about a plan or design until shared understanding is reached.
+- `modularity-review`, `modularity-design` (with the helpers `balanced-coupling` and
+  `modularity-document`): review or design modularity with the Balanced Coupling model. Copied
+  from [vladikk/modularity](https://github.com/vladikk/modularity) by Vlad Khononov with his
+  permission, CC BY-NC-SA 4.0 ([license](.claude/skills/MODULARITY-LICENSE)); changed only the
+  skill names.
