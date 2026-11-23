@@ -82,6 +82,8 @@ a workflow or count as approval.
 
 After `flyctl deploy`, `deploy` and `preview` run `.github/smoke.sh <app>` (no secrets, GETs only): polls `https://<app>.fly.dev/actuator/health` until it says `"status":"UP"` (30 x 5 s, the machine starts on the first request), then expects `/` without login to answer 401. A failure fails the job (for `preview` the link comment is then not posted).
 
+`build` also runs `.github/security-static.sh` (Docker, pinned images, the same script locally, about 15 s, also in phase 1): gitleaks 8.28.0 over the whole git history (`.env` is ignored and not tracked), Semgrep CE 1.140.0 with the registry rulesets `p/java`, `p/typescript`, `p/react`, `p/dockerfile`, `p/github-actions` (`--error`, no login, `--metrics=off`; rulesets are fetched at run time, so new rules can turn the build red without a change; `p/secrets` is left to gitleaks) on `src`, `frontend/src`, `Dockerfile` and `.github`, and Trivy 0.67.2 `config` on `Dockerfile` (HIGH, CRITICAL fail; it does not read `fly.toml`). Semgrep's `github-actions-mutable-action-tag` is excluded in the script (SHA pinning belongs to the workflow hardening). Suppress a false positive with `// nosemgrep: <rule-id>` and a reason.
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

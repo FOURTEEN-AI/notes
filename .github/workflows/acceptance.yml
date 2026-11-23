@@ -112,15 +112,19 @@ jobs:
       - name: Is the branch behind main
         id: behind
         if: steps.issue.outputs.number
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git -C head merge-base --is-ancestor "origin/${{ github.base_ref }}" HEAD \
+          git -C head merge-base --is-ancestor "origin/$BASE_REF" HEAD \
             && echo "behind=false" >> "$GITHUB_OUTPUT" || echo "behind=true" >> "$GITHUB_OUTPUT"
       # Only git, on the objects: touches no file of the pull request and runs none of its code.
       - name: Does the branch merge with main
         id: merges
         if: steps.behind.outputs.behind == 'true'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git -C head merge-tree --write-tree HEAD "origin/${{ github.base_ref }}" > /dev/null \
+          git -C head merge-tree --write-tree HEAD "origin/$BASE_REF" > /dev/null \
             && echo "clean=true" >> "$GITHUB_OUTPUT" || echo "clean=false" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
         if: steps.issue.outputs.number
