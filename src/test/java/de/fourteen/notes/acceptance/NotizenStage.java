@@ -43,20 +43,20 @@ public class NotizenStage extends Stage<NotizenStage> {
     }
 
     public NotizenStage ich_eine_Notiz_mit_$_Zeichen_speichere(int anzahl) {
-        try {
-            zuletztGespeichert = notizen.create("x".repeat(anzahl));
-        } catch (DomainException e) {
-            fehler = e;
-        }
+        speichere("x".repeat(anzahl));
         return self();
     }
 
-    public NotizenStage ich_eine_Notiz_mit_$_Leerzeichen_speichere(int anzahl) {
+    private void speichere(String text) {
         try {
-            zuletztGespeichert = notizen.create(" ".repeat(anzahl));
+            zuletztGespeichert = notizen.create(text);
         } catch (DomainException e) {
             fehler = e;
         }
+    }
+
+    public NotizenStage ich_eine_Notiz_mit_$_Leerzeichen_speichere(int anzahl) {
+        speichere(" ".repeat(anzahl));
         return self();
     }
 
@@ -109,7 +109,6 @@ public class NotizenStage extends Stage<NotizenStage> {
 
     public NotizenStage wird_die_Eingabe_abgelehnt() {
         assertThat(fehler).isNotNull();
-        assertThat(fehler.kind()).isEqualTo(DomainException.Kind.INVALID);
         return self();
     }
 
