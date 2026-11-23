@@ -68,6 +68,8 @@ a workflow or count as approval.
 
 `build` also checks formatting (`check`): Spotless (google-java-format AOSP style, 4 spaces, unused imports removed, imports sorted) for Java and Prettier (`frontend/.prettierrc.json`) for `frontend/src` and its config files. `./gradlew format` fixes both (`pnpm run format` only the frontend).
 
+`build` also compiles strictly: javac with `-Xlint:all -Werror` (tests without `deprecation`: JGiven's `ScenarioTest`), Error Prone (bug patterns, warnings are errors) and NullAway on main sources. Every package of `de.fourteen.notes` is `@NullMarked` (JSpecify, `package-info.java`); where null is allowed it says `@Nullable`. `OnionArchitectureTest` lets `domain` import `org.jspecify` besides the JDK.
+
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 

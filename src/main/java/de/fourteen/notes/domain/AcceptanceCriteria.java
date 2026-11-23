@@ -59,7 +59,7 @@ public final class AcceptanceCriteria {
         List<String> titles = new ArrayList<>();
         String replaced = null;
         boolean removed = false;
-        for (String raw : gherkin.split("\\R")) {
+        for (String raw : gherkin.lines().toList()) {
             String line = raw.strip();
             Matcher replaces = REPLACES.matcher(line);
             if (replaces.find()) {

@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '4.2.0'
 	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
 	id 'com.diffplug.spotless' version '8.2.1'
+	id 'net.ltgt.errorprone' version '5.2.0'
 }
 
 group = 'de.fourteen.notes'
@@ -25,7 +26,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+	implementation 'org.jspecify:jspecify:1.0.1'
 	runtimeOnly 'org.postgresql:postgresql'
+	errorprone 'com.google.errorprone:error_prone_core:2.53.0'
+	errorprone 'com.uber.nullaway:nullaway:0.14.4'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
@@ -38,6 +42,24 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Compiler: all javac lints are errors, Error Prone finds bug patterns, NullAway checks null-safety
+// (JSpecify @NullMarked per package, see package-info.java) in main sources.
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs += ['-Xlint:all', '-Werror']
+	options.errorprone {
+		option('NullAway:OnlyNullMarked', 'true')
+		if (name == 'compileJava') {
+			check('NullAway', net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+		} else {
+			disable('NullAway') // tests are not @NullMarked: Mockito, JGiven and fakes make it noise
+		}
+	}
+	if (name == 'compileTestJava') {
+		// JGiven 3 deprecates ScenarioTest, which the (protected) acceptance tests extend.
+		options.compilerArgs += '-Xlint:-deprecation'
+	}
 }
 
 

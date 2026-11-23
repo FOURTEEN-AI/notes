@@ -22,12 +22,13 @@ class OnionArchitectureTest {
             Pattern.compile("^import\\s+(?:static\\s+)?([\\w.]+)", Pattern.MULTILINE);
 
     @Test
-    void domain_uses_only_the_jdk() throws IOException {
+    void domain_uses_only_the_jdk_and_nullness_annotations() throws IOException {
         assertThat(imports("domain"))
                 .allSatisfy(
                         i ->
                                 assertThat(i)
-                                        .matches("(java\\.|de\\.fourteen\\.notes\\.domain\\.).*"));
+                                        .matches(
+                                                "(java\\.|de\\.fourteen\\.notes\\.domain\\.|org\\.jspecify\\.).*"));
     }
 
     @Test
@@ -61,7 +62,7 @@ class OnionArchitectureTest {
     void every_class_lives_in_a_ring() throws IOException {
         try (Stream<Path> files = Files.list(SOURCES)) {
             assertThat(files.filter(Files::isRegularFile).map(p -> p.getFileName().toString()))
-                    .containsExactly("NotesApplication.java");
+                    .containsExactlyInAnyOrder("NotesApplication.java", "package-info.java");
         }
     }
 

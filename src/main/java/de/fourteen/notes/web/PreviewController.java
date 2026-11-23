@@ -5,6 +5,7 @@ import de.fourteen.notes.application.PreviewService;
 import de.fourteen.notes.domain.CheckState;
 import de.fourteen.notes.domain.DemoStep;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,11 +34,12 @@ class PreviewController {
             CheckState acceptance,
             boolean mergeable,
             List<DemoStepResponse> demo,
-            Integer issue,
-            String proposal) {}
+            @Nullable Integer issue,
+            @Nullable String proposal) {}
 
     /** Named like in the ```demo block, which the frontend shows as it is. */
-    record DemoStepResponse(@JsonProperty("do") String action, String expect, String selector) {
+    record DemoStepResponse(
+            @JsonProperty("do") String action, String expect, @Nullable String selector) {
 
         static DemoStepResponse of(DemoStep step) {
             return new DemoStepResponse(step.action(), step.expect(), step.selector());

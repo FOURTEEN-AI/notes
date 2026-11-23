@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -91,7 +92,10 @@ class JGivenReport implements ScenarioReport {
             StringBuilder line =
                     new StringBuilder(
                             KEYWORDS.getOrDefault(
-                                    words.path(0).path("value").asString("").toLowerCase(),
+                                    words.path(0)
+                                            .path("value")
+                                            .asString("")
+                                            .toLowerCase(Locale.ROOT),
                                     words.path(0).path("value").asString("")));
             for (int i = 1; i < words.size(); i++) {
                 String value = words.get(i).path("value").asString("");

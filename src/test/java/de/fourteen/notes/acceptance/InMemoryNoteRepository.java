@@ -3,6 +3,7 @@ package de.fourteen.notes.acceptance;
 import de.fourteen.notes.domain.Note;
 import de.fourteen.notes.domain.NoteRepository;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +20,7 @@ class InMemoryNoteRepository implements NoteRepository {
 
     @Override
     public Note add(String text) {
-        Note note = new Note(nextId++, text, OffsetDateTime.now());
+        Note note = new Note(nextId++, text, OffsetDateTime.now(ZoneOffset.UTC));
         notes.add(note);
         return note;
     }

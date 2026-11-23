@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -41,11 +42,12 @@ public class PreviewService {
             CheckState acceptance,
             boolean mergeable,
             List<DemoStep> demo,
-            Integer issue,
-            String proposal) {}
+            @Nullable Integer issue,
+            @Nullable String proposal) {}
 
     /** A step as the coding agent writes it in the ```demo block (format in CLAUDE.md). */
-    private record WrittenStep(@JsonProperty("do") String action, String expect, String selector) {}
+    private record WrittenStep(
+            @JsonProperty("do") String action, String expect, @Nullable String selector) {}
 
     // The coding agent starts on comments with this marker (agent.yml).
     private static final String FEEDBACK_MARKER = "## Human feedback";
