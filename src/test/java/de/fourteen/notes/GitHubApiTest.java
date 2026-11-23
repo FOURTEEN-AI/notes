@@ -270,7 +270,7 @@ class GitHubApiTest {
                 .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
                 .andRespond(json(checkRuns("success", null)));
-
+        issueComments(6, "[]");
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(7))
@@ -281,6 +281,46 @@ class GitHubApiTest {
                 .andExpect(jsonPath("$.acceptance").value("SUCCESS"))
                 .andExpect(jsonPath("$.mergeable").value(false))
                 .andExpect(jsonPath("$.demo.length()").value(0));
+    }
+
+    @Test
+    void preview_offers_an_amended_delta_that_the_coding_agent_proposed() throws Exception {
+        github.expect(requestTo(REPO + "/pulls/7"))
+                .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
+        github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
+                .andRespond(json(checkRuns("success", "success")));
+        issueComments(
+                6,
+                """
+                [
+                  {"body": "## Acceptance criteria\\n\\n```gherkin\\nold\\n```"},
+                  {"body": "## Refine\\n\\nMain moved:\\n```gherkin\\n# language: de\\nnew\\n```"}
+                ]
+                """);
+
+        mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(jsonPath("$.issue").value(6))
+                .andExpect(jsonPath("$.proposal").value("# language: de\nnew"));
+    }
+
+    @Test
+    void preview_offers_nothing_once_the_proposal_is_approved() throws Exception {
+        github.expect(requestTo(REPO + "/pulls/7"))
+                .andRespond(json(pullRequest(7, "agent/issue-6", "def", "open")));
+        github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
+                .andRespond(json(checkRuns("success", "success")));
+        issueComments(
+                6,
+                """
+                [
+                  {"body": "## Refine\\n\\n```gherkin\\nnew\\n```"},
+                  {"body": "## Acceptance criteria\\n\\n```gherkin\\nnew\\n```"}
+                ]
+                """);
+
+        mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(jsonPath("$.issue").value(6))
+                .andExpect(jsonPath("$.proposal").doesNotExist());
     }
 
     @Test
@@ -303,7 +343,7 @@ class GitHubApiTest {
                 .andRespond(json(withBody(pullRequest(7, "agent/issue-6", "def", "open"), body)));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
                 .andRespond(json(checkRuns("success", "success")));
-
+        issueComments(6, "[]");
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(jsonPath("$.demo.length()").value(2))
                 .andExpect(jsonPath("$.demo[0].do").value("Write a note and save it"))
@@ -320,7 +360,7 @@ class GitHubApiTest {
                 .andRespond(json(withBody(pullRequest(7, "agent/issue-6", "def", "open"), body)));
         github.expect(requestTo(REPO + "/commits/def/check-runs?per_page=100"))
                 .andRespond(json(checkRuns("success", "success")));
-
+        issueComments(6, "[]");
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.demo.length()").value(0));
@@ -407,6 +447,11 @@ class GitHubApiTest {
 
         mvc.perform(get("/api/preview").header(HttpHeaders.AUTHORIZATION, LOGIN))
                 .andExpect(status().isBadGateway());
+    }
+
+    private void issueComments(int issue, String comments) {
+        github.expect(requestTo(REPO + "/issues/" + issue + "/comments?per_page=100"))
+                .andRespond(json(comments));
     }
 
     private static org.springframework.test.web.client.ResponseCreator json(String body) {

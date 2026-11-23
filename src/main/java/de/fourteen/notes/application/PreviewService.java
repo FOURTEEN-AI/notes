@@ -1,6 +1,7 @@
 package de.fourteen.notes.application;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import de.fourteen.notes.domain.AcceptanceCriteria;
 import de.fourteen.notes.domain.CheckState;
 import de.fourteen.notes.domain.Checks;
 import de.fourteen.notes.domain.DemoStep;
@@ -9,6 +10,7 @@ import de.fourteen.notes.domain.GitHub;
 import de.fourteen.notes.domain.PullRequest;
 import java.util.Arrays;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +27,9 @@ public class PreviewService {
 
     /**
      * deployedSha is the commit this app runs (env PULL_REQUEST_SHA, set by ci.yml). A page that
-     * was loaded from another commit offers to reload.
+     * was loaded from another commit offers to reload. proposal is the gherkin block of an amended
+     * delta that the coding agent proposed in the chat of the idea (number issue) and that the
+     * human has not released yet; null if there is none.
      */
     public record Preview(
             int number,
@@ -36,7 +40,9 @@ public class PreviewService {
             CheckState review,
             CheckState acceptance,
             boolean mergeable,
-            List<DemoStep> demo) {}
+            List<DemoStep> demo,
+            Integer issue,
+            String proposal) {}
 
     /** A step as the coding agent writes it in the ```demo block (format in CLAUDE.md). */
     private record WrittenStep(@JsonProperty("do") String action, String expect, String selector) {}
@@ -66,6 +72,7 @@ public class PreviewService {
     public Preview get() {
         PullRequest pr = github.pullRequest(number());
         Checks checks = github.checks(pr.sha());
+        OptionalInt issue = pr.open() ? pr.issue() : OptionalInt.empty();
         return new Preview(
                 pr.number(),
                 pr.title(),
@@ -75,7 +82,12 @@ public class PreviewService {
                 checks.review(),
                 checks.acceptance(),
                 pr.open() && checks.green(),
-                demo(pr.body()));
+                demo(pr.body()),
+                issue.isPresent() ? issue.getAsInt() : null,
+                issue.isPresent()
+                        ? AcceptanceCriteria.pendingProposal(github.comments(issue.getAsInt()))
+                                .orElse(null)
+                        : null);
     }
 
     public void feedback(String text) {

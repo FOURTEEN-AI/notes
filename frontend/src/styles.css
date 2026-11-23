@@ -220,6 +220,13 @@ header {
   margin: 0;
 }
 
+.preview-bar pre {
+  max-height: 10rem;
+  overflow: auto;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
 .preview-bar .actions {
   display: flex;
   justify-content: flex-end;

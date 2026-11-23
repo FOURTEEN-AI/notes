@@ -279,7 +279,14 @@ per stage and fake method (Jev, Haiku in between; needs the secret `TYPESAFE_API
 (`agent.yml` prompts per phase; green `acceptance` in phase 1 posts `## Acceptance checked <sha>`
 and starts phase 2; `.github/acceptance/phase.mjs` fails a phase 2 that changes the acceptance
 tests against that commit, a commit with the line `Phase: 1` goes back; `review` fails until phase 2
-has pushed). Open: late conflicts, the old versions in the idea chat.
+has pushed), late conflicts (`acceptance` posts `## Acceptance conflict` when a test of `main` that
+the delta leaves alone is red after phase 2, or when it has findings while the branch is behind
+`main`; `agent.yml` then only proposes an amended full delta in a `## Refine` comment and swaps
+`agent` for `refine`; the next release posts the new `## Acceptance criteria`, which replaces the
+old one, and phase 1 repeats on the same branch after a `## Acceptance reset` comment that voids the
+checked commit and the rounds; the preview bar shows a pending proposal with the button
+"Freigeben", which calls the approval endpoint of the idea chat; feedback that changes approved
+behaviour takes the same path). Open: the old versions in the idea chat.
 
 **Done when**
 

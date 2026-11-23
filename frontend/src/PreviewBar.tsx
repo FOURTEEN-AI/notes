@@ -12,6 +12,9 @@ type Preview = {
   acceptance: CheckState;
   mergeable: boolean;
   demo: DemoStep[];
+  // The coding agent's amended delta (gherkin) that waits for the human's release, in the chat of this issue.
+  issue: number | null;
+  proposal: string | null;
 };
 
 const checkLabels: Record<CheckState, string> = {
@@ -71,6 +74,20 @@ export function PreviewBar() {
     setMessage('Feedback gesendet, der Agent arbeitet daran.');
   }
 
+  // Same endpoint as the button in the idea chat: it posts the block as the new acceptance criteria
+  // and sends the idea back to the coding agent.
+  async function approve() {
+    setBusy(true);
+    const response = await fetch(`/api/ideas/${preview?.issue}/approval`, { method: 'POST' });
+    setBusy(false);
+    if (!response.ok) {
+      setMessage('Freigabe fehlgeschlagen.');
+      return;
+    }
+    setMessage('Freigegeben, der Agent beginnt von vorn mit den Tests.');
+    setPreview({ ...preview!, proposal: null });
+  }
+
   async function merge() {
     if (!confirm(`Pull Request #${preview?.number} mergen?`)) return;
     setBusy(true);
@@ -112,6 +129,15 @@ export function PreviewBar() {
       )}
       {preview.state === 'open' && loadedSha.current && (
         <Tour steps={preview.demo} sha={loadedSha.current} onMismatch={prefillFeedback} />
+      )}
+      {preview.state === 'open' && preview.proposal && (
+        <details open>
+          <summary>Der Agent schlägt geänderte Szenarien vor</summary>
+          <pre>{preview.proposal}</pre>
+          <button type="button" className="approve" onClick={approve} disabled={busy}>
+            Freigeben
+          </button>
+        </details>
       )}
       {preview.state === 'open' && (
         <form onSubmit={sendFeedback}>

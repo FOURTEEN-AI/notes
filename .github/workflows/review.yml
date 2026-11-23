@@ -39,7 +39,7 @@ jobs:
             exit 0
           fi
           checked=$(gh pr view "$PR" --json comments --jq \
-            '[.comments[] | select(.body | startswith("## Acceptance checked "))] | last | .body // "" | split(" ") | .[3] // ""')
+            '[.comments[] | select(.body | test("^## Acceptance (checked |reset)"))] | last | .body // "" | split(" ") | .[3] // ""')
           git show origin/main:.github/acceptance/phase.mjs > "$RUNNER_TEMP/phase.mjs"
           out=$(node "$RUNNER_TEMP/phase.mjs" "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md")
           if [ -n "$checked" ] && [ "$checked" != "$HEAD_SHA" ] && grep -qx 'phase=2' <<< "$out" \

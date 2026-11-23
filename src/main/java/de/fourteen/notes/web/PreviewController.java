@@ -28,7 +28,9 @@ class PreviewController {
             CheckState review,
             CheckState acceptance,
             boolean mergeable,
-            List<DemoStepResponse> demo) {}
+            List<DemoStepResponse> demo,
+            Integer issue,
+            String proposal) {}
 
     /** Named like in the ```demo block, which the frontend shows as it is. */
     record DemoStepResponse(@JsonProperty("do") String action, String expect, String selector) {
@@ -58,7 +60,9 @@ class PreviewController {
                 p.review(),
                 p.acceptance(),
                 p.mergeable(),
-                p.demo().stream().map(DemoStepResponse::of).toList());
+                p.demo().stream().map(DemoStepResponse::of).toList(),
+                p.issue(),
+                p.proposal());
     }
 
     @PostMapping(path = "/feedback", consumes = MediaType.APPLICATION_JSON_VALUE)

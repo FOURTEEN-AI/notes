@@ -10,6 +10,10 @@ name: Acceptance
 # It also drives the two phases of the coding agent (`.github/acceptance/phase.mjs`). Green in phase 1
 # records the checked commit in a comment "## Acceptance checked <sha>" and starts phase 2. In phase 2
 # the acceptance tests, stages and fakes must equal that commit, otherwise this is a finding.
+#
+# Late conflicts: an old test of `main` that is red after phase 2, or findings while the branch is
+# behind `main` (a parallel pull request was merged), are no findings for the coding agent: the
+# comment "## Acceptance conflict" sends the idea back to the idea chat (agent.yml, input `conflict`).
 
 on:
   pull_request:
@@ -54,6 +58,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
           fetch-depth: 0
+      - name: Is the branch behind main
+        id: behind
+        if: steps.issue.outputs.number
+        run: |
+          git -C head merge-base --is-ancestor "origin/${{ github.base_ref }}" HEAD \
+            && echo "behind=false" >> "$GITHUB_OUTPUT" || echo "behind=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
         if: steps.issue.outputs.number
         with:
@@ -71,7 +81,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           checked=$(gh pr view "$PR" --json comments --jq \
-            '[.comments[] | select(.body | startswith("## Acceptance checked "))] | last | .body // "" | split(" ") | .[3] // ""')
+            '[.comments[] | select(.body | test("^## Acceptance (checked |reset)"))] | last | .body // "" | split(" ") | .[3] // ""')
           cd head
           node ../base/.github/acceptance/phase.mjs "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md" \
             | tee -a "$GITHUB_OUTPUT"
@@ -81,13 +91,13 @@ jobs:
         run: |
           cp "$RUNNER_TEMP/phase-findings.md" "$RUNNER_TEMP/findings.md"
           echo 1 > "$RUNNER_TEMP/exit_code"
-      # In phase 1 the tests are red against the stubs; only the report matters.
+      # In phase 1 the tests are red against the stubs, in phase 2 an old red test is a late
+      # conflict (below); only the report matters.
       - name: Run the acceptance tests of both
         if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
         run: |
           (cd base && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks)
-          (cd head && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks) \
-            || [ "${{ steps.phase.outputs.phase }}" = 1 ]
+          (cd head && ./gradlew test --tests 'de.fourteen.notes.acceptance.*' --rerun-tasks) || true
       - name: Compare with the approved scenarios
         if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
         env:
@@ -124,10 +134,36 @@ jobs:
               && code=0 || code=$?
             echo "$code" > "$RUNNER_TEMP/exit_code"
           fi
+      # The approved tests are checked and match; do old tests of main fail with this code?
+      - name: Old tests that are red
+        if: steps.issue.outputs.number && steps.phase.outputs.phase == '2' && steps.phase.outputs.violation != 'true'
+        run: |
+          if [ "$(cat "$RUNNER_TEMP/exit_code")" = 0 ]; then
+            node base/.github/acceptance/conflict.mjs "$RUNNER_TEMP/criteria.md" \
+              base/build/jgiven-results/test head/build/jgiven-results/test \
+              | tee "$RUNNER_TEMP/conflict.md" || true
+          fi
       - name: Report the findings, or start phase 2
         if: steps.issue.outputs.number
         run: |
           exit_code=$(cat "$RUNNER_TEMP/exit_code")
+          # The delta does not fit main any more: findings while the branch lacks what main got meanwhile.
+          if [ "$exit_code" = 1 ] && [ "${{ steps.phase.outputs.violation }}" != true ] \
+              && [ "${{ steps.behind.outputs.behind }}" = true ]; then
+            cp "$RUNNER_TEMP/findings.md" "$RUNNER_TEMP/conflict.md"
+          fi
+          if [ -s "$RUNNER_TEMP/conflict.md" ]; then
+            {
+              echo "## Acceptance conflict"
+              echo
+              echo "The approved scenarios and the tests of main do not fit together any more (an old test is red, or main changed in the meantime):"
+              echo
+              cat "$RUNNER_TEMP/conflict.md"
+            } | gh pr comment "$PR" --body-file -
+            # The coding agent proposes an amended delta in the idea chat instead of fixing it.
+            gh workflow run agent.yml -f pr="$PR" -f conflict=true
+            exit 1
+          fi
           if [ "$exit_code" = 0 ]; then
             # Green: in phase 1 the tests are checked now, and phase 2 starts.
             if [ "${{ steps.phase.outputs.phase }}" = 1 ]; then
@@ -138,8 +174,10 @@ jobs:
           fi
           [ "$exit_code" = 1 ] || { echo "The acceptance check itself failed."; exit 1; }
 
-          rounds=$(gh pr view "$PR" --json comments \
-            --jq '[.comments[] | select(.body | startswith("## Acceptance round"))] | length')
+          # The rounds count from the last "## Acceptance reset" (new approval of the idea).
+          rounds=$(gh pr view "$PR" --json comments --jq \
+            'reduce .comments[] as $c (0; if ($c.body | startswith("## Acceptance reset")) then 0
+              elif ($c.body | startswith("## Acceptance round")) then . + 1 else . end)')
           if [ "$rounds" -lt 3 ]; then
             {
               echo "## Acceptance round $((rounds + 1))"

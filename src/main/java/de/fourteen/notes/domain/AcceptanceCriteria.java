@@ -1,5 +1,6 @@
 package de.fourteen.notes.domain;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +23,24 @@ public final class AcceptanceCriteria {
         return matcher.find() && !matcher.group(1).isBlank()
                 ? Optional.of(matcher.group(1))
                 : Optional.empty();
+    }
+
+    /**
+     * The gherkin block of the newest `## Refine` comment, as long as no `## Acceptance criteria`
+     * comment follows it: the coding agent proposes an amended delta (late conflict or feedback)
+     * that the human has not released yet.
+     */
+    public static Optional<String> pendingProposal(List<Comment> comments) {
+        for (int i = comments.size() - 1; i >= 0; i--) {
+            String body = comments.get(i).body();
+            if (body.startsWith(MARKER)) {
+                return Optional.empty();
+            }
+            if (body.startsWith("## Refine")) {
+                return gherkinBlock(body);
+            }
+        }
+        return Optional.empty();
     }
 
     public static String toComment(String gherkin) {
