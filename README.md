@@ -113,6 +113,10 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh variable set FLY_ORG --repo FOURTEEN-AI/note
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_NAME --repo FOURTEEN-AI/notes
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_PASSWORD --repo FOURTEEN-AI/notes
 
+# Jev (TypeSafe) judges the stage and fake methods in the `acceptance` workflow. Own key with its own
+# budget; no other workflow uses it.
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set TYPESAFE_API_KEY --repo FOURTEEN-AI/notes
+
 # Last, once the checks `build`, `review` and `acceptance` have run on a pull request: protect main.
 # "enforce_admins": false keeps direct pushes to main open for admins (local sessions).
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
@@ -135,6 +139,7 @@ EOF
 | `FLY_ORG_TOKEN`, variable `FLY_ORG` | GitHub Actions secret and variable | preview apps |
 | `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD` | GitHub Actions secrets | login of the preview apps |
 | `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions secret | coding and review agent |
+| `TYPESAFE_API_KEY` | GitHub Actions secret (own TypeSafe key and budget; only the `acceptance` job uses it) | Jev judges the changed stage and fake methods |
 | `GITHUB_TOKEN` | Fly secret (production; set by `ci.yml` on previews) | ideas and preview bar |
 | `APP_GITHUB_TOKEN` | GitHub Actions secret | the same token, for the preview apps |
 | `PULL_REQUEST` | Fly env of a preview (set by `ci.yml`) | turns on the preview bar |

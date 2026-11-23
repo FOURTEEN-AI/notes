@@ -2,7 +2,8 @@ name: Acceptance
 
 # Required check `acceptance`: do the acceptance tests of an agent pull request match the
 # scenarios that the human approved (latest "## Acceptance criteria" comment on its issue), as a
-# delta against the tests of `main`? A failure is posted as "## Acceptance round <n>", at most 3
+# delta against the tests of `main`, and does every stage and fake method that changed against `main`
+# implement its step in every scenario that uses it (Jev, Haiku in between)? A failure is posted as "## Acceptance round <n>", at most 3
 # rounds, then the pull request waits for the human. Each round starts the coding agent. Pull requests that are not from an
 # `agent/issue-<n>` branch have no criteria and pass.
 
@@ -68,6 +69,7 @@ jobs:
         env:
           ISSUE: ${{ steps.issue.outputs.number }}
         run: |
+          set -o pipefail
           gh issue view "$ISSUE" --json comments --jq \
             '[.comments[] | select(.body | startswith("## Acceptance criteria"))] | last | .body // empty' \
             > "$RUNNER_TEMP/criteria.md"
@@ -79,7 +81,31 @@ jobs:
               base/build/jgiven-results/test head/build/jgiven-results/test \
               | tee "$RUNNER_TEMP/findings.md" && exit_code=0 || exit_code=$?
           fi
+          [ "$exit_code" = 0 ] && echo "ok" > "$RUNNER_TEMP/matches"
+          echo "$exit_code" > "$RUNNER_TEMP/exit_code"
+          exit 0
+      # Only when the tests match the scenarios. The key and the token are only here; the step
+      # reads the Java files of the pull request as text and runs none of its code.
+      - name: Judge the changed stage and fake methods
+        if: steps.issue.outputs.number
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set -o pipefail
+          if [ -f "$RUNNER_TEMP/matches" ]; then
+            npm install --global @anthropic-ai/claude-code
+            # Exit 1: findings for the coding agent, anything else: the check itself is broken.
+            node base/.github/acceptance/stages.mjs base head | tee "$RUNNER_TEMP/findings.md" \
+              && code=0 || code=$?
+            echo "$code" > "$RUNNER_TEMP/exit_code"
+          fi
+      - name: Report the findings
+        if: steps.issue.outputs.number
+        run: |
+          exit_code=$(cat "$RUNNER_TEMP/exit_code")
           [ "$exit_code" = 0 ] && exit 0
+          [ "$exit_code" = 1 ] || { echo "The acceptance check itself failed."; exit 1; }
 
           rounds=$(gh pr view "$PR" --json comments \
             --jq '[.comments[] | select(.body | startswith("## Acceptance round"))] | length')
@@ -87,7 +113,7 @@ jobs:
             {
               echo "## Acceptance round $((rounds + 1))"
               echo
-              echo "The acceptance tests do not match the approved scenarios:"
+              echo "The acceptance tests do not match the approved scenarios, or a changed stage or fake method or do not implement their steps:"
               echo
               cat "$RUNNER_TEMP/findings.md"
             } | gh pr comment "$PR" --body-file -

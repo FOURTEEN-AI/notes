@@ -274,8 +274,8 @@ versions of changed scenarios), the deterministic comparison of approved delta a
 (`.github/acceptance/`, tested in `ci.yml`), the workflow `acceptance` around it (latest
 `## Acceptance criteria`, tests of `main` and of the pull request, the comment
 `## Acceptance round <n>`, which starts the coding agent, at most 3 rounds), `acceptance` as a
-required check in branch protection and for the merge button (preview bar lists it). Open: the judgement per stage method
-(Jev, Haiku), the two phases of the coding agent, late conflicts, the old versions in the idea chat.
+required check in branch protection and for the merge button (preview bar lists it), the judgement
+per stage and fake method (Jev, Haiku in between; needs the secret `TYPESAFE_API_KEY`). Open: the two phases of the coding agent, late conflicts, the old versions in the idea chat.
 
 **Done when**
 
