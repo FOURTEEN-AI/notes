@@ -42,6 +42,29 @@ public class NotizenStage extends Stage<NotizenStage> {
         return self();
     }
 
+    public NotizenStage ich_eine_Notiz_mit_$_Zeichen_speichere(int anzahl) {
+        speichereVersuch("x".repeat(anzahl));
+        return self();
+    }
+
+    public NotizenStage ich_eine_Notiz_mit_$_Leerzeichen_speichere(int anzahl) {
+        speichereVersuch(" ".repeat(anzahl));
+        return self();
+    }
+
+    private void speichereVersuch(String text) {
+        try {
+            zuletztGespeichert = notizen.create(text);
+        } catch (DomainException e) {
+            fehler = e;
+        }
+    }
+
+    public NotizenStage die_Liste_zeigt_die_Notiz_mit_$_Zeichen(int anzahl) {
+        assertThat(notizen.list().stream().map(Note::text).toList()).containsExactly("x".repeat(anzahl));
+        return self();
+    }
+
     public NotizenStage ich_loesche_die_Notiz_$(String text) {
         long id =
                 notizen.list().stream()
@@ -92,6 +115,28 @@ public class NotizenStage extends Stage<NotizenStage> {
 
     @Pending
     public NotizenStage das_Eingabefeld_ist_leer() {
+        return self();
+    }
+
+    @Pending
+    public NotizenStage ich_$_Zeichen_in_das_Eingabefeld_tippe(int anzahl) {
+        return self();
+    }
+
+    @Pending
+    @As("zeigt das Formular „12/280“ unter dem Textfeld")
+    public NotizenStage das_Formular_zeigt_den_Zaehler() {
+        return self();
+    }
+
+    @Pending
+    @As("ich eine Notiz mit mehr als 280 Zeichen speichern möchte")
+    public NotizenStage ich_eine_zu_lange_Notiz_speichern_moechte() {
+        return self();
+    }
+
+    @Pending
+    public NotizenStage die_App_zeigt_eine_verstaendliche_Fehlermeldung() {
         return self();
     }
 }

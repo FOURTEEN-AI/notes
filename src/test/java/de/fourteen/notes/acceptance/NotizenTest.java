@@ -56,4 +56,43 @@ class NotizenTest extends ScenarioTest<NotizenStage, NotizenStage, NotizenStage>
         when().ich_speichere_die_Notiz_$("Milch kaufen");
         then().das_Eingabefeld_ist_leer();
     }
+
+    @Test
+    @Description("Eine Notiz mit genau 280 Zeichen wird gespeichert")
+    void eine_Notiz_mit_genau_280_Zeichen_wird_gespeichert() {
+        when().ich_eine_Notiz_mit_$_Zeichen_speichere(280);
+        then().die_Liste_zeigt_die_Notiz_mit_$_Zeichen(280);
+    }
+
+    @Test
+    @Description("Eine zu lange Notiz wird abgelehnt")
+    void eine_zu_lange_Notiz_wird_abgelehnt() {
+        when().ich_eine_Notiz_mit_$_Zeichen_speichere(281);
+        then().die_Eingabe_wird_abgelehnt().and().die_Liste_ist_leer();
+    }
+
+    @Test
+    @Description("Eine nur aus Leerzeichen bestehende Notiz bleibt leer")
+    void eine_nur_aus_Leerzeichen_bestehende_Notiz_bleibt_leer() {
+        when().ich_eine_Notiz_mit_$_Leerzeichen_speichere(300);
+        then().die_Eingabe_wird_abgelehnt().and().die_Liste_ist_leer();
+    }
+
+    @Test
+    @Pending
+    @Manuell("Nur das Frontend zeigt den Zeichenzähler")
+    @Description("Der Zeichenzähler zeigt die Länge der Eingabe")
+    void der_Zeichenzaehler_zeigt_die_Laenge_der_Eingabe() {
+        when().ich_$_Zeichen_in_das_Eingabefeld_tippe(12);
+        then().das_Formular_zeigt_den_Zaehler();
+    }
+
+    @Test
+    @Pending
+    @Manuell("Nur das Frontend zeigt die Fehlermeldung")
+    @Description("Die App meldet eine zu lange Notiz verständlich")
+    void die_App_meldet_eine_zu_lange_Notiz_verstaendlich() {
+        when().ich_eine_zu_lange_Notiz_speichern_moechte();
+        then().die_App_zeigt_eine_verstaendliche_Fehlermeldung();
+    }
 }
