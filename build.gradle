@@ -51,6 +51,12 @@ tasks.named('test') {
 	// DocumentedExamplesTest reads the docs and the frontend sources from the repository root.
 	inputs.files(fileTree(dir: '.', includes: ['CLAUDE.md', 'README.md', 'docs/**/*.md', 'frontend/src/**']))
 			.withPropertyName('documentedExamples')
+	// SchemaMigrationTest compares schema.sql with the one of origin/main; rerun when that moves.
+	// Empty without git or origin/main (the test itself fails then, but other runs are unaffected).
+	inputs.property('mainSchema', providers.exec {
+		commandLine 'git', 'show', 'origin/main:src/main/resources/schema.sql'
+		ignoreExitValue = true
+	}.standardOutput.asText.orElse(''))
 }
 
 // Compiler: all javac lints are errors, Error Prone finds bug patterns, NullAway checks null-safety
