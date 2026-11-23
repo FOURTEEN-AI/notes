@@ -80,14 +80,12 @@ test('a step that no stage method stands for is a finding, not skipped', () => {
   assert.match(finding, /No stage method stands for "when eine Notiz existiert \$" in "Anhängen"/);
 });
 
-test('Jev decides at 0.9 and 0.5, Haiku in between', async () => {
+test('Haiku decides and its reason goes into the finding', async () => {
   const q = (label) => ({ label, method: 'S.m', changed: ['S.m'], state: {} });
-  const run = (p, pass) =>
-    judge([q('a')], { jev: async () => p, haiku: async () => ({ pass, reason: 'because' }) });
-  assert.deepEqual(await run(0.9, false), []);
-  assert.match((await run(0.49, true))[0], /Jev p=0.49/);
-  assert.deepEqual(await run(0.5, true), []);
-  assert.match((await run(0.7, false))[0], /Jev p=0.70, Haiku: because/);
+  const run = (pass) => judge([q('a')], { haiku: async () => ({ pass, reason: 'because' }) });
+  assert.deepEqual(await run(true), []);
+  const [finding] = await run(false);
+  assert.match(finding, /does not implement its step\. a: S\.m \(changed: S\.m\)\. Reason: because/);
 });
 
 test('a pending scenario is skipped, its steps do not run', () => {

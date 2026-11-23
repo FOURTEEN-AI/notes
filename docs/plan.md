@@ -247,9 +247,9 @@ app, is the living documentation.
     scenario that uses it, not only in the delta. Pending scenarios are skipped; their steps do
     not run. The state is the scenario, the step text, the
     method's source and the fake and service methods it calls; the question is whether the method
-    implements exactly this step. Jev (TypeSafe, own budget and key) decides: from p ≥ 0.9 it
-    passes, below 0.5 it fails, in between Haiku decides (`claude -p --model claude-haiku-5-5`
-    with the existing OAuth token).
+    implements exactly this step. Haiku decides (`claude -p --model claude-haiku-5-5` with the
+    existing OAuth token); on NO its reason (what differs, what to change) is the finding for the
+    coding agent.
   - A failure goes back to the coding agent as a comment `## Acceptance round <n>`, at most 3
     rounds, then the pull request waits for the human.
 - Late conflicts: an old acceptance test that is red after phase 2, or a delta that no longer
@@ -278,7 +278,7 @@ the existing tests, `.feature` files.
 pass; the deterministic checks only guard the wording and the delta. A hidden conflict with an
 old scenario shows only after phase 2, when phase 1, `acceptance` and phase 2 have already run.
 A `@manuell` scenario is checked only for its wording; whether it holds shows only in the demo.
-Jev costs its own budget, Haiku the subscription limit.
+Haiku costs the subscription limit.
 
 **Progress:** done so far: JGiven tests of the notes (title = `@Description`, the report shows
 it), the report in the jar (`/jgiven/`), proposal and the button "Freigeben" (with the old
@@ -287,7 +287,7 @@ versions of changed scenarios), the deterministic comparison of approved delta a
 `## Acceptance criteria`, tests of `main` and of the pull request, the comment
 `## Acceptance round <n>`, which starts the coding agent, at most 3 rounds), `acceptance` as a
 required check in branch protection and for the merge button (preview bar lists it), the judgement
-per stage and fake method (Jev, Haiku in between; needs the secret `TYPESAFE_API_KEY`), the two phases of the coding agent
+per stage and fake method (Haiku, with its reason), the two phases of the coding agent
 (`agent.yml` prompts per phase; green `acceptance` in phase 1 posts `## Acceptance checked <sha>`
 and starts phase 2; `.github/acceptance/phase.mjs` fails a phase 2 that changes the acceptance
 tests against that commit, a commit with the line `Phase: 1` goes back; `review` fails until phase 2

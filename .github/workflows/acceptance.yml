@@ -3,7 +3,7 @@ name: Acceptance
 # Required check `acceptance`: do the acceptance tests of an agent pull request match the
 # scenarios that the human approved (latest "## Acceptance criteria" comment on its issue), as a
 # delta against the tests of `main`, and does every stage and fake method that changed against `main`
-# implement its step in every scenario that uses it (Jev, Haiku in between)? A failure is posted as "## Acceptance round <n>", at most 3
+# implement its step in every scenario that uses it (Haiku, with its reason)? A failure is posted as "## Acceptance round <n>", at most 3
 # rounds, then the pull request waits for the human. Each round starts the coding agent. Pull requests that are not from an
 # `agent/issue-<n>` branch have no criteria and pass.
 #
@@ -180,7 +180,6 @@ jobs:
       - name: Judge the changed stage and fake methods
         if: steps.issue.outputs.number && steps.phase.outputs.violation != 'true'
         env:
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           set -o pipefail
