@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class NoteService {
 
+    static final int MAX_LENGTH = 280;
+
     private final NoteRepository notes;
 
     public NoteService(NoteRepository notes) {
@@ -22,6 +24,9 @@ public class NoteService {
     public Note create(String text) {
         if (text == null || text.isBlank()) {
             throw new DomainException(DomainException.Kind.INVALID, "text must not be blank");
+        }
+        if (text.length() > MAX_LENGTH) {
+            throw new DomainException(DomainException.Kind.INVALID, "text must not exceed " + MAX_LENGTH + " characters");
         }
         return notes.add(text);
     }

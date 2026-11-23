@@ -4,6 +4,8 @@ import { PreviewBar } from './PreviewBar';
 
 type Note = { id: number; text: string; createdAt: string };
 
+const MAX_LENGTH = 280;
+
 export function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [text, setText] = useState('');
@@ -28,7 +30,11 @@ export function App() {
       body: JSON.stringify({ text }),
     });
     if (!response.ok) {
-      setError('Notiz konnte nicht gespeichert werden.');
+      setError(
+        response.status === 400
+          ? `Die Notiz ist zu lang. Erlaubt sind höchstens ${MAX_LENGTH} Zeichen.`
+          : 'Notiz konnte nicht gespeichert werden.',
+      );
       return;
     }
     const note = (await response.json()) as Note;
@@ -61,6 +67,9 @@ export function App() {
             placeholder="Neue Notiz"
             rows={4}
           />
+          <p className="counter">
+            {text.length}/{MAX_LENGTH}
+          </p>
           <button type="submit" disabled={text.trim() === ''}>
             Speichern
           </button>
