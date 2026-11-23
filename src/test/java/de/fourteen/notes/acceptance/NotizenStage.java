@@ -91,23 +91,32 @@ public class NotizenStage extends Stage<NotizenStage> {
         return self();
     }
 
-    public NotizenStage ich_eine_Notiz_mit_$_Zeichen_speichere(int anzahl) {
-        speichereVersuch("x".repeat(anzahl));
+    public NotizenStage ich_eine_Notiz_mit_280_Zeichen_speichere() {
+        speichereVersuch("x".repeat(280));
         return self();
     }
 
-    public NotizenStage ich_eine_Notiz_aus_$_Leerzeichen_speichere(int anzahl) {
-        speichereVersuch(" ".repeat(anzahl));
+    public NotizenStage ich_eine_Notiz_mit_281_Zeichen_speichere() {
+        speichereVersuch("x".repeat(281));
         return self();
     }
 
-    public NotizenStage die_Liste_zeigt_die_Notiz_mit_$_Zeichen(int anzahl) {
+    public NotizenStage ich_eine_Notiz_aus_300_Leerzeichen_speichere() {
+        speichereVersuch(" ".repeat(300));
+        return self();
+    }
+
+    public NotizenStage zeigt_die_Liste_die_Notiz_mit_280_Zeichen() {
         assertThat(notizen.list().stream().map(Note::text).toList())
-                .isEqualTo(List.of("x".repeat(anzahl)));
+                .isEqualTo(List.of("x".repeat(280)));
         return self();
     }
 
-    public NotizenStage die_Eingabe_wird_als_zu_lang_abgelehnt() {
+    public NotizenStage wird_die_Eingabe_abgelehnt() {
+        return die_Eingabe_wird_abgelehnt();
+    }
+
+    public NotizenStage wird_die_Eingabe_als_zu_lang_abgelehnt() {
         assertThat(fehler).isNotNull();
         assertThat(fehler.kind()).isEqualTo(DomainException.Kind.TOO_LONG);
         return self();
@@ -127,18 +136,18 @@ public class NotizenStage extends Stage<NotizenStage> {
     }
 
     @Pending
-    @As("der Zähler zeigt $")
-    public NotizenStage der_Zaehler_zeigt_$(String text) {
+    @As("zeigt der Zähler $")
+    public NotizenStage zeigt_der_Zaehler_$(String text) {
         return self();
     }
 
     @Pending
-    public NotizenStage ich_eine_Notiz_mit_$_Zeichen_speichern_will(int anzahl) {
+    public NotizenStage ich_eine_Notiz_mit_281_Zeichen_speichern_will() {
         return self();
     }
 
     @Pending
-    public NotizenStage ich_sehe_die_Meldung_$(String text) {
+    public NotizenStage sehe_ich_die_Meldung_$(String text) {
         return self();
     }
 
