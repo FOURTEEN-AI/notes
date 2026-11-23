@@ -257,7 +257,8 @@ app, is the living documentation.
   chat: the coding agent proposes an amended delta in a `## Refine` comment and the label goes
   back to `refine`. The new `## Acceptance criteria` replaces the previous one as a full delta, and
   phase 1 starts again. Human feedback from the preview that changes approved behaviour takes the
-  same path, with the button "Freigeben" in the preview bar.
+  same path; the preview bar shows the proposal and links to the idea chat in production, where it is
+  released with the old versions in view.
 - The review agent runs only after phase 2. Branch protection and the merge button require
   `build`, `review` and `acceptance`.
 - The app serves the JGiven HTML report behind the login, in production and in every preview.
@@ -295,8 +296,8 @@ the delta leaves alone is red after phase 2, or when it has findings while the b
 `main`; `agent.yml` then only proposes an amended full delta in a `## Refine` comment and swaps
 `agent` for `refine`; the next release posts the new `## Acceptance criteria`, which replaces the
 old one, and phase 1 repeats on the same branch after a `## Acceptance reset` comment that voids the
-checked commit and the rounds; the preview bar shows a pending proposal with the button
-"Freigeben", which calls the approval endpoint of the idea chat; feedback that changes approved
+checked commit and the rounds; the preview bar shows a pending proposal and links to its idea
+chat in production (`?idee=<n>`), the only place with the report of `main`; feedback that changes approved
 behaviour takes the same path), the old versions in the idea chat (`GET /api/ideas/{n}/previous-scenarios`
 reads title and steps of every `@ersetzt` and `@entfällt` scenario from the JGiven data of the
 running build, which is `main` in production; a preview shows its own build's report). Open:

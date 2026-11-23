@@ -17,6 +17,9 @@ type Preview = {
   proposal: string | null;
 };
 
+// The production app (fly.toml), where an idea's chat lives.
+const PRODUCTION_URL = 'https://notes-fourteen-it.fly.dev';
+
 const checkLabels: Record<CheckState, string> = {
   PENDING: 'läuft',
   SUCCESS: 'grün',
@@ -74,20 +77,6 @@ export function PreviewBar() {
     setMessage('Feedback gesendet, der Agent arbeitet daran.');
   }
 
-  // Same endpoint as the button in the idea chat: it posts the block as the new acceptance criteria
-  // and sends the idea back to the coding agent.
-  async function approve() {
-    setBusy(true);
-    const response = await fetch(`/api/ideas/${preview?.issue}/approval`, { method: 'POST' });
-    setBusy(false);
-    if (!response.ok) {
-      setMessage('Freigabe fehlgeschlagen.');
-      return;
-    }
-    setMessage('Freigegeben, der Agent beginnt von vorn mit den Tests.');
-    setPreview({ ...preview!, proposal: null });
-  }
-
   async function merge() {
     if (!confirm(`Pull Request #${preview?.number} mergen?`)) return;
     setBusy(true);
@@ -134,9 +123,11 @@ export function PreviewBar() {
         <details open>
           <summary>Der Agent schlägt geänderte Szenarien vor</summary>
           <pre>{preview.proposal}</pre>
-          <button type="button" className="approve" onClick={approve} disabled={busy}>
-            Freigeben
-          </button>
+          {/* Released in production only: its idea chat shows the old versions from the report of
+              main, which this preview does not have. */}
+          <a href={`${PRODUCTION_URL}/?idee=${preview.issue}`} target="_blank" rel="noreferrer">
+            In der Idee freigeben
+          </a>
         </details>
       )}
       {preview.state === 'open' && (

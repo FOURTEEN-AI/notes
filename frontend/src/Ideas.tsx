@@ -88,12 +88,19 @@ export function Ideas() {
     setIdeas((await response.json()) as Idea[]);
   }
 
-  // Loaded once for the count on the button, polled only while the dialog is open.
+  // Loaded once for the count on the button, polled only while the dialog is open. `?idee=<n>`
+  // (the link in the preview bar) opens the chat of that idea right away.
   useEffect(() => {
     fetch('/api/preview')
       .then((preview) => {
         if (preview.ok) return;
         load().catch(() => setError('Ideen konnten nicht geladen werden.'));
+        const linked = Number(new URLSearchParams(location.search).get('idee'));
+        if (Number.isInteger(linked) && linked > 0) {
+          dialog.current?.showModal();
+          setOpen(true);
+          setSelected(linked);
+        }
       })
       .catch(() => {});
   }, []);

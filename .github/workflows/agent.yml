@@ -251,7 +251,7 @@ jobs:
               the full delta against `main` that replaces the previous one (new scenarios no
               tag, changed ones `@ersetzt("<old title>")`, removed ones a title tagged
               `@entfällt`, frontend-only ones `@ui`). Then `gh issue edit <n> --add-label refine
-              --remove-label agent`. The human releases it in the preview bar.
+              --remove-label agent`. The human releases it in the idea chat.
             - Update the demo tour in the description with `gh pr edit` before you push, so that
               it shows the change as it is now (see "Demo tour" in CLAUDE.md).
             - Run `./gradlew build` and make it pass before you push.
