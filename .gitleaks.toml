@@ -1,0 +1,28 @@
+# Secret scan (gitleaks): the default rules plus the tokens this project uses.
+title = "notes"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "fly-token"
+description = "Fly.io access token"
+regex = '''\b(?:FlyV1 )?fm[12]_[A-Za-z0-9+/=_-]{40,}|\bfo1_[A-Za-z0-9_-]{30,}'''
+keywords = ["fm1_", "fm2_", "fo1_"]
+
+[[rules]]
+id = "claude-oauth-token"
+description = "Claude Code OAuth token"
+regex = '''sk-ant-oat01-[A-Za-z0-9_-]{20,}'''
+keywords = ["sk-ant-oat01-"]
+
+[[rules]]
+id = "database-url-password"
+description = "Postgres URL with a password"
+regex = '''postgres(?:ql)?://[^\s:/@]+:[^\s@]{3,}@[^\s/]+'''
+keywords = ["postgres"]
+[rules.allowlist]
+# Tests use made-up URLs.
+paths = ['''src/test/''']
+regexTarget = "match"
+regexes = ['''://[^:]+:(?:password|secret|test|dev|p%40ss|\\?\$\{?[A-Za-z_]+\}?)@''']

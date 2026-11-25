@@ -6,6 +6,36 @@ on:
   pull_request:
 
 jobs:
+  # No secret in the history and none in what an agent writes into the pull request. Needs no
+  # secrets itself and never runs code of the pull request.
+  secret-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: .devcontainer/install-gitleaks.sh "$RUNNER_TEMP/bin" && echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Scan the commits
+        run: gitleaks git --redact --no-banner --verbose
+      # The description and the comments of a pull request are public like the code. They are
+      # scanned as they are at this run; a later edit is caught by the next run.
+      - name: Scan the pull request text
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir "$RUNNER_TEMP/text"
+          printf '%s' "$BODY" > "$RUNNER_TEMP/text/description.md"
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate --jq '.[].body' \
+            > "$RUNNER_TEMP/text/comments.md"
+          gitleaks dir "$RUNNER_TEMP/text" --redact --no-banner --verbose --config .gitleaks.toml
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+          BODY: ${{ github.event.pull_request.body }}
+
   build:
     runs-on: ubuntu-latest
     permissions:
@@ -119,15 +149,16 @@ jobs:
             flyctl postgres attach notes-fourteen-it-db --app "$APP" \
               --database-name "$DB" --database-user "$DB"
             flyctl secrets set --app "$APP" --stage \
-              SPRING_SECURITY_USER_NAME="${{ secrets.APP_LOGIN_NAME }}" \
-              SPRING_SECURITY_USER_PASSWORD="${{ secrets.APP_LOGIN_PASSWORD }}"
+              SPRING_SECURITY_USER_NAME="${{ secrets.PREVIEW_LOGIN_NAME }}" \
+              SPRING_SECURITY_USER_PASSWORD="${{ secrets.PREVIEW_LOGIN_PASSWORD }}"
           fi
-      # The token for the preview bar (comment and merge). Set on every run, so that it reaches
-      # previews created before it existed and follows a rotated token.
+      # The token for the preview bar (comment and merge). Its own token, narrower than the one of
+      # production, because the preview runs code of the pull request. Set on every run, so that
+      # it reaches previews created before it existed and follows a rotated token.
       - name: Pass the GitHub token
         run: flyctl secrets set --app "$APP" --stage GITHUB_TOKEN="$GITHUB_APP_TOKEN"
         env:
-          GITHUB_APP_TOKEN: ${{ secrets.APP_GITHUB_TOKEN }}
+          GITHUB_APP_TOKEN: ${{ secrets.PREVIEW_GITHUB_TOKEN }}
       # PULL_REQUEST turns on the preview bar for exactly this pull request. PULL_REQUEST_SHA
       # lets an open page notice that a newer commit is deployed.
       - run: >-

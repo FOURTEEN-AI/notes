@@ -90,17 +90,22 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 | Job | Secrets | Token permissions | Runs code of the pull request |
 |-----|---------|-------------------|-------------------------------|
 | `build` | none | default | yes |
+| `secret-scan` | none | contents: read, pull-requests: read | no (gitleaks over commits, description and comments) |
 | `acceptance tests` | none | contents: read | yes (acceptance tests only), no cache |
 | `acceptance` | `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | pull-requests: write, actions: write | no (reads files as text) |
 | `review` | `CLAUDE_CODE_OAUTH_TOKEN` | pull-requests: write, actions: write | no |
 | agent `work` | `CLAUDE_CODE_OAUTH_TOKEN` | contents, pull-requests, issues: write | yes (builds and tests) |
 | refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |
 | `deploy` | `FLY_API_TOKEN` | default | only the built jar |
-| `preview` | `FLY_ORG_TOKEN`, `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD`, `APP_GITHUB_TOKEN` | pull-requests: write | only the built jar |
+| `preview` | `FLY_ORG_TOKEN`, `PREVIEW_LOGIN_NAME`, `PREVIEW_LOGIN_PASSWORD`, `PREVIEW_GITHUB_TOKEN` | pull-requests: write | only the built jar |
 | preview cleanup | `FLY_ORG_TOKEN` | default | no |
 
-The app itself holds one fine-grained GitHub token (`GITHUB_TOKEN` env) in production and in every
-preview, for ideas, the idea chat, feedback and merge.
+The app itself holds one fine-grained GitHub token (`GITHUB_TOKEN` env), for ideas, the idea chat,
+feedback and merge. Production and previews hold different tokens and logins, because a preview
+runs code of a pull request. The agent job `work` also builds and tests code it wrote itself and
+holds the Claude token while doing so; that stays, and the `secret-scan` is the net for what it
+writes. Push protection of GitHub, the hook `.githooks/pre-commit` and `secret-scan` guard the
+repository, which is public.
 
 ## Scenario tags
 

@@ -93,7 +93,13 @@ The repository is public, so reading check runs and workflow runs needs no furth
 
 ```sh
 fly secrets set --app notes-fourteen-it GITHUB_TOKEN=<token>
-GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_GITHUB_TOKEN --repo FOURTEEN-AI/notes
+```
+
+The previews run code of pull requests, so they get their own, second token of the same kind and
+a login that is not the one of production:
+
+```sh
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set PREVIEW_GITHUB_TOKEN --repo FOURTEEN-AI/notes
 ```
 
 One-time setup:
@@ -109,19 +115,19 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo FO
 fly tokens create org | GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set FLY_ORG_TOKEN --repo FOURTEEN-AI/notes
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh variable set FLY_ORG --repo FOURTEEN-AI/notes --body <org-slug>
 
-# The login of production, once more, for the previews (Fly secrets cannot be read back).
-GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_NAME --repo FOURTEEN-AI/notes
-GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set APP_LOGIN_PASSWORD --repo FOURTEEN-AI/notes
+# A login for the previews, never the one of production: a preview runs code of a pull request.
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set PREVIEW_LOGIN_NAME --repo FOURTEEN-AI/notes
+GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set PREVIEW_LOGIN_PASSWORD --repo FOURTEEN-AI/notes
 
 # Jev (TypeSafe) judges the stage and fake methods in the `acceptance` workflow. Own key with its own
 # budget; no other workflow uses it.
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set TYPESAFE_API_KEY --repo FOURTEEN-AI/notes
 
-# Last, once the checks `build`, `review` and `acceptance` have run on a pull request: protect main.
+# Last, once the checks `build`, `secret-scan`, `review` and `acceptance` have run on a pull request: protect main.
 # "enforce_admins": false keeps direct pushes to main open for admins (local sessions).
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
 {
-  "required_status_checks": {"strict": false, "contexts": ["build", "review", "acceptance"]},
+  "required_status_checks": {"strict": false, "contexts": ["build", "secret-scan", "review", "acceptance"]},
   "enforce_admins": false,
   "required_pull_request_reviews": {"required_approving_review_count": 0},
   "restrictions": null
@@ -137,10 +143,22 @@ EOF
 | `SPRING_SECURITY_USER_NAME`, `SPRING_SECURITY_USER_PASSWORD` | Fly secrets | the one login |
 | `FLY_API_TOKEN` | GitHub Actions secret | deploy from CI |
 | `FLY_ORG_TOKEN`, variable `FLY_ORG` | GitHub Actions secret and variable | preview apps |
-| `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD` | GitHub Actions secrets | login of the preview apps |
+| `PREVIEW_LOGIN_NAME`, `PREVIEW_LOGIN_PASSWORD` | GitHub Actions secrets | login of the preview apps (not the one of production) |
 | `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions secret | coding and review agent |
 | `TYPESAFE_API_KEY` | GitHub Actions secret (own TypeSafe key and budget; only the `acceptance` job uses it) | Jev judges the changed stage and fake methods |
 | `GITHUB_TOKEN` | Fly secret (production; set by `ci.yml` on previews) | ideas and preview bar |
-| `APP_GITHUB_TOKEN` | GitHub Actions secret | the same token, for the preview apps |
+| `PREVIEW_GITHUB_TOKEN` | GitHub Actions secret | a second token of the same kind, for the preview apps |
 | `PULL_REQUEST` | Fly env of a preview (set by `ci.yml`) | turns on the preview bar |
 | `PULL_REQUEST_SHA` | Fly env of a preview (set by `ci.yml`) | lets the bar offer a reload after a new deploy |
+
+## Keeping secrets out of the repository
+
+- GitHub secret scanning with push protection is on for the repository (Settings, Code security).
+  It blocks a push that contains a known token.
+- `.gitleaks.toml` adds the tokens of this project. The devcontainer installs gitleaks and the hook
+  `.githooks/pre-commit` blocks a commit with a secret. Elsewhere, run
+  `.devcontainer/install-gitleaks.sh` and `git config core.hooksPath .githooks`.
+- The check `secret-scan` in `ci.yml` scans every commit and the description and comments of the
+  pull request.
+- The app masks the values of environment variables whose name contains PASSWORD, TOKEN, SECRET,
+  KEY or `DATABASE_URL` in its logs.

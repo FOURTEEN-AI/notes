@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs what the devcontainer features don't: the Node version pinned in
-# .node-version, pnpm and flyctl.
+# .node-version, pnpm, flyctl and gitleaks.
 set -eo pipefail
 
 # Node: switch the node feature's nvm to the pinned version. Global packages
@@ -19,3 +19,7 @@ npm install -g pnpm
 
 # flyctl: Fly's official installer, into ~/.fly/bin (on PATH via remoteEnv).
 curl -fsSL https://fly.io/install.sh | sh
+
+# gitleaks and the pre-commit hook that blocks commits with secrets (also scanned in CI).
+.devcontainer/install-gitleaks.sh "$HOME/.local/bin"
+git config core.hooksPath .githooks

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Blocks a commit that adds a secret (gitleaks, rules in .gitleaks.toml). Set up by
+# .devcontainer/post-create.sh with `git config core.hooksPath .githooks`.
+if ! command -v gitleaks > /dev/null; then
+  echo "pre-commit: gitleaks is not installed, skipping (run .devcontainer/install-gitleaks.sh); CI scans anyway." >&2
+  exit 0
+fi
+exec gitleaks git --pre-commit --staged --redact --no-banner --verbose
