@@ -104,7 +104,9 @@ The app itself holds one fine-grained GitHub token (`GITHUB_TOKEN` env), for ide
 feedback and merge. Production and previews hold different tokens and logins, because a preview
 runs code of a pull request. The agent job `work` also builds and tests code it wrote itself and
 holds the Claude token while doing so; that stays, and the `secret-scan` is the net for what it
-writes. Push protection of GitHub, the hook `.githooks/pre-commit` and `secret-scan` guard the
+writes. Before the agent checks out a pull request, it checks that the branch is an `agent/*`
+branch of this repository, and it checks out the commit the pull request had at that moment.
+Push protection of GitHub, the hook `.githooks/pre-commit` and `secret-scan` guard the
 repository, which is public.
 
 ## Scenario tags
