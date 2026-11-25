@@ -162,3 +162,10 @@ EOF
   pull request.
 - The app masks the values of environment variables whose name contains PASSWORD, TOKEN, SECRET,
   KEY or `DATABASE_URL` in its logs.
+
+**A secret that was pushed is compromised.** The repository is public and the history is copied
+within seconds, so removing the commit does not help. Revoke and replace it at once (Fly token:
+`fly tokens revoke`, GitHub token: its settings page, `CLAUDE_CODE_OAUTH_TOKEN`: `claude
+setup-token`, login or database password: set a new one), update the secret where it is used (see
+the table above), and only then clean up the history. GitHub's secret scanning and `secret-scan`
+only tell you; they do not check whether the secret still works.
