@@ -192,7 +192,10 @@ export function Ideas() {
   // The button releases the idea with the scenarios of the agent's last message, if it has any.
   async function approve() {
     setError(null);
-    const response = await fetch(`/api/ideas/${selected}/approval`, { method: 'POST' });
+    const response = await fetch(`/api/ideas/${selected}/approval`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
     if (!response.ok) {
       setError('Idee konnte nicht freigegeben werden.');
       return;

@@ -256,7 +256,10 @@ class GitHubApiTest {
                 .andExpect(method(HttpMethod.DELETE))
                 .andRespond(withStatus(HttpStatus.OK));
 
-        mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
+        mvc.perform(
+                        post("/api/ideas/19/approval")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
@@ -297,7 +300,10 @@ class GitHubApiTest {
                                 ]
                                 """));
 
-        mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
+        mvc.perform(
+                        post("/api/ideas/19/approval")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict());
     }
 
@@ -306,7 +312,10 @@ class GitHubApiTest {
         github.expect(requestTo(REPO + "/issues/19/comments?per_page=100"))
                 .andRespond(json("[{\"body\": \"## Refine\\n\\nWhich columns?\"}]"));
 
-        mvc.perform(post("/api/ideas/19/approval").header(HttpHeaders.AUTHORIZATION, LOGIN))
+        mvc.perform(
+                        post("/api/ideas/19/approval")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict());
     }
 
@@ -458,7 +467,10 @@ class GitHubApiTest {
                 .andExpect(content().json("{\"sha\": \"def\", \"merge_method\": \"squash\"}"))
                 .andRespond(json("{\"merged\": true}"));
 
-        mvc.perform(post("/api/preview/merge").header(HttpHeaders.AUTHORIZATION, LOGIN))
+        mvc.perform(
+                        post("/api/preview/merge")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
@@ -470,7 +482,10 @@ class GitHubApiTest {
                 .andRespond(json(checkRuns("success", "failure")));
         github.expect(never(), requestTo(REPO + "/pulls/7/merge"));
 
-        mvc.perform(post("/api/preview/merge").header(HttpHeaders.AUTHORIZATION, LOGIN))
+        mvc.perform(
+                        post("/api/preview/merge")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict());
     }
 
@@ -482,7 +497,10 @@ class GitHubApiTest {
                 .andRespond(json(checkRuns("success", "success", "failure", "success")));
         github.expect(never(), requestTo(REPO + "/pulls/7/merge"));
 
-        mvc.perform(post("/api/preview/merge").header(HttpHeaders.AUTHORIZATION, LOGIN))
+        mvc.perform(
+                        post("/api/preview/merge")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict());
     }
 
@@ -571,5 +589,23 @@ class GitHubApiTest {
 
         org.assertj.core.api.Assertions.assertThat(response)
                 .doesNotContain("test-token", "Bad credentials");
+    }
+
+    @Test
+    void writes_without_a_body_need_json_so_that_a_cross_site_form_cannot_send_them()
+            throws Exception {
+        github.expect(never(), requestTo(REPO + "/pulls/7/merge"));
+        github.expect(never(), requestTo(REPO + "/issues/19/comments"));
+
+        mvc.perform(
+                        post("/api/preview/merge")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(status().isUnsupportedMediaType());
+        mvc.perform(
+                        post("/api/ideas/19/approval")
+                                .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(status().isUnsupportedMediaType());
     }
 }

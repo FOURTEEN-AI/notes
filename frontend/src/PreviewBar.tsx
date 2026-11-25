@@ -87,7 +87,10 @@ export function PreviewBar() {
   async function merge() {
     if (!confirm(`Pull Request #${preview?.number} mergen?`)) return;
     setBusy(true);
-    const response = await fetch('/api/preview/merge', { method: 'POST' });
+    const response = await fetch('/api/preview/merge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
     setBusy(false);
     if (!response.ok) {
       setMessage('Merge abgelehnt. Sind build, review und acceptance grün?');

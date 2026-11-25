@@ -10,8 +10,10 @@ import org.springframework.security.web.SecurityFilterChain;
  * One user with HTTP Basic, set through SPRING_SECURITY_USER_NAME and
  * SPRING_SECURITY_USER_PASSWORD. Only the health check is public, for Fly.
  *
- * <p>CSRF tokens are off. Writes accept JSON only, which a cross-site form cannot send, and a
- * cross-site fetch with JSON needs a CORS preflight that this app never allows.
+ * <p>CSRF tokens are off. Every write is a POST that must declare {@code consumes = JSON}, even
+ * without a body, or a DELETE. A cross-site form cannot send that content type, and a cross-site
+ * fetch with it needs a CORS preflight that this app never allows. A new write without it would be
+ * open to CSRF, because the browser sends the cached Basic login along.
  */
 @Configuration
 class SecurityConfiguration {

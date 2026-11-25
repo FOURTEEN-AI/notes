@@ -57,7 +57,7 @@ class IdeaController {
         return ideas.reply(number, message.text());
     }
 
-    @PostMapping("/{number}/approval")
+    @PostMapping(value = "/{number}/approval", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void approve(@PathVariable int number) {
         ideas.approve(number);

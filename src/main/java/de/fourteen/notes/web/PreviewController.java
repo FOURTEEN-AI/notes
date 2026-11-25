@@ -78,7 +78,7 @@ class PreviewController {
         preview.feedback(feedback.text());
     }
 
-    @PostMapping("/merge")
+    @PostMapping(path = "/merge", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void merge() {
         preview.merge();
