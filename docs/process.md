@@ -66,7 +66,9 @@ a workflow or count as approval.
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
 | `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) |
 
-`build` also checks formatting (`check`): Spotless (google-java-format AOSP style, 4 spaces, unused imports removed, imports sorted) for Java and Prettier (`frontend/.prettierrc.json`) for `frontend/src` and its config files. `./gradlew format` fixes both (`pnpm run format` only the frontend).
+`build` also checks formatting (`check`): Spotless (google-java-format AOSP style, 4 spaces, unused imports removed, imports sorted) for Java and Prettier (`frontend/.prettierrc.json`) for `frontend/src` and its config files (`*.ts`, `*.js`, `*.json`). `./gradlew format` fixes both (`pnpm run format` only the frontend).
+
+`build` also lints (`check`): ESLint (`frontend/eslint.config.js`: recommended rules of ESLint and typescript-eslint, plus the two classic React hooks rules) and knip (`frontend/knip.json`: unused files, exports and dependencies) for the frontend, and Error Prone for the Java code. Error Prone findings in `src/main` fail the build (`-Werror`); in `src/test` they only warn, because the acceptance tests, stages and fakes must not change in phase 2. typescript-eslint and knip need the TypeScript 6 API, so `typescript` in `frontend/package.json` is an alias of `@typescript/typescript6` and `typescript7` brings the compiler `tsc` (TypeScript 7) used by the build. `pnpm run lint` runs ESLint and knip alone.
 
 Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
 button repeats the check on the exact commit, squash merge.

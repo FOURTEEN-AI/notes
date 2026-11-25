@@ -15,6 +15,8 @@ public enum IdeaStatus {
     }
 
     /**
+     * The status of an idea that has been released to the coding agent.
+     *
      * @param agentRuns whether the coding agent runs or is queued for the issue or its pull request
      * @param checks the checks of the pull request, or null if there is none yet
      */

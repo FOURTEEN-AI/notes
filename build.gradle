@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '4.2.0'
 	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
 	id 'com.diffplug.spotless' version '8.2.1'
+	id 'net.ltgt.errorprone' version '5.1.0'
 }
 
 group = 'de.fourteen.notes'
@@ -27,6 +28,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
 	runtimeOnly 'org.postgresql:postgresql'
 
+	errorprone 'com.google.errorprone:error_prone_core:2.50.0'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
@@ -34,6 +37,12 @@ dependencies {
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'com.tngtech.jgiven:jgiven-junit5:3.0.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Error Prone findings in production code fail the build. Test code only warns: the acceptance
+// tests, stages and fakes are checked files that a coding agent must not change in phase 2.
+tasks.named('compileJava') {
+	options.compilerArgs << '-Werror'
 }
 
 tasks.named('test') {
@@ -94,8 +103,21 @@ tasks.register('prettierCheck', Exec) {
 	workingDir = frontendDir
 	commandLine 'pnpm', 'run', 'format:check'
 	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
-			frontendDir.file('.prettierrc.json'), frontendDir.file('index.html'),
+			frontendDir.file('.prettierrc.json'), frontendDir.file('eslint.config.js'),
+			frontendDir.file('index.html'),
 			frontendDir.file('tsconfig.json'), frontendDir.file('vite.config.ts'))
+	inputs.dir(frontendDir.dir('src'))
+	outputs.upToDateWhen { true }
+}
+
+tasks.register('frontendLint', Exec) {
+	dependsOn 'frontendInstall'
+	workingDir = frontendDir
+	commandLine 'pnpm', 'run', 'lint'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'),
+			frontendDir.file('eslint.config.js'), frontendDir.file('knip.json'),
+			frontendDir.file('tsconfig.json'), frontendDir.file('vite.config.ts'),
+			frontendDir.file('index.html'))
 	inputs.dir(frontendDir.dir('src'))
 	outputs.upToDateWhen { true }
 }
@@ -111,5 +133,5 @@ tasks.register('format') {
 }
 
 tasks.named('check') {
-	dependsOn 'prettierCheck'
+	dependsOn 'prettierCheck', 'frontendLint'
 }

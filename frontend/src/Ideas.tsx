@@ -143,9 +143,10 @@ export function Ideas() {
 
   // The newest message is at the bottom, like in a chat. Only a new message (or another chat)
   // scrolls: a poll that brings the same messages must not pull the reader down again.
+  const loading = ideas === null;
   useEffect(() => {
     chat.current?.scrollTo({ top: chat.current.scrollHeight });
-  }, [ideas === null, open, selected, messages.length]);
+  }, [loading, open, selected, messages.length]);
 
   if (ideas === null && error === null) return null;
 

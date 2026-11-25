@@ -6,15 +6,13 @@ package de.fourteen.notes.domain;
  */
 public record Issue(int number, String title, String body, boolean refining) {
 
-    // The preview app of a pull request, as ci.yml names it.
-    private static final String PREVIEW_URL = "https://notes-fourteen-it-issue-%d.fly.dev";
-
     /** The coding agent works on this branch. */
     public String branch() {
         return "agent/issue-" + number;
     }
 
+    /** The preview app of a pull request, as ci.yml names it. */
     public String previewUrl() {
-        return PREVIEW_URL.formatted(number);
+        return "https://notes-fourteen-it-issue-%d.fly.dev".formatted(number);
     }
 }
