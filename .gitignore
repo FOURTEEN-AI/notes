@@ -12,3 +12,4 @@ frontend/dist/
 .pnpm-store/
 *.tsbuildinfo
 .vscode/
+/bin/
