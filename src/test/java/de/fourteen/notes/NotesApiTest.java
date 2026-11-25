@@ -119,4 +119,12 @@ class NotesApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
     }
+
+    @Test
+    void configuration_of_the_app_is_not_exposed() throws Exception {
+        mvc.perform(get("/actuator/env").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/actuator/configprops").header(HttpHeaders.AUTHORIZATION, LOGIN))
+                .andExpect(status().isNotFound());
+    }
 }

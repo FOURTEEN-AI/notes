@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spring Boot's console logging, with secrets masked (SecretMaskingConverter). -->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <conversionRule conversionWord="masked"
+                    converterClass="de.fourteen.notes.infrastructure.SecretMaskingConverter"/>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%masked(${CONSOLE_LOG_PATTERN})</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

@@ -549,4 +549,27 @@ class GitHubApiTest {
                 : "{\"id\": %d, \"name\": \"%s\", \"status\": \"completed\", \"conclusion\": \"%s\"}"
                         .formatted(id, name, conclusion);
     }
+
+    @Test
+    void failed_github_request_does_not_pass_on_the_token_or_the_response() throws Exception {
+        github.expect(requestTo(REPO + "/issues"))
+                .andRespond(
+                        withStatus(HttpStatus.UNAUTHORIZED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body("{\"message\": \"Bad credentials test-token\"}"));
+
+        String response =
+                mvc.perform(
+                                post("/api/ideas")
+                                        .header(HttpHeaders.AUTHORIZATION, LOGIN)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"title\": \"x\", \"description\": \"y\"}"))
+                        .andExpect(status().isBadGateway())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(response)
+                .doesNotContain("test-token", "Bad credentials");
+    }
 }
