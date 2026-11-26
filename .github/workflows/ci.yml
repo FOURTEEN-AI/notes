@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Started by dependency-updates.yml after it merged a pull request of Dependabot: a push made
+  # with the GITHUB_TOKEN starts no workflow, so the deploy would not run.
+  workflow_dispatch:
 
 jobs:
   # No secret in the history and none in what an agent writes into the pull request. Needs no
@@ -98,7 +101,7 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency: deploy
     permissions:
@@ -118,7 +121,10 @@ jobs:
   # jar built above, never the code of the pull request itself.
   preview:
     needs: build
-    if: github.event_name == 'pull_request' && needs.build.outputs.phase1 != 'true'
+    # Dependabot's own runs have no secrets, so no preview for them (docs/plan.md, step 7).
+    if: >-
+      github.event_name == 'pull_request' && needs.build.outputs.phase1 != 'true'
+      && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     concurrency: preview-${{ github.event.number }}
     permissions:

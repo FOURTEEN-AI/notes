@@ -1,0 +1,34 @@
+# Known vulnerabilities and outdated versions of third-party dependencies become pull requests.
+# .github/workflows/dependency-updates.yml merges them when the checks are green (docs/plan.md,
+# step 7). Dependabot security updates are switched on in the repository settings.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: build
+      include: scope
+  # pnpm is the ecosystem "npm" for Dependabot; it reads frontend/pnpm-lock.yaml.
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: build
+      include: scope
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: build
+      include: scope
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: ci
+      include: scope

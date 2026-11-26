@@ -29,6 +29,10 @@ on:
         description: The acceptance check found a late conflict, so send the idea back to the idea chat
         required: false
         default: "false"
+      dependency:
+        description: The pull request is a dependency update of Dependabot whose checks failed
+        required: false
+        default: "false"
 
 jobs:
   work:
@@ -59,7 +63,9 @@ jobs:
           IFS=$'\t' read -r cross branch sha < <(gh pr view "$PR" \
             --json isCrossRepository,headRefName,headRefOid \
             --jq '[.isCrossRepository, .headRefName, .headRefOid] | @tsv')
-          if [ "$cross" != false ] || [[ "$branch" != agent/* ]]; then
+          # The branches of Dependabot only when dependency-updates.yml asks for them.
+          if [ "$cross" != false ] || { [[ "$branch" != agent/* ]] \
+              && ! { [ "$DEPENDENCY" = true ] && [[ "$branch" == dependabot/* ]]; }; }; then
             echo "::error::The agent only works on agent/* branches of this repository, not $branch"
             exit 1
           fi
@@ -73,6 +79,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ inputs.pr || github.event.issue.number }}
+          DEPENDENCY: ${{ inputs.dependency }}
       # An idea that comes back from the idea chat has its branch and pull request already. A new
       # approval invalidates the checked commit ("## Acceptance reset"), so phase 1 starts again.
       - name: Continue on the branch of an earlier approval
@@ -160,7 +167,7 @@ jobs:
               (see "Demo tour" in CLAUDE.md), and ends with "Closes #${{ github.event.issue.number }}".
             - Do not touch anything under `.github/`.
       - name: Fix the review or acceptance findings
-        if: github.event_name == 'workflow_dispatch' && inputs.conflict != 'true'
+        if: github.event_name == 'workflow_dispatch' && inputs.conflict != 'true' && inputs.dependency != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -197,6 +204,37 @@ jobs:
             - If the fix changes what the human sees, update the demo tour in the description
               with `gh pr edit` before you push (see "Demo tour" in CLAUDE.md).
             - In phase 2 run `./gradlew build` and make it pass before you push.
+            - Commit with a Conventional Commit message and push to this branch. Never push to
+              `main`, and do not touch anything under `.github/`.
+      # A dependency update has no issue, no scenarios and no phases: the version is bumped, the
+      # code has to follow.
+      - name: Adapt the code to a dependency update
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: github-actions
+          claude_args: >-
+            --model claude-sonnet-5-5
+            --max-turns 40
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh pr comment:*),Bash(gh run view:*)"
+          prompt: |
+            Pull request #${{ inputs.pr }} in ${{ github.repository }} is a dependency update
+            from Dependabot, and a required check failed. Read the title and the diff
+            (`gh pr view`, `gh pr diff`), find the failure (`gh pr checks ${{ inputs.pr }}`, and
+            `gh run view <run> --log-failed` for the failed run) and read CLAUDE.md.
+
+            - You are on the branch of the pull request. Keep the new version. Change only what
+              the new version needs so that `./gradlew build` passes again: code, configuration,
+              tests that use a changed API. Do not downgrade, exclude or pin the dependency, do
+              not delete or weaken a test, and do not change the acceptance tests, stages and
+              fakes under `src/test/java/de/fourteen/notes/acceptance`.
+            - If that is not possible, push nothing and say why in one comment on the pull
+              request (`gh pr comment ${{ inputs.pr }}`, starting with `## Dependency fix failed`).
+            - A failure that has no connection to the update (a flaky test, a problem of `main`)
+              is not yours to fix: say so in the same way.
+            - Run `./gradlew build` and make it pass before you push. For a frontend update also
+              run `pnpm run lint` in `frontend/`.
             - Commit with a Conventional Commit message and push to this branch. Never push to
               `main`, and do not touch anything under `.github/`.
       # No code: the delta is amended in the idea chat, where the human releases it again. The

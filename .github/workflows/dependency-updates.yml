@@ -1,0 +1,82 @@
+name: Dependency updates
+
+# Merges the pull requests of Dependabot (docs/plan.md, step 7) once the required checks are
+# green, and deploys the result. A red check goes to the coding agent (agent.yml, input
+# `dependency`), at most 3 rounds, then the pull request waits for the human.
+#
+# pull_request_target, because it needs a token that can merge, which a pull_request run of
+# Dependabot does not get. Safe here: the job never checks out or runs code of the pull request,
+# and it only handles pull requests that Dependabot opened in this repository. Dependabot's own runs
+# have no secrets, so `review` and `preview` skip them (review.yml, ci.yml); after a push of the
+# agent they run as for any pull request.
+#
+# The merge uses the GITHUB_TOKEN, and a push made with it starts no workflow. That is why the job
+# starts ci.yml on `main` itself: the deploy.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: dependency-update-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  merge:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]'
+      && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Wait for the required checks
+        id: checks
+        run: |
+          required='["build","review","acceptance","secret-scan"]'
+          for _ in $(seq 1 80); do
+            checks=$(gh pr checks "$PR" --required --json name,bucket 2>/dev/null || echo '[]')
+            failed=$(jq -r '[.[] | select(.bucket == "fail" or .bucket == "cancel") | .name] | join(", ")' <<< "$checks")
+            if [ -n "$failed" ]; then
+              echo "failed=$failed" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if jq -e --argjson req "$required" '
+                [.[] | select(.bucket == "pass" or .bucket == "skipping") | .name] as $ok
+                | $req | all(. as $n | $ok | any(. == $n))' <<< "$checks" > /dev/null; then
+              echo "failed=" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error::The required checks did not finish in time"
+          exit 1
+      - name: Merge and deploy
+        if: steps.checks.outputs.failed == ''
+        run: |
+          gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA"
+          gh workflow run ci.yml --ref main
+      - name: Hand the failure to the coding agent
+        if: steps.checks.outputs.failed != ''
+        run: |
+          rounds=$(gh pr view "$PR" --json comments \
+            --jq '[.comments[] | select(.body | startswith("## Dependency round"))] | length')
+          if [ "$rounds" -ge 3 ]; then
+            gh pr comment "$PR" --body "The dependency update failed in $rounds rounds. Waiting for the human."
+          else
+            gh pr comment "$PR" --body "## Dependency round $((rounds + 1))
+
+          Failed checks: $FAILED. The coding agent adapts the code to the new version."
+            gh workflow run agent.yml -f pr="$PR" -f dependency=true
+          fi
+          exit 1
+        env:
+          FAILED: ${{ steps.checks.outputs.failed }}

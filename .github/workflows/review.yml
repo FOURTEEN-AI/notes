@@ -51,7 +51,10 @@ jobs:
         run: |
           echo "::error::Phase 2 has not produced the production code yet; the review waits."
           exit 1
+      # Dependabot's own runs have no secrets (docs/plan.md, step 7): no review, the check passes.
+      # After a push of the coding agent the run is the agent's and reviews as usual.
       - uses: anthropics/claude-code-action@v1
+        if: github.actor != 'dependabot[bot]'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: claude
@@ -89,6 +92,7 @@ jobs:
             command as `gh pr comment`: a Bash command may not write outside the checkout, and a
             denied command also loses the comment.
       - name: Verdict
+        if: github.actor != 'dependabot[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.number }}

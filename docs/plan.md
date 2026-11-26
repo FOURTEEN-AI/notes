@@ -320,6 +320,49 @@ the annotation `@Manuell("<reason>")`, `report.mjs` reads status and reason from
 - [ ] An agent issue went from approved scenarios to production, with at least one finding of
   `acceptance` on the way
 
+## Step 7: known vulnerabilities in dependencies are found and fixed by themselves
+
+**Result:** a vulnerable or outdated third-party dependency becomes a pull request on its own, is
+merged and deployed when the checks are green, and goes to the coding agent when they are red. The
+human does not have to look.
+
+**Scope**
+
+- Dependabot (`.github/dependabot.yml`), daily, for Gradle, pnpm (`frontend/`), the Docker base
+  image and GitHub Actions: security updates (switched on in the repository settings) and version
+  updates, patch and major alike. No grouping, no ignore rules. No Dependency Submission: a
+  vulnerability in a version that the Spring Boot BOM manages (Tomcat, Jackson) raises no alert and
+  arrives with the next Boot update, at most a day later, and only once Boot has the fix.
+- Dependabot's own runs have no repository secrets. `review` passes for them without a review and
+  `preview` is skipped; `build` (all tests) and `secret-scan` are the net. A push of the coding
+  agent on such a branch runs as for any pull request, so its code is reviewed.
+- `dependency-updates.yml` (`pull_request_target`, no code of the pull request) waits for the
+  required checks and squash-merges the pull request when they are green. It then starts `ci.yml`
+  on `main` (`workflow_dispatch`), because a merge with the `GITHUB_TOKEN` starts no push
+  workflow, and that is the deploy.
+- A red required check posts `## Dependency round <n>` and starts `agent.yml` with
+  `dependency=true`. The agent keeps the new version, changes only what it needs (code,
+  configuration, tests that use a changed API) and pushes to the `dependabot/*` branch. No issue,
+  no scenarios, no phases. At most 3 rounds, then the pull request waits for the human.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow
+changes. The process itself is described in [process.md](process.md).
+
+**Not in this step:** Dependency Submission or another scanner (OSV, Trivy) for transitive
+dependencies and the OS packages of the base image, grouped pull requests, a rule to hold back
+major versions, a notice in the app.
+
+**Risks:** with auto-merge for every version, the tests are the only guard against a changed
+behaviour that they do not cover (a major update, a new Java image); a broken release of a
+dependency reaches production within a day. A compromised package can reach `main` the same way,
+`build` runs its code. The agent can only fix what the tests show.
+
+**Done when**
+
+- [ ] A Dependabot pull request with green checks is merged and deployed without a human
+- [ ] A Dependabot pull request with a red `build` is fixed by the agent and then merged
+- [ ] After 3 failed rounds the pull request waits for the human with a comment
+
 ## Candidates for later steps
 
 Not planned, only to keep ideas. The order is decided when a step is done.

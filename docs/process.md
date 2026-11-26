@@ -28,6 +28,7 @@ Paths off the main line:
 | Phase 2 needs a change in tests, stages or fakes | Commit with the line `Phase: 1` at the end; the pull request is back in phase 1 |
 | Phase 2 changed the checked tests | `phase.mjs` makes `acceptance` fail; counts as a round |
 | Pull request from a branch that is not `agent/issue-<n>` | No phases, no criteria: `acceptance` passes at once, the review runs at once |
+| Dependency update: Dependabot opens a pull request for a known vulnerability (security update) or a new version (daily; Gradle, pnpm in `frontend/`, the Docker base image, GitHub Actions) | No idea, no demo, no human. Dependabot's own runs have no secrets: `review` passes without a review, `preview` is skipped. `dependency-updates.yml` waits for `build`, `review`, `acceptance` and `secret-scan`; green: squash merge (any version, major too) and `ci.yml` is started on `main`, because a merge with the `GITHUB_TOKEN` starts no push workflow, so that is the deploy. Red: comment `## Dependency round <n>` and `agent.yml` with `dependency=true`: the agent keeps the new version, adapts the code on the `dependabot/*` branch and pushes. Its push starts the checks again, now with a real review and a preview. At most 3 rounds, then the pull request waits for the human |
 
 ## Labels
 
@@ -53,6 +54,7 @@ a workflow or count as approval.
 | `## Acceptance reset` | pull request | Coding agent workflow, on a re-release | Voids the checked commit and the rounds: phase 1 again |
 | `## Acceptance conflict` | pull request | `acceptance` | Late conflict, see above |
 | `## Review round` | pull request | Review agent | PASS or FAIL with findings |
+| `## Dependency round <n>` | pull request of Dependabot | `dependency-updates.yml` | A required check failed; starts the agent with `dependency=true`. 3 at most |
 | `## Human feedback` | pull request | Preview bar / human | Starts the coding agent; no round limit; only on `agent/*` branches |
 | `Preview: <url>` | pull request | `ci.yml` | Link; the one comment starting with `Preview: ` is edited in place |
 | `Acceptance failed in <n> rounds...`, `The review failed in <n> rounds...` | pull request | Workflows | The pull request waits for the human |
@@ -64,7 +66,8 @@ a workflow or count as approval.
 | `build` | `ci.yml` `build` | yes | yes | `./gradlew build` (with Testcontainers) and the Node tests of `.github/acceptance`. On an agent branch in phase 1 only `./gradlew compileTestJava` (the new acceptance tests are red against the stubs), same phase test as `review`; then no jar |
 | `review` | `review.yml` | yes | yes | Fails without a review until phase 2 has pushed on top of the checked commit |
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
-| `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) |
+| `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) and in runs of Dependabot |
+| `secret-scan` | `ci.yml` `secret-scan` | yes | yes | gitleaks over commits, description and comments |
 
 `build` also checks formatting (`check`): Spotless (google-java-format AOSP style, 4 spaces, unused imports removed, imports sorted) for Java and Prettier (`frontend/.prettierrc.json`) for `frontend/src` and its config files (`*.ts`, `*.js`, `*.json`). `./gradlew format` fixes both (`pnpm run format` only the frontend).
 
@@ -80,8 +83,9 @@ button repeats the check on the exact commit, squash merge.
 | Refine questions | 3 per round (the agent proposes after at most 3 rounds, never releases) | A text answer starts another round |
 | `## Acceptance round` | 3, counted since the last `## Acceptance reset` | Comment, the pull request waits |
 | `## Review round` | 3 in total on the pull request, never reset | Comment, the pull request waits |
+| `## Dependency round` | 3 in total on the pull request | Comment, the pull request waits |
 | `## Human feedback` | none | |
-| Agent turns | idea 60, fix 40, feedback 40, conflict 30, refine 20, review 30 | |
+| Agent turns | idea 60, fix 40, feedback 40, dependency 40, conflict 30, refine 20, review 30 | |
 
 ## Secrets per job
 
@@ -96,6 +100,7 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 | `review` | `CLAUDE_CODE_OAUTH_TOKEN` | pull-requests: write, actions: write | no |
 | agent `work` | `CLAUDE_CODE_OAUTH_TOKEN` | contents, pull-requests, issues: write | yes (builds and tests) |
 | refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |
+| `dependency-updates` | none | contents, pull-requests, actions: write | no (`pull_request_target`, only pull requests of Dependabot in this repository; it merges, and starts `ci.yml` and `agent.yml`) |
 | `deploy` | `FLY_API_TOKEN` | default | only the built jar |
 | `preview` | `FLY_ORG_TOKEN`, `PREVIEW_LOGIN_NAME`, `PREVIEW_LOGIN_PASSWORD`, `PREVIEW_GITHUB_TOKEN` | pull-requests: write | only the built jar |
 | preview cleanup | `FLY_ORG_TOKEN` | default | no |
