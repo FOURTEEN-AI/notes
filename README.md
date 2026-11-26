@@ -123,11 +123,11 @@ GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set PREVIEW_LOGIN_PASSWORD --repo FOU
 # budget; no other workflow uses it.
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set TYPESAFE_API_KEY --repo FOURTEEN-AI/notes
 
-# Last, once the checks `build`, `secret-scan`, `review` and `acceptance` have run on a pull request: protect main.
+# Last, once the checks `build`, `secret-scan`, `review`, `acceptance` and `smells` have run on a pull request: protect main.
 # "enforce_admins": false keeps direct pushes to main open for admins (local sessions).
 GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh api -X PUT repos/FOURTEEN-AI/notes/branches/main/protection --input - <<'EOF'
 {
-  "required_status_checks": {"strict": false, "contexts": ["build", "secret-scan", "review", "acceptance"]},
+  "required_status_checks": {"strict": false, "contexts": ["build", "secret-scan", "review", "acceptance", "smells"]},
   "enforce_admins": false,
   "required_pull_request_reviews": {"required_approving_review_count": 0},
   "restrictions": null

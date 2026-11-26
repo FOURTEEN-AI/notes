@@ -411,6 +411,61 @@ of the digest; a change of the `Dockerfile` that installs more packages is scann
 - [ ] An entry in `.trivyignore` lets a finding pass until its expiry
 - [x] The nightly scan opens an issue on a finding and closes it when it is gone
 
+## Step 9: code smells are found before the review, and coached away
+
+**Result:** a pull request whose code has structural smells (a function that is too long or too
+complex, too many parameters, dead code, ...) does not reach the review. The coding agent gets the
+coaching guide for each smell instead of a bare number, because a bare metric invites gaming it.
+
+**Scope**
+
+- [habit-hooks](https://github.com/habit-hooks/habit-hooks) with its plugins `java` (PMD),
+  `typescript` (ESLint, knip) and `generic`, run by `.github/smells.sh` over the files that the
+  branch changed against `origin/main`. No snooze file: existing smells are no backlog, they count
+  when a pull request touches the file. Java from the repository root, the frontend as a project of
+  its own (`frontend/.habit-hooks/config.toml`, its `node_modules`). Defaults for every smell; a
+  smell is tuned with `[smells.<name>]` only once a real pull request shows the noise. The sensors
+  `jscpd` (duplication) and `comment` (needs ts-morph) are off: they need npm packages nothing else
+  uses, and both only suggest.
+- Findings in production code that habit-hooks enforces fail the check. Everything else is a
+  suggestion: all findings in test files (acceptance tests, stages and fakes cannot change in phase
+  2) and the smells that habit-hooks only suggests.
+- A job `smells` in `review.yml`, a required check, and `review` needs it: the review starts only
+  after a green smell check. On an agent branch it waits for phase 2 like `review`. Dependabot's
+  own runs skip it. The job has a read-only token and no secret, because the tools load
+  configuration files of the pull request.
+- An enforced smell on an agent branch is posted as `## Smell round <n>` with the coaching guides
+  and starts the coding agent like a review round; 3 rounds in total, then the pull request waits
+  for the human. The suggestions are given to the review agent, which may mention those that point
+  at a real weakness; it fails only for its own criteria.
+- The coding agent runs `smells` itself before it pushes production code (phase 2, fixes,
+  feedback), so most rounds never reach CI. Its prompt says to fix the cause, not the metric.
+- Tools and configuration come from `main`, not from the branch, so a pull request cannot loosen
+  its own check: `.devcontainer/install-habit-hooks.sh` (uv, PMD with pinned checksums, the Python
+  packages by the hashes of `habit-hooks-requirements.txt`), the same script in CI, for the agent
+  and in the devcontainer.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow
+changes. Before the push, `smells` must be added to the required checks of branch protection.
+[process.md](process.md) is updated.
+
+**Not in this step:** duplication and comment smells, tuning thresholds, snoozing, `smells` in the
+app's check list of the preview bar, a smell check for Dependabot pull requests.
+
+**Risks:** the thresholds are those of habit-hooks, not tuned to this code, so the first pull
+requests may be told to refactor more than they changed. A guide followed to the letter can still
+produce a worse design; the review agent reads the result. Another tool in the loop spends
+agent turns and one more required check can block a deploy. The code of habit-hooks and PMD runs
+on code of the pull request; the pins and hashes guard against a replaced release.
+
+**Done when**
+
+- [ ] An enforced smell in a pull request fails `smells`, and `review` does not start
+- [ ] The coding agent fixes it after `## Smell round <n>` and the review then runs
+- [ ] A finding in a test file is only a suggestion and reaches the review agent
+- [ ] After 3 failed rounds the pull request waits for the human with a comment
+- [ ] Dependabot pull requests are not blocked by `smells`
+
 ## Candidates for later steps
 
 Not planned, only to keep ideas. The order is decided when a step is done.

@@ -1,0 +1,9 @@
+# Java, scanned from the repository root by .github/smells.sh (docs/plan.md, step 9). The frontend
+# has its own project with its own node_modules: frontend/.habit-hooks/config.toml. Defaults for
+# every smell; tune a smell with [smells.<name>] only when a real pull request shows the noise.
+# CI reads this file from `main`, not from the pull request.
+plugins = ["java", "generic"]
+
+# Duplication needs jscpd from npm, which nothing else in the project uses.
+[sensors.jscpd]
+disabled = true

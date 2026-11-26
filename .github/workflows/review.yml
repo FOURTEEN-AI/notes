@@ -5,6 +5,13 @@ name: Review
 # findings, at most 3 rounds. On an agent branch it runs only after phase 2 (see docs/plan.md,
 # step 6): until `acceptance` has checked the tests and the coding agent has pushed on top of the
 # checked commit, the check fails without a review.
+#
+# Before the review comes the smell check (docs/plan.md, step 9): the job `smells` runs habit-hooks
+# over the files that the pull request changed, and `review` starts only when it is green. An
+# enforced smell on an agent branch is handed to the coding agent as `## Smell round <n>`, at most 3
+# rounds. The suggestions that do not fail the check go to the reviewer. The job `smells` runs
+# tools over code of the pull request (ESLint and knip load configuration files of it), so it has
+# a read-only token and no secret; the job that comments does not check out anything.
 
 on:
   pull_request:
@@ -15,7 +22,136 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  smells:
+    # Dependabot's own runs are not scanned (docs/plan.md, step 9); after a push of the coding agent
+    # the run is the agent's and scans as usual.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      result: ${{ steps.scan.outputs.result }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Wait for phase 2
+        id: phase
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+          BRANCH: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$BRANCH" != agent/* ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          checked=$(gh pr view "$PR" --json comments --jq \
+            '[.comments[] | select(.author.login == "github-actions" and (.body | test("^## Acceptance (checked |reset)")))] | last | .body // "" | split(" ") | .[3] // ""')
+          git show origin/main:.github/acceptance/phase.mjs > "$RUNNER_TEMP/phase.mjs"
+          out=$(node "$RUNNER_TEMP/phase.mjs" "$HEAD_SHA" "$checked" "$RUNNER_TEMP/phase-findings.md")
+          if [ -n "$checked" ] && [ "$checked" != "$HEAD_SHA" ] && grep -qx 'phase=2' <<< "$out" \
+              && grep -qx 'violation=false' <<< "$out"; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Not after phase 2
+        if: steps.phase.outputs.ready != 'true'
+        run: |
+          echo "::error::Phase 2 has not produced the production code yet; the smell check waits."
+          exit 1
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install the frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      # The tools and the script come from `main`, not from the pull request.
+      - name: Install habit-hooks
+        run: |
+          mkdir "$RUNNER_TEMP/habit-hooks" "$RUNNER_TEMP/bin"
+          for f in install-habit-hooks.sh habit-hooks-requirements.txt; do
+            git show "origin/main:.devcontainer/$f" > "$RUNNER_TEMP/habit-hooks/$f"
+          done
+          chmod +x "$RUNNER_TEMP/habit-hooks/install-habit-hooks.sh"
+          "$RUNNER_TEMP/habit-hooks/install-habit-hooks.sh" "$RUNNER_TEMP/bin"
+          git show origin/main:.github/smells.sh > "$RUNNER_TEMP/bin/smells"
+          chmod +x "$RUNNER_TEMP/bin/smells"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Scan the changed files
+        id: scan
+        run: |
+          set +e
+          smells "$RUNNER_TEMP/smells"
+          echo "result=$?" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/smells/enforced.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smells
+          path: |
+            ${{ runner.temp }}/smells/enforced.md
+            ${{ runner.temp }}/smells/suggested.md
+      - name: Verdict
+        env:
+          RESULT: ${{ steps.scan.outputs.result }}
+        run: |
+          if [ "$RESULT" != 0 ]; then
+            echo "::error::habit-hooks found enforced smells (or a tool failed), see the summary"
+            exit 1
+          fi
+
+  # Hands enforced smells to the coding agent, like the review does with its findings. Only on an
+  # agent branch, and not when `smells` failed for another reason (waiting for phase 2).
+  smell-round:
+    needs: smells
+    if: >-
+      ${{ always() && startsWith(github.head_ref, 'agent/')
+      && (needs.smells.outputs.result == '1' || needs.smells.outputs.result == '2') }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: smells
+          path: ${{ runner.temp }}/smells
+      - name: Comment and start the coding agent
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.number }}
+        run: |
+          rounds=$(gh pr view "$PR" --json comments \
+            --jq '[.comments[] | select(.body | startswith("## Smell round"))] | length')
+          if [ "$rounds" -ge 3 ]; then
+            gh pr comment "$PR" --body "The smell check failed in $rounds rounds. Waiting for the human."
+            exit 0
+          fi
+          {
+            echo "## Smell round $((rounds + 1))"
+            echo
+            echo "The smell check (habit-hooks) found these in the files of this pull request. Fix them as the guides say:"
+            echo
+            head -c 60000 "$RUNNER_TEMP/smells/enforced.md"
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$PR" --body-file "$RUNNER_TEMP/comment.md"
+          gh workflow run agent.yml -f pr="$PR"
+
   review:
+    needs: smells
+    # `smells` is skipped for Dependabot; any other result than success or skipped ends here.
+    if: ${{ !cancelled() && (needs.smells.result == 'success' || needs.smells.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,6 +187,11 @@ jobs:
         run: |
           echo "::error::Phase 2 has not produced the production code yet; the review waits."
           exit 1
+      - uses: actions/download-artifact@v8
+        if: needs.smells.result == 'success'
+        with:
+          name: smells
+          path: ${{ runner.temp }}/smells
       # Dependabot's own runs have no secrets (docs/plan.md, step 7): no review, the check passes.
       # After a push of the coding agent the run is the agent's and reviews as usual.
       - uses: anthropics/claude-code-action@v1
@@ -82,6 +223,13 @@ jobs:
               "Demo tour" in CLAUDE.md), the block is not a valid JSON list of steps, a step
               does not match the change, or a selector matches no element in the code.
             Style preferences are not findings.
+
+            The smell check (habit-hooks) has passed: nothing it enforces is left. What it only
+            suggests (findings in test files, duplication, comments, ...), with its coaching
+            guides, is in `${{ runner.temp }}/smells/suggested.md` (read it with the Read tool;
+            no file or an empty one means no suggestions). A suggestion is no reason to fail the
+            review. Where one points at a real weakness of this change, add it as one line under
+            PASS or FAIL ("Smell: <file>: <what>, <what the guide advises>"); leave out the rest.
 
             Post exactly one comment with `gh pr comment ${{ github.event.number }} --body ...`.
             It starts with the line `## Review round`, followed by PASS or FAIL and, for FAIL,

@@ -14,7 +14,7 @@ only the current state. Derived from `.github/workflows/*.yml`, `.github/accepta
 | 4 | Coding agent, phase 1 (`agent.yml`) | Writes only JGiven acceptance tests, stages, fakes, compiling stubs; opens the pull request `agent/issue-<n>` with the demo tour | Label `agent` |
 | 5 | `acceptance` | Compares tests with the approved delta, judges changed stage/fake methods | Green: comment `## Acceptance checked <sha>`, starts phase 2. Red: `## Acceptance round <n>`, starts the agent |
 | 6 | Coding agent, phase 2 | Writes the production code; the checked tests must stay unchanged | Started by `acceptance`; push |
-| 7 | `build`, `image-scan`, `acceptance`, `review` | Build and tests; scan of the container image; check again; review agent (only after phase 2) | Red review: `## Review round`, starts the agent |
+| 7 | `build`, `image-scan`, `acceptance`, `smells`, `review` | Build and tests; scan of the container image; check again; habit-hooks over the changed files, then the review agent (both only after phase 2; `review` only after a green `smells`) | Red smells: `## Smell round <n>`, red review: `## Review round`, each starts the agent |
 | 8 | Preview (`ci.yml`) | Deploys the pull request to `notes-fourteen-it-issue-<n>` | Preview bar: checks, demo tour, feedback, merge |
 | 9 | Human | Walks the tour. Feedback, or merge | Feedback: comment `## Human feedback`, starts the agent. Merge: squash, only with green `build`, `review`, `acceptance`, `image-scan` |
 | 10 | CI | Deploys `main` to production; `preview-cleanup.yml` removes the preview on close | Push to `main` |
@@ -53,6 +53,7 @@ a workflow or count as approval.
 | `## Acceptance round <n>` | pull request | `acceptance` | Findings; starts the coding agent. Rounds count from the last `## Acceptance reset` |
 | `## Acceptance reset` | pull request | Coding agent workflow, on a re-release | Voids the checked commit and the rounds: phase 1 again |
 | `## Acceptance conflict` | pull request | `acceptance` | Late conflict, see above |
+| `## Smell round <n>` | pull request | `smells` (job `smell-round`) | Enforced smells with their coaching guides; starts the coding agent. Agent branches only |
 | `## Review round` | pull request | Review agent | PASS or FAIL with findings |
 | `## Dependency round <n>` | pull request of Dependabot | `dependency-updates.yml` | A required check failed; starts the agent with `dependency=true`. 3 at most |
 | `## Human feedback` | pull request | Preview bar / human | Starts the coding agent; no round limit; only on `agent/*` branches |
@@ -64,7 +65,8 @@ a workflow or count as approval.
 | Check | Job | Required by branch protection | Blocks merge button | Notes |
 |-------|-----|------|------|-------|
 | `build` | `ci.yml` `build` | yes | yes | `./gradlew build` (with Testcontainers) and the Node tests of `.github/acceptance`. On an agent branch in phase 1 only `./gradlew compileTestJava` (the new acceptance tests are red against the stubs), same phase test as `review`; then no jar |
-| `review` | `review.yml` | yes | yes | Fails without a review until phase 2 has pushed on top of the checked commit |
+| `smells` | `review.yml` `smells` | yes | yes | habit-hooks (`.github/smells.sh`, also runnable locally and by the agent) over the files that differ from `origin/main`: Java with PMD from the root, the frontend with ESLint and knip as its own project. Enforced findings in production code are red; findings in test files and smells that habit-hooks only suggests are suggestions, given to the review agent. Tools, script and `.habit-hooks/` config come from `main`. Waits for phase 2 on an agent branch; skipped (green) for Dependabot's own runs. Duplication (`jscpd`) and the comment sensor are off |
+| `review` | `review.yml` | yes | yes | Starts only after a green or skipped `smells`; fails without a review until phase 2 has pushed on top of the checked commit |
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
 | `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) and in runs of Dependabot |
 | `secret-scan` | `ci.yml` `secret-scan` | yes | yes | gitleaks over commits, description and comments |
@@ -76,7 +78,7 @@ The workflow `image-scan-nightly.yml` scans the pinned base image every night an
 
 `build` also lints (`check`): ESLint (`frontend/eslint.config.js`: recommended rules of ESLint and typescript-eslint, plus the two classic React hooks rules) and knip (`frontend/knip.json`: unused files, exports and dependencies) for the frontend, and Error Prone for the Java code. Error Prone findings in `src/main` fail the build (`-Werror`); in `src/test` they only warn, because the acceptance tests, stages and fakes must not change in phase 2. typescript-eslint and knip need the TypeScript 6 API, so `typescript` in `frontend/package.json` is an alias of `@typescript/typescript6` and `typescript7` brings the compiler `tsc` (TypeScript 7) used by the build. `pnpm run lint` runs ESLint and knip alone.
 
-Branch protection on `main`: pull request, the required checks (`build`, `review`, `acceptance`, `secret-scan`, `image-scan`), admins exempt. The merge
+Branch protection on `main`: pull request, the required checks (`build`, `review`, `acceptance`, `secret-scan`, `image-scan`, `smells`), admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 
 ## Round limits
@@ -85,10 +87,11 @@ button repeats the check on the exact commit, squash merge.
 |------|-------|------|
 | Refine questions | 3 per round (the agent proposes after at most 3 rounds, never releases) | A text answer starts another round |
 | `## Acceptance round` | 3, counted since the last `## Acceptance reset` | Comment, the pull request waits |
+| `## Smell round` | 3 in total on the pull request, never reset | Comment, the pull request waits |
 | `## Review round` | 3 in total on the pull request, never reset | Comment, the pull request waits |
 | `## Dependency round` | 3 in total on the pull request | Comment, the pull request waits |
 | `## Human feedback` | none | |
-| Agent turns | idea 60, fix 40, feedback 40, dependency 40, conflict 30, refine 20, review 30 | |
+| Agent turns | idea 60, fix (review, acceptance, smells) 40, feedback 40, dependency 40, conflict 30, refine 20, review 30 | |
 
 ## Secrets per job
 
@@ -102,6 +105,8 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 | `image-scan-nightly` | none | contents: read, issues: write | no (scans the base image of `main`) |
 | `acceptance tests` | none | contents: read | yes (acceptance tests only), no cache |
 | `acceptance` | `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | pull-requests: write, actions: write | no (reads files as text) |
+| `smells` | none | contents: read, pull-requests: read | yes (ESLint and knip load configuration files of the pull request; tools and script from `main`) |
+| `smell-round` | none | pull-requests: write, actions: write | no (no checkout; posts the text of the artifact, starts `agent.yml`) |
 | `review` | `CLAUDE_CODE_OAUTH_TOKEN` | pull-requests: write, actions: write | no |
 | agent `work` | `CLAUDE_CODE_OAUTH_TOKEN` | contents, pull-requests, issues: write | yes (builds and tests) |
 | refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |

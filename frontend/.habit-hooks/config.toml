@@ -1,0 +1,10 @@
+# The frontend, scanned with `frontend/` as the project (see ../../.habit-hooks/config.toml).
+# eslint and knip are those of frontend/node_modules. The comment sensor needs ts-morph and
+# jscpd needs a package of its own, which nothing else in the project uses.
+plugins = ["typescript", "generic"]
+
+[sensors.comment]
+disabled = true
+
+[sensors.jscpd]
+disabled = true

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs what the devcontainer features don't: the Node version pinned in
-# .node-version, pnpm, flyctl, gitleaks and Trivy.
+# .node-version, pnpm, flyctl, gitleaks, Trivy and habit-hooks.
 set -eo pipefail
 
 # Node: switch the node feature's nvm to the pinned version. Global packages
@@ -28,3 +28,6 @@ git config rebase.autoStash true
 
 # Trivy: scans the container image like CI does (.github/image-scan.sh).
 .devcontainer/install-trivy.sh "$HOME/.local/bin"
+
+# habit-hooks: the smell check like CI does it (.github/smells.sh), also for the coding agent.
+.devcontainer/install-habit-hooks.sh "$HOME/.local/bin"

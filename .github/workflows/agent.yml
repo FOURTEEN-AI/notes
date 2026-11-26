@@ -3,8 +3,8 @@ name: Agent
 # Works in two phases (see docs/plan.md, step 6). Phase 1, the labelled issue and every fix before
 # `acceptance` has checked the tests: only acceptance tests, stages, fakes and compiling stubs. Phase 2,
 # started by `acceptance` when it is green: the production code, the checked tests stay unchanged.
-# Takes a labelled issue to a pull request, fixes the findings of a failed review or acceptance
-# check, or implements a comment on a pull request that starts with "## Human feedback" (from the preview bar or
+# Takes a labelled issue to a pull request, fixes the findings of a failed review, acceptance
+# or smell check (docs/plan.md, step 9), or implements a comment on a pull request that starts with "## Human feedback" (from the preview bar or
 # written on GitHub; no round limit). A late conflict (`acceptance` dispatches with `conflict`) and
 # feedback that changes approved behaviour do not change code: the agent proposes an amended
 # delta in a "## Refine" comment on the issue and swaps the label `agent` for `refine`, which
@@ -124,6 +124,21 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
+      # The smell check of CI (`smells`, docs/plan.md, step 9), to run before a push that changes
+      # production code. Tools and script from `main`, not from the branch.
+      - name: Install habit-hooks
+        if: github.event_name == 'issue_comment' || (github.event_name == 'workflow_dispatch' && inputs.conflict != 'true' && inputs.dependency != 'true')
+        run: |
+          mkdir "$RUNNER_TEMP/habit-hooks" "$RUNNER_TEMP/bin"
+          for f in install-habit-hooks.sh habit-hooks-requirements.txt; do
+            git show "origin/main:.devcontainer/$f" > "$RUNNER_TEMP/habit-hooks/$f"
+          done
+          chmod +x "$RUNNER_TEMP/habit-hooks/install-habit-hooks.sh"
+          "$RUNNER_TEMP/habit-hooks/install-habit-hooks.sh" "$RUNNER_TEMP/bin"
+          git show origin/main:.github/smells.sh > "$RUNNER_TEMP/bin/smells"
+          chmod +x "$RUNNER_TEMP/bin/smells"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          (cd frontend && pnpm install --frozen-lockfile --ignore-scripts)
       - name: Implement the issue
         if: github.event_name == 'issues'
         uses: anthropics/claude-code-action@v1
@@ -166,7 +181,7 @@ jobs:
               request exists, open it with `gh pr create`. The description says what is planned, contains the demo tour
               (see "Demo tour" in CLAUDE.md), and ends with "Closes #${{ github.event.issue.number }}".
             - Do not touch anything under `.github/`.
-      - name: Fix the review or acceptance findings
+      - name: Fix the review, acceptance or smell findings
         if: github.event_name == 'workflow_dispatch' && inputs.conflict != 'true' && inputs.dependency != 'true'
         uses: anthropics/claude-code-action@v1
         with:
@@ -175,11 +190,11 @@ jobs:
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 40
-            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh pr edit:*)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(smells:*),Bash(gh pr view:*),Bash(gh pr edit:*)"
           prompt: |
-            The review or the acceptance check of pull request #${{ inputs.pr }} in
+            The review, the acceptance check or the smell check of pull request #${{ inputs.pr }} in
             ${{ github.repository }} found problems. Read the latest comment that starts with
-            "## Review round" or "## Acceptance round" (whichever is newer) with
+            "## Review round", "## Acceptance round" or "## Smell round" (whichever is newest) with
             `gh pr view ${{ inputs.pr }} --comments`, and read CLAUDE.md.
 
             - You are on the branch of the pull request. Fix exactly the findings of that comment
@@ -201,6 +216,16 @@ jobs:
                 production code for the pull request.
               - The check of phase 2 failed if it says that the acceptance tests changed: restore
                 them from the checked commit named in the finding (`git checkout <sha> -- <path>`).
+            - A "## Smell round" lists code smells that habit-hooks found, each with a coaching
+              guide. Fix each one as its guide says, at the cause: do not make the number or the
+              check go away (no helper that only splits a function to get under a limit, no
+              wrapper object that only renames the parameters, no suppression, no snooze). The
+              files under `src/test/java/de/fourteen/notes/acceptance` stay as they are in phase
+              2; findings in test files are only suggestions.
+            - Before you push code of `src/main` or `frontend/src`, run `smells` (the check of CI
+              for the files that differ from `origin/main`) and fix what it enforces; it prints
+              the guides. Do not edit `.habit-hooks/` or `frontend/.habit-hooks/`, CI reads them
+              from `main`.
             - If the fix changes what the human sees, update the demo tour in the description
               with `gh pr edit` before you push (see "Demo tour" in CLAUDE.md).
             - In phase 2 run `./gradlew build` and make it pass before you push.
@@ -282,7 +307,7 @@ jobs:
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 40
-            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(pnpm:*),Bash(git:*),Bash(smells:*),Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*)"
           prompt: |
             The human tried pull request #${{ github.event.issue.number }} in ${{ github.repository }}
             in its preview app and left feedback. Read the latest comment that starts with
@@ -310,6 +335,9 @@ jobs:
               --remove-label agent`. The human releases it in the idea chat.
             - Update the demo tour in the description with `gh pr edit` before you push, so that
               it shows the change as it is now (see "Demo tour" in CLAUDE.md).
-            - Run `./gradlew build` and make it pass before you push.
+            - Run `./gradlew build` and make it pass before you push. Run `smells` too (the smell
+              check of CI for the files that differ from `origin/main`) and fix what it enforces
+              as its guides say, at the cause, without gaming the check. Do not edit
+              `.habit-hooks/` or `frontend/.habit-hooks/`.
             - Commit with a Conventional Commit message and push to this branch. Never push to
               `main`, and do not touch anything under `.github/`.
