@@ -349,7 +349,7 @@ human does not have to look.
 changes. The process itself is described in [process.md](process.md).
 
 **Not in this step:** Dependency Submission or another scanner (OSV, Trivy) for transitive
-dependencies and the OS packages of the base image, grouped pull requests, a rule to hold back
+dependencies (the OS packages of the base image come in step 8), grouped pull requests, a rule to hold back
 major versions, a notice in the app.
 
 **Risks:** with auto-merge for every version, the tests are the only guard against a changed
@@ -362,6 +362,52 @@ dependency reaches production within a day. A compromised package can reach `mai
 - [ ] A Dependabot pull request with green checks is merged and deployed without a human
 - [ ] A Dependabot pull request with a red `build` is fixed by the agent and then merged
 - [ ] After 3 failed rounds the pull request waits for the human with a comment
+
+## Step 8: vulnerable OS packages and misconfigurations in the container image are caught
+
+**Result:** an image with a known, fixable vulnerability in its OS packages, or a risky
+`Dockerfile`, does not reach production or a preview.
+
+**Scope**
+
+- Trivy, installed by a version-pinned script with pinned checksums
+  (`.devcontainer/install-trivy.sh`, like gitleaks), no third-party action. `.github/image-scan.sh`
+  does the build and the scan and runs the same in CI and in the devcontainer.
+- A new job `image-scan` in `ci.yml`, a required check: it builds the image from the jar of `build`
+  and fails on a HIGH or CRITICAL vulnerability of an OS package that has a fix
+  (`--ignore-unfixed`), and on a HIGH or CRITICAL misconfiguration of the `Dockerfile`. It needs no
+  secrets. `deploy` and `preview` wait for it. Skipped, which counts as green, in phase 1 (no jar).
+- Fly still builds the image on deploy (`--remote-only`), because pushing the scanned image to
+  Fly's registry would put a Fly token into a job that runs code of the pull request. Instead the
+  base image is pinned by digest in the `Dockerfile`, so the build gets the one that was scanned;
+  the jar is the same artifact. Dependabot (docker) moves the digest.
+- `.trivyignore`: accepted findings, each with a reason in a comment and an expiry date
+  (`exp:`).
+- `image-scan-nightly.yml`: scans the pinned base image every night, because new vulnerabilities
+  appear against an unchanged image. It opens or updates one issue "Vulnerabilities in the base
+  image" while there are findings and closes it when they are gone. It blocks nothing.
+- `dependency-updates.yml` waits for `image-scan` too, so a Dependabot pull request that bumps the
+  base image is merged only when the new image is clean.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow
+changes. Before the push, `image-scan` must be added to the required checks of branch protection,
+because `dependency-updates.yml` waits for it. [process.md](process.md) is updated.
+
+**Not in this step:** vulnerabilities in the libraries inside the jar (Dependabot covers
+direct ones), `fly.toml`, linting of workflows, scanning the image that runs on Fly after the
+deploy, a `HEALTHCHECK` (Fly checks `/actuator/health` itself).
+
+**Risks:** a new CVE with a fix can block every deploy, a hotfix included, until the base image
+is bumped or an entry with an expiry is added to `.trivyignore`. A pull request that changes the
+`Dockerfile` is built by CI, which is code of the pull request. The scanned base image is the one
+of the digest; a change of the `Dockerfile` that installs more packages is scanned as well.
+
+**Done when**
+
+- [ ] A fixable HIGH or CRITICAL vulnerability in the image fails `image-scan` and blocks the deploy
+- [ ] A risky `Dockerfile` fails `image-scan`
+- [ ] An entry in `.trivyignore` lets a finding pass until its expiry
+- [ ] The nightly scan opens an issue on a finding and closes it when it is gone
 
 ## Candidates for later steps
 

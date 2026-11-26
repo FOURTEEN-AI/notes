@@ -41,7 +41,7 @@ jobs:
       - name: Wait for the required checks
         id: checks
         run: |
-          required='["build","review","acceptance","secret-scan"]'
+          required='["build","review","acceptance","secret-scan","image-scan"]'
           for _ in $(seq 1 80); do
             checks=$(gh pr checks "$PR" --required --json name,bucket 2>/dev/null || echo '[]')
             failed=$(jq -r '[.[] | select(.bucket == "fail" or .bucket == "cancel") | .name] | join(", ")' <<< "$checks")
