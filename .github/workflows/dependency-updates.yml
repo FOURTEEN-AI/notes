@@ -38,10 +38,15 @@ jobs:
       PR: ${{ github.event.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
+      # The branch protection decides what is required: the merge state is CLEAN (or UNSTABLE,
+      # when only a check that is not required fails) once every required check has passed. No list
+      # of checks here. A required check that this branch never runs (it was added to `main` after
+      # Dependabot opened the pull request) leaves the state BLOCKED with nothing pending; then
+      # Dependabot is asked once to rebase onto `main`, which starts this job again.
       - name: Wait for the required checks
         id: checks
         run: |
-          required='["build","review","acceptance","secret-scan","image-scan"]'
+          idle=0
           for _ in $(seq 1 80); do
             checks=$(gh pr checks "$PR" --required --json name,bucket 2>/dev/null || echo '[]')
             failed=$(jq -r '[.[] | select(.bucket == "fail" or .bucket == "cancel") | .name] | join(", ")' <<< "$checks")
@@ -49,18 +54,32 @@ jobs:
               echo "failed=$failed" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            if jq -e --argjson req "$required" '
-                [.[] | select(.bucket == "pass" or .bucket == "skipping") | .name] as $ok
-                | $req | all(. as $n | $ok | any(. == $n))' <<< "$checks" > /dev/null; then
+            state=$(gh pr view "$PR" --json mergeStateStatus --jq .mergeStateStatus)
+            if [ "$state" = CLEAN ] || [ "$state" = UNSTABLE ]; then
               echo "failed=" >> "$GITHUB_OUTPUT"
               exit 0
+            fi
+            pending=$(jq '[.[] | select(.bucket == "pending")] | length' <<< "$checks")
+            if [ "$state" = BLOCKED ] && [ "$pending" = 0 ]; then idle=$((idle + 1)); else idle=0; fi
+            if [ "$idle" -ge 6 ]; then
+              asked=$(gh pr view "$PR" --json comments \
+                --jq '[.comments[] | select(.body == "@dependabot rebase")] | length')
+              if [ "$asked" = 0 ]; then
+                gh pr comment "$PR" --body "@dependabot rebase"
+                echo "A required check is missing on this branch; Dependabot is asked to rebase."
+                echo "failed=" >> "$GITHUB_OUTPUT"
+                echo "rebase=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "::error::A required check is missing on this branch, and Dependabot was asked already"
+              exit 1
             fi
             sleep 30
           done
           echo "::error::The required checks did not finish in time"
           exit 1
       - name: Merge and deploy
-        if: steps.checks.outputs.failed == ''
+        if: steps.checks.outputs.failed == '' && steps.checks.outputs.rebase != 'true'
         run: |
           gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA"
           gh workflow run ci.yml --ref main

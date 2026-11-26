@@ -337,7 +337,9 @@ human does not have to look.
   `preview` is skipped; `build` (all tests) and `secret-scan` are the net. A push of the coding
   agent on such a branch runs as for any pull request, so its code is reviewed.
 - `dependency-updates.yml` (`pull_request_target`, no code of the pull request) waits for the
-  required checks and squash-merges the pull request when they are green. It then starts `ci.yml`
+  required checks (the merge state of the pull request, so branch protection decides what is
+  required) and squash-merges the pull request when they are green. A required check that the
+  branch never runs, because it was added to `main` later, makes it ask Dependabot once to rebase. It then starts `ci.yml`
   on `main` (`workflow_dispatch`), because a merge with the `GITHUB_TOKEN` starts no push
   workflow, and that is the deploy.
 - A red required check posts `## Dependency round <n>` and starts `agent.yml` with
