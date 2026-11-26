@@ -406,10 +406,10 @@ of the digest; a change of the `Dockerfile` that installs more packages is scann
 
 **Done when**
 
-- [ ] A fixable HIGH or CRITICAL vulnerability in the image fails `image-scan` and blocks the deploy
-- [ ] A risky `Dockerfile` fails `image-scan`
+- [x] A fixable HIGH or CRITICAL vulnerability in the image fails `image-scan` and blocks the deploy
+- [x] A risky `Dockerfile` fails `image-scan`
 - [ ] An entry in `.trivyignore` lets a finding pass until its expiry
-- [ ] The nightly scan opens an issue on a finding and closes it when it is gone
+- [x] The nightly scan opens an issue on a finding and closes it when it is gone
 
 ## Candidates for later steps
 
