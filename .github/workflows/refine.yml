@@ -31,7 +31,7 @@ jobs:
       issues: write
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # The coding agent sends an idea back with its own "## Refine" proposal and the label
       # `refine` (late conflict, feedback): then there is nothing to ask or propose yet.
       - name: Is the newest comment already a proposal
