@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Refuses a push of a branch that is behind its counterpart on origin, so a push never races
+# a commit of another agent or of Dependabot. Fix with `git pull` (rebases, see pull.rebase).
+branch=$(git branch --show-current)
+[ -n "$branch" ] || exit 0
+git fetch -q origin "$branch" 2> /dev/null || exit 0
+if [ "$(git rev-list --count "HEAD..origin/$branch")" -gt 0 ]; then
+  echo "pre-push: origin/$branch has commits you do not have. Run: git pull" >&2
+  exit 1
+fi

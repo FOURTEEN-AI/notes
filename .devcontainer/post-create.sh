@@ -23,6 +23,8 @@ curl -fsSL https://fly.io/install.sh | sh
 # gitleaks and the pre-commit hook that blocks commits with secrets (also scanned in CI).
 .devcontainer/install-gitleaks.sh "$HOME/.local/bin"
 git config core.hooksPath .githooks
+git config pull.rebase true
+git config rebase.autoStash true
 
 # Trivy: scans the container image like CI does (.github/image-scan.sh).
 .devcontainer/install-trivy.sh "$HOME/.local/bin"
