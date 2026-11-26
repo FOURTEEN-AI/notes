@@ -1,0 +1,47 @@
+name: Image scan nightly
+
+# New vulnerabilities appear against an unchanged image (docs/plan.md, step 8). Scans the base
+# image that the Dockerfile pins by digest; the jar adds no OS packages. Opens or updates one
+# issue while there are findings and closes it when they are gone. Never touches a deploy.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: Vulnerabilities in the base image
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Trivy
+        run: .devcontainer/install-trivy.sh "$RUNNER_TEMP/bin" && echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Scan the pinned base image
+        run: |
+          image=$(sed -n 's/^FROM \([^ ]*\).*/\1/p' Dockerfile | head -1)
+          trivy image --scanners vuln --pkg-types os --severity HIGH,CRITICAL --ignore-unfixed \
+            --ignorefile .trivyignore --no-progress --format json --output "$RUNNER_TEMP/trivy.json" "$image"
+          jq -r --arg image "$image" '
+            [.Results[]?.Vulnerabilities[]?] as $v
+            | "Nightly scan of `\($image)`: \($v | length) HIGH or CRITICAL vulnerabilities of OS packages with a fix.\n\n"
+              + ($v | map("- \(.Severity) \(.VulnerabilityID): `\(.PkgName)` \(.InstalledVersion), fixed in \(.FixedVersion)") | join("\n"))
+              + "\n\nFix: a newer base image (Dependabot opens the pull request), or an entry with reason and expiry in `.trivyignore`."
+          ' "$RUNNER_TEMP/trivy.json" > "$RUNNER_TEMP/body.md"
+          echo "count=$(jq '[.Results[]?.Vulnerabilities[]?] | length' "$RUNNER_TEMP/trivy.json")" >> "$GITHUB_ENV"
+      - name: Open, update or close the issue
+        run: |
+          number=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq "[.[] | select(.title == \"$TITLE\")] | first | .number // empty")
+          if [ "$count" -eq 0 ]; then
+            [ -z "$number" ] || gh issue close "$number" --comment "No findings in the last nightly scan."
+          elif [ -n "$number" ]; then
+            gh issue edit "$number" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/body.md"
+          fi

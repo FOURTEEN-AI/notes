@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
@@ -86,20 +86,20 @@ jobs:
           fi
       # The check code and the tests of `main` come from the base. The pull request is checked out
       # as text only (sources, git history); its report comes from the job `tests`.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         if: steps.issue.outputs.number
         with:
           ref: ${{ github.base_ref }}
           path: base
           persist-credentials: false
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         if: steps.issue.outputs.number
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: steps.issue.outputs.number
         continue-on-error: true
         with:

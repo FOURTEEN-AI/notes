@@ -14,9 +14,9 @@ only the current state. Derived from `.github/workflows/*.yml`, `.github/accepta
 | 4 | Coding agent, phase 1 (`agent.yml`) | Writes only JGiven acceptance tests, stages, fakes, compiling stubs; opens the pull request `agent/issue-<n>` with the demo tour | Label `agent` |
 | 5 | `acceptance` | Compares tests with the approved delta, judges changed stage/fake methods | Green: comment `## Acceptance checked <sha>`, starts phase 2. Red: `## Acceptance round <n>`, starts the agent |
 | 6 | Coding agent, phase 2 | Writes the production code; the checked tests must stay unchanged | Started by `acceptance`; push |
-| 7 | `build`, `acceptance`, `review` | Build and tests; check again; review agent (only after phase 2) | Red review: `## Review round`, starts the agent |
+| 7 | `build`, `image-scan`, `acceptance`, `review` | Build and tests; scan of the container image; check again; review agent (only after phase 2) | Red review: `## Review round`, starts the agent |
 | 8 | Preview (`ci.yml`) | Deploys the pull request to `notes-fourteen-it-issue-<n>` | Preview bar: checks, demo tour, feedback, merge |
-| 9 | Human | Walks the tour. Feedback, or merge | Feedback: comment `## Human feedback`, starts the agent. Merge: squash, only with green `build`, `review`, `acceptance` |
+| 9 | Human | Walks the tour. Feedback, or merge | Feedback: comment `## Human feedback`, starts the agent. Merge: squash, only with green `build`, `review`, `acceptance`, `image-scan` |
 | 10 | CI | Deploys `main` to production; `preview-cleanup.yml` removes the preview on close | Push to `main` |
 
 Paths off the main line:
@@ -28,7 +28,7 @@ Paths off the main line:
 | Phase 2 needs a change in tests, stages or fakes | Commit with the line `Phase: 1` at the end; the pull request is back in phase 1 |
 | Phase 2 changed the checked tests | `phase.mjs` makes `acceptance` fail; counts as a round |
 | Pull request from a branch that is not `agent/issue-<n>` | No phases, no criteria: `acceptance` passes at once, the review runs at once |
-| Dependency update: Dependabot opens a pull request for a known vulnerability (security update) or a new version (daily; Gradle, pnpm in `frontend/`, the Docker base image, GitHub Actions) | No idea, no demo, no human. Dependabot's own runs have no secrets: `review` passes without a review, `preview` is skipped. `dependency-updates.yml` waits for `build`, `review`, `acceptance` and `secret-scan`; green: squash merge (any version, major too) and `ci.yml` is started on `main`, because a merge with the `GITHUB_TOKEN` starts no push workflow, so that is the deploy. Red: comment `## Dependency round <n>` and `agent.yml` with `dependency=true`: the agent keeps the new version, adapts the code on the `dependabot/*` branch and pushes. Its push starts the checks again, now with a real review and a preview. At most 3 rounds, then the pull request waits for the human |
+| Dependency update: Dependabot opens a pull request for a known vulnerability (security update) or a new version (daily; Gradle, pnpm in `frontend/`, the Docker base image, GitHub Actions) | No idea, no demo, no human. Dependabot's own runs have no secrets: `review` passes without a review, `preview` is skipped. `dependency-updates.yml` waits for `build`, `review`, `acceptance`, `secret-scan` and `image-scan`; green: squash merge (any version, major too) and `ci.yml` is started on `main`, because a merge with the `GITHUB_TOKEN` starts no push workflow, so that is the deploy. Red: comment `## Dependency round <n>` and `agent.yml` with `dependency=true`: the agent keeps the new version, adapts the code on the `dependabot/*` branch and pushes. Its push starts the checks again, now with a real review and a preview. At most 3 rounds, then the pull request waits for the human |
 
 ## Labels
 
@@ -68,12 +68,15 @@ a workflow or count as approval.
 | `acceptance` | `acceptance.yml` `acceptance` | yes | yes | Passes for branches other than `agent/issue-<n>` |
 | `preview` | `ci.yml` `preview` | no | no | Only the deploy; the preview link shows once it is green. Skipped in phase 1 (no jar) and in runs of Dependabot |
 | `secret-scan` | `ci.yml` `secret-scan` | yes | yes | gitleaks over commits, description and comments |
+| `image-scan` | `ci.yml` `image-scan` | yes | yes | Builds the image from the jar of `build` and scans it with Trivy (`.github/image-scan.sh`, also runnable locally): OS packages with a fix for a HIGH or CRITICAL vulnerability, and the Dockerfile. `deploy` and `preview` wait for it. Skipped (green) in phase 1 (no jar). The base image is pinned by digest in the `Dockerfile`, so the build of Fly gets the image that was scanned; Dependabot moves the digest. Accepted findings go into `.trivyignore` with a reason and an expiry date |
+
+The workflow `image-scan-nightly.yml` scans the pinned base image every night and opens or updates the issue "Vulnerabilities in the base image" while there are findings; it closes it when they are gone. It never blocks a deploy.
 
 `build` also checks formatting (`check`): Spotless (google-java-format AOSP style, 4 spaces, unused imports removed, imports sorted) for Java and Prettier (`frontend/.prettierrc.json`) for `frontend/src` and its config files (`*.ts`, `*.js`, `*.json`). `./gradlew format` fixes both (`pnpm run format` only the frontend).
 
 `build` also lints (`check`): ESLint (`frontend/eslint.config.js`: recommended rules of ESLint and typescript-eslint, plus the two classic React hooks rules) and knip (`frontend/knip.json`: unused files, exports and dependencies) for the frontend, and Error Prone for the Java code. Error Prone findings in `src/main` fail the build (`-Werror`); in `src/test` they only warn, because the acceptance tests, stages and fakes must not change in phase 2. typescript-eslint and knip need the TypeScript 6 API, so `typescript` in `frontend/package.json` is an alias of `@typescript/typescript6` and `typescript7` brings the compiler `tsc` (TypeScript 7) used by the build. `pnpm run lint` runs ESLint and knip alone.
 
-Branch protection on `main`: pull request, the three required checks, admins exempt. The merge
+Branch protection on `main`: pull request, the required checks (`build`, `review`, `acceptance`, `secret-scan`, `image-scan`), admins exempt. The merge
 button repeats the check on the exact commit, squash merge.
 
 ## Round limits
@@ -95,6 +98,8 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 |-----|---------|-------------------|-------------------------------|
 | `build` | none | default | yes |
 | `secret-scan` | none | contents: read, pull-requests: read | no (gitleaks over commits, description and comments) |
+| `image-scan` | none | contents: read | no (builds the image from the jar and the Dockerfile of the pull request, which are code of it; Trivy runs on the image, not in it) |
+| `image-scan-nightly` | none | contents: read, issues: write | no (scans the base image of `main`) |
 | `acceptance tests` | none | contents: read | yes (acceptance tests only), no cache |
 | `acceptance` | `CLAUDE_CODE_OAUTH_TOKEN` (only in the judging step) | pull-requests: write, actions: write | no (reads files as text) |
 | `review` | `CLAUDE_CODE_OAUTH_TOKEN` | pull-requests: write, actions: write | no |

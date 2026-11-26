@@ -158,6 +158,9 @@ EOF
 - `.gitleaks.toml` adds the tokens of this project. The devcontainer installs gitleaks and the hook
   `.githooks/pre-commit` blocks a commit with a secret. Elsewhere, run
   `.devcontainer/install-gitleaks.sh` and `git config core.hooksPath .githooks`.
+- `image-scan` in `ci.yml` scans the container image (OS packages, Dockerfile) with Trivy; locally
+  `./gradlew build` and then `.github/image-scan.sh` (needs Docker and
+  `.devcontainer/install-trivy.sh`). Accepted findings: `.trivyignore`, with a reason and an expiry.
 - The check `secret-scan` in `ci.yml` scans every commit and the description and comments of the
   pull request.
 - The app masks the values of environment variables whose name contains PASSWORD, TOKEN, SECRET,

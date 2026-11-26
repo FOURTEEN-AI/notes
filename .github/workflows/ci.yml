@@ -17,7 +17,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Install gitleaks
@@ -47,7 +47,7 @@ jobs:
     outputs:
       phase1: ${{ steps.phase.outputs.phase1 }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # On an agent branch the acceptance tests are red against the stubs until phase 2 has pushed
@@ -99,16 +99,36 @@ jobs:
           name: notes-jar
           path: build/libs/notes.jar
 
-  deploy:
+  # The image that deploy and preview build, scanned before they run (docs/plan.md, step 8): OS
+  # packages of the base image with a fix for a HIGH or CRITICAL vulnerability, and the
+  # Dockerfile. The base image is pinned by digest, so the build of Fly gets the same one. Needs
+  # no secrets. Skipped in phase 1 (no jar), which counts as green.
+  image-scan:
     needs: build
+    if: needs.build.outputs.phase1 != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: notes-jar
+          path: build/libs
+      - name: Install Trivy
+        run: .devcontainer/install-trivy.sh "$RUNNER_TEMP/bin" && echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - run: .github/image-scan.sh
+
+  deploy:
+    needs: [build, image-scan]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency: deploy
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: notes-jar
           path: build/libs
@@ -120,7 +140,7 @@ jobs:
   # A preview app per pull request. Only this job gets the Fly org token, and it only handles the
   # jar built above, never the code of the pull request itself.
   preview:
-    needs: build
+    needs: [build, image-scan]
     # Dependabot's own runs have no secrets, so no preview for them (docs/plan.md, step 7).
     if: >-
       github.event_name == 'pull_request' && needs.build.outputs.phase1 != 'true'
@@ -143,8 +163,8 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
           PR: ${{ github.event.number }}
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: notes-jar
           path: build/libs

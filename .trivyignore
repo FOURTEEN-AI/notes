@@ -1,0 +1,5 @@
+# Accepted findings of the image scan (docs/plan.md, step 8). One entry per line, each with a
+# comment above it that says why, and an expiry date: an entry stops working after it.
+#
+#   # Why this finding does not apply or cannot be fixed yet.
+#   CVE-2026-12345 exp:2026-12-31

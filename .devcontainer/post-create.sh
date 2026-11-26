@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs what the devcontainer features don't: the Node version pinned in
-# .node-version, pnpm, flyctl and gitleaks.
+# .node-version, pnpm, flyctl, gitleaks and Trivy.
 set -eo pipefail
 
 # Node: switch the node feature's nvm to the pinned version. Global packages
@@ -23,3 +23,6 @@ curl -fsSL https://fly.io/install.sh | sh
 # gitleaks and the pre-commit hook that blocks commits with secrets (also scanned in CI).
 .devcontainer/install-gitleaks.sh "$HOME/.local/bin"
 git config core.hooksPath .githooks
+
+# Trivy: scans the container image like CI does (.github/image-scan.sh).
+.devcontainer/install-trivy.sh "$HOME/.local/bin"
