@@ -119,6 +119,9 @@ branch of this repository, and it checks out the commit the pull request had at 
 Push protection of GitHub, the hook `.githooks/pre-commit` and `secret-scan` guard the
 repository, which is public.
 
+The hook `.githooks/pre-push` refuses a push while `origin` has commits of the branch that you do
+not have; `git pull` rebases (set up by `.devcontainer/post-create.sh`).
+
 ## Scenario tags
 
 In the proposal and in the approved delta, the tags describe a scenario against `main`.
