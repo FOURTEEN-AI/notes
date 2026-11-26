@@ -49,7 +49,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
       # In phase 1 the tests are red against the stubs, in phase 2 an old red test is a late
@@ -131,7 +131,7 @@ jobs:
         if: steps.issue.outputs.number
         with:
           package_json_file: base/frontend/package.json
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         if: steps.issue.outputs.number
         with:
           node-version-file: base/.node-version
