@@ -19,7 +19,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TITLE: Vulnerabilities in the base image
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install Trivy
         run: .devcontainer/install-trivy.sh "$RUNNER_TEMP/bin" && echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Scan the pinned base image
