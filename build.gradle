@@ -3,7 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '4.2.0'
 	id 'com.tngtech.jgiven.gradle-plugin' version '3.0.0'
 	id 'com.diffplug.spotless' version '8.2.1'
-	id 'net.ltgt.errorprone' version '5.1.0'
+	id 'net.ltgt.errorprone' version '5.2.0'
 }
 
 group = 'de.fourteen.notes'
