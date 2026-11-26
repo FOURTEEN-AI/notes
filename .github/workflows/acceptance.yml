@@ -99,7 +99,7 @@ jobs:
           path: head
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: steps.issue.outputs.number
         continue-on-error: true
         with:
