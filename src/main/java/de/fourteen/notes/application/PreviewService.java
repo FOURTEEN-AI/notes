@@ -123,11 +123,8 @@ public class PreviewService {
         }
         try {
             return Arrays.stream(json.readValue(block.group(1), WrittenStep[].class))
-                    .filter(
-                            step ->
-                                    step != null
-                                            && step.action() != null
-                                            && !step.action().isBlank())
+                    .filter(step ->
+                            step != null && step.action() != null && !step.action().isBlank())
                     .map(step -> new DemoStep(step.action(), step.expect(), step.selector()))
                     .toList();
         } catch (JacksonException e) {

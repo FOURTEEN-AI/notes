@@ -23,10 +23,9 @@ class DatabaseUrlEnvironmentPostProcessorTest {
 
     @Test
     void rejects_other_schemes_without_echoing_the_password() {
-        assertThatThrownBy(
-                        () ->
-                                DatabaseUrlEnvironmentPostProcessor.toDatasourceProperties(
-                                        "mysql://user:secret@host/db"))
+        assertThatThrownBy(() ->
+                        DatabaseUrlEnvironmentPostProcessor.toDatasourceProperties(
+                                "mysql://user:secret@host/db"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .message()
                 .doesNotContain("secret");

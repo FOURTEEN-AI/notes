@@ -524,10 +524,10 @@ class GitHubApiTest {
 
     private static String pullRequest(int number, String branch, String sha, String state) {
         return """
-                {"number": %d, "title": "feat: pull request %d", "state": "%s",
-                 "html_url": "https://github.com/FOURTEEN-AI/notes/pull/%d",
-                 "head": {"ref": "%s", "sha": "%s"}}
-                """
+        {"number": %d, "title": "feat: pull request %d", "state": "%s",
+         "html_url": "https://github.com/FOURTEEN-AI/notes/pull/%d",
+         "head": {"ref": "%s", "sha": "%s"}}
+        """
                 .formatted(number, number, state, number, branch, sha);
     }
 
@@ -545,14 +545,14 @@ class GitHubApiTest {
     private static String checkRuns(
             String build, String review, String acceptance, String preview) {
         return """
-                {"check_runs": [
-                  {"id": 1, "name": "review", "status": "completed", "conclusion": "failure"},
-                  {"id": 2, "name": "build", "status": "completed", "conclusion": "%s"},
-                  %s,
-                  %s,
-                  %s
-                ]}
-                """
+        {"check_runs": [
+          {"id": 1, "name": "review", "status": "completed", "conclusion": "failure"},
+          {"id": 2, "name": "build", "status": "completed", "conclusion": "%s"},
+          %s,
+          %s,
+          %s
+        ]}
+        """
                 .formatted(
                         build,
                         checkRun(3, "review", review),

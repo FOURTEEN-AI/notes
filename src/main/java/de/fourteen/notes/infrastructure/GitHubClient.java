@@ -39,41 +39,38 @@ class GitHubClient implements GitHub {
                 builder.baseUrl(properties.apiUrl() + "/repos/" + properties.repository())
                         .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
                         .defaultHeader("X-GitHub-Api-Version", "2022-11-28")
-                        .defaultHeaders(
-                                headers -> {
-                                    if (properties.configured()) {
-                                        headers.setBearerAuth(properties.token());
-                                    }
-                                })
+                        .defaultHeaders(headers -> {
+                            if (properties.configured()) {
+                                headers.setBearerAuth(properties.token());
+                            }
+                        })
                         .build();
     }
 
     @Override
     public Issue createIssue(String title, String body) {
         JsonNode issue =
-                call(
-                        () ->
-                                rest.post()
-                                        .uri("/issues")
-                                        .body(
-                                                Map.of(
-                                                        "title", title,
-                                                        "body", body,
-                                                        "labels", List.of("refine")))
-                                        .retrieve()
-                                        .body(JsonNode.class));
+                call(() ->
+                        rest.post()
+                                .uri("/issues")
+                                .body(
+                                        Map.of(
+                                                "title", title,
+                                                "body", body,
+                                                "labels", List.of("refine")))
+                                .retrieve()
+                                .body(JsonNode.class));
         return toIssue(issue);
     }
 
     @Override
     public List<Issue> openIdeaIssues() {
         JsonNode items =
-                call(
-                        () ->
-                                rest.get()
-                                        .uri("/issues?state=open&per_page=100")
-                                        .retrieve()
-                                        .body(JsonNode.class));
+                call(() ->
+                        rest.get()
+                                .uri("/issues?state=open&per_page=100")
+                                .retrieve()
+                                .body(JsonNode.class));
         return items.values().stream()
                 // The issues endpoint lists pull requests too.
                 .filter(item -> !item.has("pull_request"))
@@ -85,24 +82,19 @@ class GitHubClient implements GitHub {
     @Override
     public List<PullRequest> openPullRequests() {
         JsonNode items =
-                call(
-                        () ->
-                                rest.get()
-                                        .uri("/pulls?state=open&per_page=100")
-                                        .retrieve()
-                                        .body(JsonNode.class));
+                call(() ->
+                        rest.get()
+                                .uri("/pulls?state=open&per_page=100")
+                                .retrieve()
+                                .body(JsonNode.class));
         return items.values().stream().map(GitHubClient::toPullRequest).toList();
     }
 
     @Override
     public PullRequest pullRequest(int number) {
         return toPullRequest(
-                call(
-                        () ->
-                                rest.get()
-                                        .uri("/pulls/{number}", number)
-                                        .retrieve()
-                                        .body(JsonNode.class)));
+                call(() ->
+                        rest.get().uri("/pulls/{number}", number).retrieve().body(JsonNode.class)));
     }
 
     @Override
@@ -118,12 +110,11 @@ class GitHubClient implements GitHub {
     @Override
     public List<Comment> comments(int number) {
         JsonNode items =
-                call(
-                        () ->
-                                rest.get()
-                                        .uri("/issues/{number}/comments?per_page=100", number)
-                                        .retrieve()
-                                        .body(JsonNode.class));
+                call(() ->
+                        rest.get()
+                                .uri("/issues/{number}/comments?per_page=100", number)
+                                .retrieve()
+                                .body(JsonNode.class));
         return items.values().stream()
                 .map(item -> new Comment(item.path("body").asString("")))
                 .toList();
@@ -131,14 +122,11 @@ class GitHubClient implements GitHub {
 
     private Set<Integer> activeRuns(String workflow, Pattern runName) {
         JsonNode runs =
-                call(
-                        () ->
-                                rest.get()
-                                        .uri(
-                                                "/actions/workflows/{workflow}/runs?per_page=30",
-                                                workflow)
-                                        .retrieve()
-                                        .body(JsonNode.class));
+                call(() ->
+                        rest.get()
+                                .uri("/actions/workflows/{workflow}/runs?per_page=30", workflow)
+                                .retrieve()
+                                .body(JsonNode.class));
         Set<Integer> numbers = new HashSet<>();
         for (JsonNode run : runs.get("workflow_runs").values()) {
             Matcher matcher = runName.matcher(run.path("display_title").asString(""));
@@ -152,12 +140,11 @@ class GitHubClient implements GitHub {
     @Override
     public Checks checks(String sha) {
         JsonNode runs =
-                call(
-                        () ->
-                                rest.get()
-                                        .uri("/commits/{sha}/check-runs?per_page=100", sha)
-                                        .retrieve()
-                                        .body(JsonNode.class));
+                call(() ->
+                        rest.get()
+                                .uri("/commits/{sha}/check-runs?per_page=100", sha)
+                                .retrieve()
+                                .body(JsonNode.class));
         return new Checks(
                 checkState(runs, "build"),
                 checkState(runs, "review"),
@@ -167,41 +154,37 @@ class GitHubClient implements GitHub {
 
     @Override
     public void comment(int number, String body) {
-        call(
-                () ->
-                        rest.post()
-                                .uri("/issues/{number}/comments", number)
-                                .body(Map.of("body", body))
-                                .retrieve()
-                                .toBodilessEntity());
+        call(() ->
+                rest.post()
+                        .uri("/issues/{number}/comments", number)
+                        .body(Map.of("body", body))
+                        .retrieve()
+                        .toBodilessEntity());
     }
 
     @Override
     public void release(int number) {
-        call(
-                () ->
-                        rest.post()
-                                .uri("/issues/{number}/labels", number)
-                                .body(Map.of("labels", List.of("agent")))
-                                .retrieve()
-                                .toBodilessEntity());
-        call(
-                () ->
-                        rest.delete()
-                                .uri("/issues/{number}/labels/refine", number)
-                                .retrieve()
-                                .toBodilessEntity());
+        call(() ->
+                rest.post()
+                        .uri("/issues/{number}/labels", number)
+                        .body(Map.of("labels", List.of("agent")))
+                        .retrieve()
+                        .toBodilessEntity());
+        call(() ->
+                rest.delete()
+                        .uri("/issues/{number}/labels/refine", number)
+                        .retrieve()
+                        .toBodilessEntity());
     }
 
     @Override
     public void merge(int number, String sha) {
-        call(
-                () ->
-                        rest.put()
-                                .uri("/pulls/{number}/merge", number)
-                                .body(Map.of("sha", sha, "merge_method", "squash"))
-                                .retrieve()
-                                .toBodilessEntity());
+        call(() ->
+                rest.put()
+                        .uri("/pulls/{number}/merge", number)
+                        .body(Map.of("sha", sha, "merge_method", "squash"))
+                        .retrieve()
+                        .toBodilessEntity());
     }
 
     private static CheckState checkState(JsonNode runs, String name) {
@@ -209,15 +192,14 @@ class GitHubClient implements GitHub {
         return runs.get("check_runs").values().stream()
                 .filter(run -> name.equals(run.path("name").asString()))
                 .max((a, b) -> Long.compare(a.get("id").asLong(), b.get("id").asLong()))
-                .map(
-                        run -> {
-                            if (!"completed".equals(run.path("status").asString())) {
-                                return CheckState.PENDING;
-                            }
-                            return "success".equals(run.path("conclusion").asString())
-                                    ? CheckState.SUCCESS
-                                    : CheckState.FAILURE;
-                        })
+                .map(run -> {
+                    if (!"completed".equals(run.path("status").asString())) {
+                        return CheckState.PENDING;
+                    }
+                    return "success".equals(run.path("conclusion").asString())
+                            ? CheckState.SUCCESS
+                            : CheckState.FAILURE;
+                })
                 .orElse(CheckState.PENDING);
     }
 
