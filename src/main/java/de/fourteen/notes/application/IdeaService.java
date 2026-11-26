@@ -43,30 +43,29 @@ public class IdeaService {
         Set<Integer> agentRuns = github.activeAgentRuns();
         Set<Integer> refineRuns = github.activeRefineRuns();
         return issues.stream()
-                .map(
-                        issue -> {
-                            if (issue.refining()) {
-                                return new Idea(
-                                        issue.number(),
-                                        issue.title(),
-                                        issue.body(),
-                                        IdeaStatus.refine(refineRuns.contains(issue.number())),
-                                        null,
-                                        false);
-                            }
-                            PullRequest pr = pullRequests.get(issue.branch());
-                            boolean running =
-                                    agentRuns.contains(issue.number())
-                                            || (pr != null && agentRuns.contains(pr.number()));
-                            Checks checks = pr == null ? null : github.checks(pr.sha());
-                            return new Idea(
-                                    issue.number(),
-                                    issue.title(),
-                                    issue.body(),
-                                    IdeaStatus.of(running, checks),
-                                    pr == null ? null : issue.previewUrl(),
-                                    checks != null && checks.preview() == CheckState.SUCCESS);
-                        })
+                .map(issue -> {
+                    if (issue.refining()) {
+                        return new Idea(
+                                issue.number(),
+                                issue.title(),
+                                issue.body(),
+                                IdeaStatus.refine(refineRuns.contains(issue.number())),
+                                null,
+                                false);
+                    }
+                    PullRequest pr = pullRequests.get(issue.branch());
+                    boolean running =
+                            agentRuns.contains(issue.number())
+                                    || (pr != null && agentRuns.contains(pr.number()));
+                    Checks checks = pr == null ? null : github.checks(pr.sha());
+                    return new Idea(
+                            issue.number(),
+                            issue.title(),
+                            issue.body(),
+                            IdeaStatus.of(running, checks),
+                            pr == null ? null : issue.previewUrl(),
+                            checks != null && checks.preview() == CheckState.SUCCESS);
+                })
                 .toList();
     }
 
@@ -121,11 +120,10 @@ public class IdeaService {
     public void approve(int number) {
         String proposal =
                 AcceptanceCriteria.pendingProposal(github.comments(number))
-                        .orElseThrow(
-                                () ->
-                                        new DomainException(
-                                                DomainException.Kind.CONFLICT,
-                                                "there is no pending proposal to approve"));
+                        .orElseThrow(() ->
+                                new DomainException(
+                                        DomainException.Kind.CONFLICT,
+                                        "there is no pending proposal to approve"));
         github.comment(number, AcceptanceCriteria.toComment(proposal));
         github.release(number);
     }

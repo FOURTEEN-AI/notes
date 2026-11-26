@@ -36,20 +36,19 @@ public class SecretMaskingConverter extends CompositeConverter<ILoggingEvent> {
 
     static List<String> secretsIn(Map<String, String> environment) {
         List<String> secrets = new ArrayList<>();
-        environment.forEach(
-                (name, value) -> {
-                    String upper = name.toUpperCase(Locale.ROOT);
-                    if (NAME_PARTS.stream().anyMatch(upper::contains)) {
-                        secrets.add(value);
-                    }
-                    if (upper.equals("DATABASE_URL")) {
-                        secrets.add(value);
-                        Matcher password = URL_PASSWORD.matcher(value);
-                        if (password.find()) {
-                            secrets.add(password.group(1));
-                        }
-                    }
-                });
+        environment.forEach((name, value) -> {
+            String upper = name.toUpperCase(Locale.ROOT);
+            if (NAME_PARTS.stream().anyMatch(upper::contains)) {
+                secrets.add(value);
+            }
+            if (upper.equals("DATABASE_URL")) {
+                secrets.add(value);
+                Matcher password = URL_PASSWORD.matcher(value);
+                if (password.find()) {
+                    secrets.add(password.group(1));
+                }
+            }
+        });
         // Longest first, so that a URL goes before the password it contains.
         return secrets.stream()
                 .filter(secret -> secret != null && secret.strip().length() >= MIN_LENGTH)

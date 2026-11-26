@@ -24,31 +24,27 @@ class OnionArchitectureTest {
     @Test
     void domain_uses_only_the_jdk() throws IOException {
         assertThat(imports("domain"))
-                .allSatisfy(
-                        i ->
-                                assertThat(i)
-                                        .matches("(java\\.|de\\.fourteen\\.notes\\.domain\\.).*"));
+                .allSatisfy(i ->
+                        assertThat(i).matches("(java\\.|de\\.fourteen\\.notes\\.domain\\.).*"));
     }
 
     @Test
     void application_knows_neither_web_nor_infrastructure() throws IOException {
         assertThat(imports("application"))
-                .noneMatch(
-                        i ->
-                                i.startsWith("de.fourteen.notes.web.")
-                                        || i.startsWith("de.fourteen.notes.infrastructure.")
-                                        || i.startsWith("org.springframework.web.")
-                                        || i.startsWith("org.springframework.http.")
-                                        || i.startsWith("org.springframework.jdbc."));
+                .noneMatch(i ->
+                        i.startsWith("de.fourteen.notes.web.")
+                                || i.startsWith("de.fourteen.notes.infrastructure.")
+                                || i.startsWith("org.springframework.web.")
+                                || i.startsWith("org.springframework.http.")
+                                || i.startsWith("org.springframework.jdbc."));
     }
 
     @Test
     void infrastructure_implements_only_domain_ports() throws IOException {
         assertThat(imports("infrastructure"))
-                .noneMatch(
-                        i ->
-                                i.startsWith("de.fourteen.notes.web.")
-                                        || i.startsWith("de.fourteen.notes.application."));
+                .noneMatch(i ->
+                        i.startsWith("de.fourteen.notes.web.")
+                                || i.startsWith("de.fourteen.notes.application."));
     }
 
     @Test
@@ -70,15 +66,14 @@ class OnionArchitectureTest {
             List<Path> sources = files.filter(p -> p.toString().endsWith(".java")).toList();
             assertThat(sources).isNotEmpty();
             return sources.stream()
-                    .flatMap(
-                            p -> {
-                                try {
-                                    Matcher m = IMPORT.matcher(Files.readString(p));
-                                    return m.results().map(r -> r.group(1)).toList().stream();
-                                } catch (IOException e) {
-                                    throw new java.io.UncheckedIOException(e);
-                                }
-                            })
+                    .flatMap(p -> {
+                        try {
+                            Matcher m = IMPORT.matcher(Files.readString(p));
+                            return m.results().map(r -> r.group(1)).toList().stream();
+                        } catch (IOException e) {
+                            throw new java.io.UncheckedIOException(e);
+                        }
+                    })
                     .toList();
         }
     }
