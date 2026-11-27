@@ -46,7 +46,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
       - uses: actions/setup-node@v7
@@ -127,7 +127,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.issue.outputs.number
         with:
           package_json_file: base/frontend/package.json
