@@ -11,25 +11,26 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     concurrency: preview-${{ github.event.number }}
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
     steps:
-      # The preview is named after the issue of an agent branch (agent/issue-<n>), else after the
-      # pull request.
+      # The scripts come from the default branch, never from the pull request.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - name: Name the preview
         run: |
-          if [[ "$HEAD_REF" =~ ^agent/issue-([0-9]+)$ ]]; then N="issue-${BASH_REMATCH[1]}"; else N="pr-$PR"; fi
+          N=$(infra/preview-name.sh "$HEAD_REF" "$PR")
           echo "APP=notes-fourteen-it-$N" >> "$GITHUB_ENV"
           echo "DB=${N//-/_}" >> "$GITHUB_ENV"
         env:
           HEAD_REF: ${{ github.head_ref }}
           PR: ${{ github.event.number }}
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Destroy the preview app
-        run: flyctl apps destroy "$APP" --yes || true
-      - name: Drop the preview database and user
-        run: |
-          flyctl ssh console --app notes-fourteen-it-db --command \
-            "sh -c 'psql postgres://postgres:\$OPERATOR_PASSWORD@localhost:5432/postgres -c \"drop database if exists $DB with (force)\" -c \"drop role if exists $DB\"'"
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
+      - name: Remove the preview app and its database
+        run: infra/preview-down.sh
+        env:
+          FLY_ORG: ${{ vars.FLY_ORG }}

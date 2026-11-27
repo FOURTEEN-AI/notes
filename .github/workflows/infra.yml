@@ -1,0 +1,78 @@
+name: Infra
+
+# Builds production from nothing and repairs what drifted (docs/plan.md, step 10). Runs only code
+# of main, never of a pull request. Opens or updates one issue while it changed or could not
+# change something and closes it when a run finds nothing to do.
+
+on:
+  push:
+    branches: [main]
+    paths: [infra/**, fly.toml, .github/workflows/infra.yml]
+  schedule:
+    - cron: "23 2 * * *"
+    - cron: "43 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      restore:
+        description: Also restore the latest snapshot into a scratch database
+        type: boolean
+        default: false
+
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The group of the deploy: no reconcile during a deploy, no deploy during a reconcile.
+    concurrency: deploy
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: Infrastructure drift
+      FLY_ORG: ${{ vars.FLY_ORG }}
+      REPORT: ${{ runner.temp }}/report.md
+    steps:
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
+      - name: Reconcile production
+        run: infra/reconcile.sh
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
+          LOGIN_NAME: ${{ secrets.APP_LOGIN_NAME }}
+          LOGIN_PASSWORD: ${{ secrets.APP_LOGIN_PASSWORD }}
+          APP_GITHUB_TOKEN: ${{ secrets.APP_GITHUB_TOKEN }}
+          IONOS_API_KEY: ${{ secrets.IONOS_API_KEY }}
+      - name: Sweep old previews
+        run: infra/sweep.sh | sed 's/^/- /' >> "$REPORT"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      - name: Set the repository settings
+        run: infra/github.sh | sed 's/^changed: /- /' >> "$REPORT"
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+      - name: Restore the latest snapshot
+        # Every Monday night, and on request.
+        if: github.event.schedule == '43 2 * * 1' || inputs.restore
+        run: infra/restore-check.sh
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
+      - name: Open, update or close the issue
+        if: always()
+        run: |
+          number=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq "[.[] | select(.title == \"$TITLE\")] | first | .number // empty")
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ "${{ job.status }}" != success ]; then
+            echo "- the run failed: $run" >> "$REPORT"
+          fi
+          if [ -s "$REPORT" ]; then
+            { echo "Run $run:"; echo; cat "$REPORT"; } > "$RUNNER_TEMP/body.md"
+            if [ -n "$number" ]; then gh issue edit "$number" --body-file "$RUNNER_TEMP/body.md"
+            else gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/body.md"; fi
+          elif [ -n "$number" ]; then
+            gh issue close "$number" --comment "The last run found nothing to do."
+          fi

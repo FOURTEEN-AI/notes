@@ -17,40 +17,28 @@ cd frontend && pnpm dev # optional: frontend with hot reload on http://localhost
 
 Every push to `main` runs `.github/workflows/ci.yml`: build and test, then `flyctl deploy`.
 
-One-time setup on Fly.io (app `notes-fourteen-it`, region `fra`):
+Production is built and kept by `.github/workflows/infra.yml` (`infra/reconcile.sh`, see
+`docs/plan.md`, step 10): on a push that changes `infra/` or `fly.toml`, every night, and on
+request (Actions, "Infra", "Run workflow"). It creates the Fly app, the unmanaged Postgres
+(`notes-fourteen-it-db`, 512 MB, snapshots for 30 days), the secrets, the `CNAME` `notes` at IONOS
+and the certificate for https://notes.fourteen-it.de, removes the extra machine of the first
+deploy, and repairs drift. Changes and failures land in the issue "Infrastructure drift".
 
-```sh
-fly apps create notes-fourteen-it
+A human provides these once, as GitHub secrets (and the variable `FLY_ORG`), and nothing else:
 
-# Unmanaged Fly Postgres, a single small machine.
-fly postgres create --name notes-fourteen-it-db --region fra \
-  --initial-cluster-size 1 --vm-size shared-cpu-1x --volume-size 1
-# 256 MB RAM is not enough once preview apps connect too.
-fly machine update <db-machine-id> --app notes-fourteen-it-db --vm-memory 512
-# Creates the database and user and sets the secret DATABASE_URL on the app.
-fly postgres attach notes-fourteen-it-db --app notes-fourteen-it
+| Name | What |
+| --- | --- |
+| `FLY_ORG_TOKEN` | Fly org token (`fly tokens create org`) |
+| `FLY_API_TOKEN` | Fly deploy token of the app, for `ci.yml` (`fly tokens create deploy --app notes-fourteen-it`) |
+| `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD` | the one login of the app |
+| `APP_GITHUB_TOKEN` | the fine-grained GitHub token of the app |
+| `IONOS_API_KEY` | key of the IONOS hosting DNS API (`<prefix>.<secret>`) |
+| `INFRA_GITHUB_TOKEN` | GitHub token with administration rights, for `infra/github.sh` |
 
-# The one login of the app.
-fly secrets set --app notes-fourteen-it --stage \
-  SPRING_SECURITY_USER_NAME=<name> SPRING_SECURITY_USER_PASSWORD=<password>
+A rotated secret takes effect with the next run of `infra.yml` and the next deploy.
 
-# Deploy token for CI.
-fly tokens create deploy --app notes-fourteen-it \
-  | GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh secret set FLY_API_TOKEN --repo FOURTEEN-AI/notes
-```
-
-The app runs on one machine (`--ha=false` in CI). The first deploy creates two; remove the
-extra one with `fly machines list --app notes-fourteen-it` and `fly machines destroy <id>`.
-
-### Custom domain
-
-The app is served at https://notes.fourteen-it.de. At the DNS provider (IONOS) add a `CNAME`
-record `notes` → `notes-fourteen-it.fly.dev`, then:
-
-```sh
-fly certs add notes.fourteen-it.de --app notes-fourteen-it
-fly certs check notes.fourteen-it.de --app notes-fourteen-it
-```
+The app runs on one machine (`--ha=false` in CI). `infra/restore-check.sh` restores the latest
+snapshot of the database into a scratch Postgres every Monday night and fails if it does not work.
 
 ## Agents
 
@@ -91,9 +79,7 @@ https://github.com/settings/personal-access-tokens/new, resource owner `FOURTEEN
 repository `FOURTEEN-AI/notes`, permissions Issues, Pull requests and Contents: read and write.
 The repository is public, so reading check runs and workflow runs needs no further permission.
 
-```sh
-fly secrets set --app notes-fourteen-it GITHUB_TOKEN=<token>
-```
+Store it as the GitHub secret `APP_GITHUB_TOKEN`; `infra.yml` sets it on the Fly app.
 
 The previews run code of pull requests, so they get their own, second token of the same kind and
 a login that is not the one of production:

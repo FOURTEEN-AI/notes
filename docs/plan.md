@@ -466,6 +466,96 @@ on code of the pull request; the pins and hashes guard against a replaced releas
 - [ ] After 3 failed rounds the pull request waits for the human with a comment
 - [ ] Dependabot pull requests are not blocked by `smells`
 
+## Step 10: the infrastructure is built, kept and repaired by code, without a manual step
+
+**Result:** a Fly org token, the IONOS key and the secrets are the only things a human provides,
+once. From them, a run of one workflow builds production from nothing (app, Postgres, secrets,
+certificate), and every night it finds and repairs what drifted. No command of the README is typed
+by hand any more.
+
+**Scope**
+
+- No Terraform or similar: `flyctl` and `gh` in idempotent shell scripts under `infra/`, each step
+  "ensure X", safe to run again. `fly.toml` stays the truth for the app; the scripts hold what it
+  cannot (cluster size, volume, memory, machine count).
+- `infra/reconcile.sh`, in this order:
+  1. the app exists, in the right org and region;
+  2. the Postgres cluster exists (1 machine, `shared-cpu-1x`, 1 GB volume) and has 512 MB of RAM,
+     which replaces `fly machine update` in the README;
+  3. the app is attached (`DATABASE_URL`) and holds its secrets, taken from GitHub Actions
+     secrets and set with `--stage`; GitHub is the one place a secret is changed, a rotation is
+     the next run;
+  4. the DNS record and the certificate: `infra/dns.sh` makes sure that `notes` is a `CNAME` to
+     `notes-fourteen-it.fly.dev` at IONOS (hosting DNS API, `https://api.hosting.ionos.com/dns`, key
+     in the header `X-API-Key`, secret `IONOS_API_KEY`; it reads the zone, creates or updates only
+     that one record, and leaves every other record alone). Then the certificate for
+     `notes.fourteen-it.de` is added and checked;
+  5. exactly one app machine: extra ones, which the first `--ha=false` deploy creates, are
+     destroyed;
+  6. the volume of the database keeps its daily snapshots for 30 days (`--snapshot-retention 30`,
+     the default is 5).
+- `infra/preview-up.sh` and `infra/preview-down.sh` replace the inline shell in `ci.yml` and
+  `preview-cleanup.yml`. Same behaviour, but "not found" is the only error that is ignored (no
+  `|| true` over everything), so a failed cleanup is red.
+- `infra/restore-check.sh`, weekly in `infra.yml`: creates a scratch Postgres from the latest
+  snapshot of the database volume, counts the notes, destroys it and fails if the restore does not
+  work or the table is empty. A backup that was never restored is only a hope.
+- `infra/sweep.sh`: previews whose pull request is closed and databases without an app are
+  removed; found by comparing `flyctl apps list` and the databases with the open pull requests.
+- `infra.yml`: runs `reconcile.sh` and `sweep.sh` on a push to `main` that changes `infra/` or
+  `fly.toml`, every night, and by hand. Only on `main`, never on code of a pull request. Like the
+  nightly image scan it opens or updates one issue "Infrastructure drift" while it repaired or
+  could not repair something, and closes it when a run finds nothing to do.
+- `infra/github.sh`, run by the same workflow: the required checks of the branch protection and the
+  Dependabot security updates are set from a list in the script, so a new check is added in the
+  commit that introduces it. This replaces the "before the push, add the check" rule of steps 8 and
+  9.
+- The README keeps only the inputs a human gives (Fly token, IONOS key, secrets) and how to
+  start `infra.yml`. `setup-flyctl` is pinned to a release instead of `@master`.
+- The scripts take the app name and org as parameters, so a copy can be built next to production
+  for the test below.
+
+**Process:** built in a local session and committed directly to `main`, including the workflow.
+`infra.yml` is the only job that holds an org-wide Fly token and a GitHub token with
+administration rights, because it runs only code of `main`. [process.md](process.md) (checks,
+secrets per job) is updated, and the manual steps in the rules for growing and in the
+steps 8 and 9 notes are removed.
+
+**Decision, backups:** the volume snapshots of Fly (daily, same account and provider) with 30 days
+of retention and a weekly restore check. Against it: a snapshot is crash-consistent, not a
+point-in-time backup (up to a day of notes can be lost), Fly itself calls it a safety net, and a
+lost Fly account takes the snapshots with it. The alternative, a nightly `pg_dump` to storage
+elsewhere, covers all three, but needs a storage account, one more secret and a way into the
+database from the job, and the dump holds all notes. For a notes app whose data a human can
+retype, the snapshots plus a proven restore are enough for now; a dump elsewhere is the next
+candidate once the notes matter more.
+
+**Not in this step:** Terraform or OpenTofu, a `pg_dump` to another provider, point-in-time
+recovery, monitoring and alerts beyond the issue, a second environment, moving away from unmanaged
+Postgres.
+
+**Risks:** the IONOS key is not scoped to one record, and as far as I know not to one zone either: it can change every DNS record of the account, mail included. It is a secret of `infra.yml` only, which runs code of `main`. The details of the IONOS API (zone id lookup, `POST` and `PUT` on single records) and of restoring a Postgres from a snapshot (`fly postgres create --snapshot-id`) are known from secondary sources and are verified with the first run. A script that repairs can also destroy: the machine and sweep steps must delete only
+what carries the expected names, and `reconcile.sh` never touches the database content. The
+GitHub token with administration rights can change the branch protection; if it leaks, so does
+that. The preview scripts are files of the pull request and run with the org token of the preview
+job, as the inline shell does today; the trust is the same, not larger. A wrong list in `github.sh`
+can lock `main` behind a check that does not exist. There is no state file: what is not in a script
+is not known, so the scripts only ever see what they ask for.
+
+**Done when**
+
+- [ ] `reconcile.sh` against a fresh name in the same org builds a working app with database,
+  secrets and certificate, and a deploy on it shows the app, with no other command
+- [ ] A second run changes nothing and exits green
+- [ ] A hand-made change (a second machine, a deleted secret, a wrong memory size) is repaired by
+  the next run and reported in the drift issue
+- [ ] A missing or wrong `notes` record at IONOS is set by the run; the other records are untouched
+- [ ] `restore-check.sh` restores the latest snapshot into a scratch database and removes it again
+- [ ] A closed pull request whose preview was not removed is swept the same night
+- [ ] A failed preview cleanup is red instead of silent
+- [ ] A new required check is set by the commit that adds it to `github.sh`
+- [ ] The README has no setup command left that a human types (inputs only)
+
 ## Candidates for later steps
 
 Not planned, only to keep ideas. The order is decided when a step is done.

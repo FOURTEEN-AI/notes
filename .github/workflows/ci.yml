@@ -132,7 +132,7 @@ jobs:
         with:
           name: notes-jar
           path: build/libs
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
       - run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
@@ -155,38 +155,27 @@ jobs:
     steps:
       # The preview is named after the issue of an agent branch (agent/issue-<n>), else after the
       # pull request.
+      - uses: actions/checkout@v7
       - name: Name the preview
         run: |
-          if [[ "$HEAD_REF" =~ ^agent/issue-([0-9]+)$ ]]; then N="issue-${BASH_REMATCH[1]}"; else N="pr-$PR"; fi
+          N=$(infra/preview-name.sh "$HEAD_REF" "$PR")
           echo "APP=notes-fourteen-it-$N" >> "$GITHUB_ENV"
           echo "DB=${N//-/_}" >> "$GITHUB_ENV"
         env:
           HEAD_REF: ${{ github.head_ref }}
           PR: ${{ github.event.number }}
-      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: notes-jar
           path: build/libs
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Create the app and its database
-        run: |
-          if ! flyctl status --app "$APP" > /dev/null 2>&1; then
-            flyctl apps create "$APP" --org "${{ vars.FLY_ORG }}"
-            # Own database and user in the existing Postgres cluster; sets DATABASE_URL.
-            flyctl postgres attach notes-fourteen-it-db --app "$APP" \
-              --database-name "$DB" --database-user "$DB"
-            flyctl secrets set --app "$APP" --stage \
-              SPRING_SECURITY_USER_NAME="${{ secrets.PREVIEW_LOGIN_NAME }}" \
-              SPRING_SECURITY_USER_PASSWORD="${{ secrets.PREVIEW_LOGIN_PASSWORD }}"
-          fi
-      # The token for the preview bar (comment and merge). Its own token, narrower than the one of
-      # production, because the preview runs code of the pull request. Set on every run, so that
-      # it reaches previews created before it existed and follows a rotated token.
-      - name: Pass the GitHub token
-        run: flyctl secrets set --app "$APP" --stage GITHUB_TOKEN="$GITHUB_APP_TOKEN"
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
+      - name: Create the app, its database and its secrets
+        run: infra/preview-up.sh
         env:
-          GITHUB_APP_TOKEN: ${{ secrets.PREVIEW_GITHUB_TOKEN }}
+          FLY_ORG: ${{ vars.FLY_ORG }}
+          PREVIEW_LOGIN_NAME: ${{ secrets.PREVIEW_LOGIN_NAME }}
+          PREVIEW_LOGIN_PASSWORD: ${{ secrets.PREVIEW_LOGIN_PASSWORD }}
+          PREVIEW_GITHUB_TOKEN: ${{ secrets.PREVIEW_GITHUB_TOKEN }}
       # PULL_REQUEST turns on the preview bar for exactly this pull request. PULL_REQUEST_SHA
       # lets an open page notice that a newer commit is deployed.
       - run: >-
