@@ -8,7 +8,7 @@ checks='["acceptance","build","image-scan","review","secret-scan","smells"]'
 
 current=$(gh api "repos/$GH_REPO/branches/main/protection/required_status_checks")
 if [ "$(jq -c '.contexts | sort' <<< "$current")" != "$checks" ]; then
-  jq -n --argjson c "$checks" --argjson s "$(jq '.strict' <<< "$current")" '{strict: $s, contexts: $c}' \
+  jq -cn --argjson c "$checks" --argjson s "$(jq '.strict' <<< "$current")" '{strict: $s, contexts: $c}' \
     | gh api -X PATCH "repos/$GH_REPO/branches/main/protection/required_status_checks" --input - > /dev/null
   echo "changed: required checks of main are now $checks"
 fi

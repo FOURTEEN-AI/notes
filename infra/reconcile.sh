@@ -6,6 +6,7 @@
 # (empty = no DNS and certificate), REPORT.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+source infra/lib.sh
 : "${FLY_ORG:?}" "${LOGIN_NAME:?}" "${LOGIN_PASSWORD:?}" "${APP_GITHUB_TOKEN:?}"
 APP=${APP:-notes-fourteen-it}
 DB_APP=$APP-db
@@ -13,17 +14,16 @@ DOMAIN=${DOMAIN-notes.fourteen-it.de}
 REGION=${REGION:-fra}
 REPORT=${REPORT:-/dev/null}
 changed() { echo "$*"; echo "- $*" >> "$REPORT"; }
-secret_names() { flyctl secrets list --app "$1" --json | jq -r '.[] | (.Name // .name)'; }
 
 # 1. The app.
-if ! flyctl apps list --org "$FLY_ORG" --json | jq -e --arg a "$APP" 'any(.[]; (.Name // .name) == $a)' > /dev/null; then
+if ! app_exists "$APP"; then
   flyctl apps create "$APP" --org "$FLY_ORG"
   changed "created app $APP"
 fi
 
 # 2. The Postgres cluster: one small machine, 1 GB volume, 512 MB RAM, snapshots for 30 days.
 # The output holds credentials, so it is dropped; the app gets its own user in step 3.
-if ! flyctl apps list --org "$FLY_ORG" --json | jq -e --arg a "$DB_APP" 'any(.[]; (.Name // .name) == $a)' > /dev/null; then
+if ! app_exists "$DB_APP"; then
   flyctl postgres create --name "$DB_APP" --org "$FLY_ORG" --region "$REGION" \
     --initial-cluster-size 1 --vm-size shared-cpu-1x --volume-size 1 > /dev/null
   changed "created Postgres $DB_APP"
@@ -38,7 +38,8 @@ flyctl volumes update "$volume" --app "$DB_APP" --scheduled-snapshots --snapshot
 
 # 3. The connection and the secrets. GitHub is the one place a secret is changed; staged secrets
 # take effect with the next deploy.
-if ! secret_names "$APP" | grep -qx DATABASE_URL; then
+secrets=$(flyctl secrets list --app "$APP" --json)
+if ! jq -e 'any(.[]; (.Name // .name) == "DATABASE_URL")' <<< "$secrets" > /dev/null; then
   flyctl postgres attach "$DB_APP" --app "$APP" > /dev/null  # the output holds DATABASE_URL
   changed "attached $APP to $DB_APP"
 fi
@@ -50,7 +51,8 @@ flyctl secrets set --app "$APP" --stage \
 if [ -n "$DOMAIN" ]; then
   out=$(DOMAIN="$DOMAIN" TARGET="$APP.fly.dev" infra/dns.sh)
   [ -z "$out" ] || changed "$out"
-  if ! flyctl certs list --app "$APP" --json | jq -e --arg d "$DOMAIN" 'any(.[]; (.hostname // .Hostname) == $d)' > /dev/null; then
+  certs=$(flyctl certs list --app "$APP" --json)
+  if ! jq -e --arg d "$DOMAIN" 'any(.[]; (.hostname // .Hostname) == $d)' <<< "$certs" > /dev/null; then
     flyctl certs add "$DOMAIN" --app "$APP"
     changed "added the certificate for $DOMAIN"
   fi

@@ -93,6 +93,8 @@ Nothing is set up by hand except the inputs a human gives once (secrets and the 
 | `infra/github.sh` | Required checks of `main` and Dependabot security updates |
 | `infra/restore-check.sh` | Monday night and on request: restores the latest snapshot of the database volume into a scratch Postgres, counts the notes, destroys it; fails if it does not work or there are no notes |
 
+Tests: `infra/test/run.sh` (a step of `build`) runs the scripts against fake `flyctl`, `gh` and `curl` and checks the calls they make; it knows only the answers that the real tools gave, so `infra-test.yml` (weekly on `main`, and on request) builds a copy of production with `infra/test/integration.sh`, breaks it, checks the repair, restores a snapshot, creates, breaks and repairs a DNS record of the copy, and removes it all. Its job has the Fly org token and the IONOS key and runs only code of `main`.
+
 Every change a run makes, and a failed run, is written to the issue "Infrastructure drift" (opened or updated); a run that finds nothing to do closes it. `preview-up.sh`, `preview-down.sh` and `preview-name.sh` are the preview steps of `ci.yml` and `preview-cleanup.yml`; "does not exist" is the only error they ignore.
 
 ## Round limits
@@ -126,6 +128,7 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 | refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |
 | `dependency-updates` | none | contents, pull-requests, actions: write | no (`pull_request_target`, only pull requests of Dependabot in this repository; it merges, and starts `ci.yml` and `agent.yml`) |
 | `deploy` | `FLY_API_TOKEN` | default | only the built jar |
+| `infra-test` | `FLY_ORG_TOKEN`, `IONOS_API_KEY` | contents: read | no (only `main`) |
 | `infra` | `FLY_ORG_TOKEN`, `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD`, `APP_GITHUB_TOKEN`, `IONOS_API_KEY`, `INFRA_GITHUB_TOKEN` (administration: write, only in the step of `github.sh`) | contents: read, issues: write | no (only `main`) |
 | `preview` | `FLY_ORG_TOKEN`, `PREVIEW_LOGIN_NAME`, `PREVIEW_LOGIN_PASSWORD`, `PREVIEW_GITHUB_TOKEN` | pull-requests: write | only the built jar, and the scripts in `infra/` of the pull request (as the inline shell in the workflow before) |
 | preview cleanup | `FLY_ORG_TOKEN` | contents: read | no (checks out the default branch for the scripts) |

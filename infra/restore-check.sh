@@ -4,13 +4,13 @@
 # is empty.
 # Needs: FLY_API_TOKEN (org token), FLY_ORG. Parameters: APP.
 set -euo pipefail
+source "$(dirname "$0")/lib.sh"
 : "${FLY_ORG:?}"
 APP=${APP:-notes-fourteen-it}
 DB_APP=$APP-db
 SCRATCH=$APP-restore
 REGION=${REGION:-fra}
-exists() { flyctl apps list --org "$FLY_ORG" --json | jq -e --arg a "$1" 'any(.[]; (.Name // .name) == $a)' > /dev/null; }
-cleanup() { if exists "$SCRATCH"; then flyctl apps destroy "$SCRATCH" --yes; fi; }
+cleanup() { if app_exists "$SCRATCH"; then flyctl apps destroy "$SCRATCH" --yes; fi; }
 trap cleanup EXIT
 cleanup
 

@@ -510,6 +510,13 @@ by hand any more.
   Dependabot security updates are set from a list in the script, so a new check is added in the
   commit that introduces it. This replaces the "before the push, add the check" rule of steps 8 and
   9.
+- Tests of the scripts, two levels. `infra/test/run.sh` runs them against fake `flyctl`, `gh` and
+  `curl` (canned answers, a log of the calls): idempotence, repair of memory and machines, the
+  sweep, the required checks, the DNS cases, a failing tool, no secret in the output. No secrets
+  and no network, a step of `build`. `infra/test/integration.sh` (`infra-test.yml`, weekly and on
+  request, only on `main`) builds a copy of production, breaks it, lets `reconcile.sh` repair it,
+  restores a snapshot, and creates, breaks and repairs a DNS record of the copy; it removes
+  everything, also after a failure and leftovers of an earlier run.
 - The README keeps only the inputs a human gives (Fly token, IONOS key, secrets) and how to
   start `infra.yml`. `setup-flyctl` is pinned to a release instead of `@master`.
 - The scripts take the app name and org as parameters, so a copy can be built next to production

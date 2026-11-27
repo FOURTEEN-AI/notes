@@ -1,0 +1,28 @@
+name: Infra test
+
+# Builds a copy of production next to it, breaks it and checks that infra/reconcile.sh repairs it;
+# restores a snapshot; creates, breaks and repairs a DNS record of the copy (docs/plan.md, step 10).
+# Real Fly and IONOS, so only on main: weekly and on request. infra/test/run.sh (fakes, no secrets)
+# runs in `build` on every pull request.
+
+on:
+  schedule:
+    - cron: "17 4 * * 0"
+  workflow_dispatch:
+
+jobs:
+  integration:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency: infra-test
+    permissions:
+      contents: read
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_ORG_TOKEN }}
+      FLY_ORG: ${{ vars.FLY_ORG }}
+      IONOS_API_KEY: ${{ secrets.IONOS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
+      - run: infra/test/integration.sh

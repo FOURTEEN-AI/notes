@@ -3,11 +3,12 @@
 # any other failure fails the run.
 # Needs: FLY_API_TOKEN (org token), FLY_ORG, APP, DB.
 set -euo pipefail
+source "$(dirname "$0")/lib.sh"
 : "${FLY_ORG:?}" "${APP:?}" "${DB:?}"
 [[ "$APP" =~ ^notes-fourteen-it-(issue|pr)-[0-9]+$ ]] || { echo "refusing to remove $APP" >&2; exit 1; }
 [[ "$DB" =~ ^(issue|pr)_[0-9]+$ ]] || { echo "refusing to drop $DB" >&2; exit 1; }
 
-if flyctl apps list --org "$FLY_ORG" --json | jq -e --arg a "$APP" 'any(.[]; (.Name // .name) == $a)' > /dev/null; then
+if app_exists "$APP"; then
   flyctl apps destroy "$APP" --yes
 fi
 flyctl ssh console --app notes-fourteen-it-db --command \

@@ -11,9 +11,9 @@ open=$(gh pr list --repo "$GH_REPO" --state open --limit 200 --json number,headR
 
 apps=$(flyctl apps list --org "$FLY_ORG" --json | jq -r '.[] | (.Name // .name)' \
   | sed -n 's/^notes-fourteen-it-\(\(issue\|pr\)-[0-9]\+\)$/\1/p')
-dbs=$(flyctl ssh console --app notes-fourteen-it-db --command \
-  "sh -c 'psql postgres://postgres:\$OPERATOR_PASSWORD@localhost:5432/postgres -Atc \"select datname from pg_database\"'" \
-  | tr -d '\r' | grep -E '^(issue|pr)_[0-9]+$' | tr '_' '-' || true)
+all=$(flyctl ssh console --app notes-fourteen-it-db --command \
+  "sh -c 'psql postgres://postgres:\$OPERATOR_PASSWORD@localhost:5432/postgres -Atc \"select datname from pg_database\"'")
+dbs=$(tr -d '\r' <<< "$all" | grep -E '^(issue|pr)_[0-9]+$' | tr '_' '-' || true)
 
 for n in $(printf '%s\n%s\n' "$apps" "$dbs" | sort -u | grep . || true); do
   if ! grep -qx "$n" <<< "$open"; then
