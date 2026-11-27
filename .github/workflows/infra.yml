@@ -45,6 +45,7 @@ jobs:
           APP_GITHUB_TOKEN: ${{ secrets.APP_GITHUB_TOKEN }}
           IONOS_API_KEY: ${{ secrets.IONOS_API_KEY }}
       - name: Sweep old previews
+        shell: bash # with pipefail: a failing script must not hide behind the pipe
         run: |
           infra/sweep.sh | sed 's/^/- /' >> "$REPORT"
         env:
@@ -52,6 +53,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
       - name: Set the repository settings
+        shell: bash # with pipefail: a failing script must not hide behind the pipe
         run: |
           infra/github.sh | sed 's/^changed: /- /' >> "$REPORT"
         env:
