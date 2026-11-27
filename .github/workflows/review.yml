@@ -95,7 +95,7 @@ jobs:
           smells "$RUNNER_TEMP/smells"
           echo "result=$?" >> "$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/smells/enforced.md" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: smells
           path: |
