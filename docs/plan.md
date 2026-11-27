@@ -490,8 +490,8 @@ by hand any more.
      in the header `X-API-Key`, secret `IONOS_API_KEY`; it reads the zone, creates or updates only
      that one record, and leaves every other record alone). Then the certificate for
      `notes.fourteen-it.de` is added and checked;
-  5. exactly one app machine: extra ones, which the first `--ha=false` deploy creates, are
-     destroyed;
+  5. exactly one app machine: extra ones (a deploy with `--ha=false` creates one, so they are
+     drift) are destroyed;
   6. the volume of the database keeps its daily snapshots for 30 days (`--snapshot-retention 30`,
      the default is 5).
 - `infra/preview-up.sh` and `infra/preview-down.sh` replace the inline shell in `ci.yml` and

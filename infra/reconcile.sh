@@ -56,7 +56,8 @@ if [ -n "$DOMAIN" ]; then
   fi
 fi
 
-# 5. Exactly one app machine: the first deploy with --ha=false creates two. The oldest stays.
+# 5. Exactly one app machine. A deploy with --ha=false creates one (tested), so an extra one is
+# drift, e.g. made by hand. The oldest stays.
 # Runs in the concurrency group of the deploy, so no rolling deploy is under way.
 ids=$(flyctl machines list --app "$APP" --json | jq -r 'sort_by(.created_at) | .[1:][] | .id')
 for id in $ids; do
