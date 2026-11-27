@@ -18,6 +18,6 @@ dbs=$(flyctl ssh console --app notes-fourteen-it-db --command \
 for n in $(printf '%s\n%s\n' "$apps" "$dbs" | sort -u | grep . || true); do
   if ! grep -qx "$n" <<< "$open"; then
     echo "swept preview $n"
-    APP="notes-fourteen-it-$n" DB="${n//-/_}" "$here/preview-down.sh"
+    APP="notes-fourteen-it-$n" DB="${n//-/_}" "$here/preview-down.sh" >&2
   fi
 done

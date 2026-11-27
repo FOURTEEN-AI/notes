@@ -31,10 +31,11 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TITLE: Infrastructure drift
       FLY_ORG: ${{ vars.FLY_ORG }}
-      REPORT: ${{ runner.temp }}/report.md
     steps:
       - uses: actions/checkout@v7
       - uses: superfly/flyctl-actions/setup-flyctl@v1
+      - name: Start the report
+        run: echo "REPORT=$RUNNER_TEMP/report.md" >> "$GITHUB_ENV"
       - name: Reconcile production
         run: infra/reconcile.sh
         env:
