@@ -94,7 +94,7 @@ jobs:
         if: steps.phase.outputs.phase1 != 'true'
       - run: node --test .github/acceptance/criteria.test.mjs .github/acceptance/check.test.mjs .github/acceptance/stages.test.mjs .github/acceptance/phase.test.mjs .github/acceptance/conflict.test.mjs
       - run: infra/test/run.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: steps.phase.outputs.phase1 != 'true'
         with:
           name: notes-jar
