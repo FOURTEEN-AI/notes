@@ -17,7 +17,7 @@ only the current state. Derived from `.github/workflows/*.yml`, `.github/accepta
 | 7 | `build`, `image-scan`, `acceptance`, `smells`, `review` | Build and tests; scan of the container image; check again; habit-hooks over the changed files, then the review agent (both only after phase 2; `review` only after a green `smells`) | Red smells: `## Smell round <n>`, red review: `## Review round`, each starts the agent |
 | 8 | Preview (`ci.yml`) | Deploys the pull request to `notes-fourteen-it-issue-<n>` | Preview bar: checks, demo tour, feedback, merge |
 | 9 | Human | Walks the tour. Feedback, or merge | Feedback: comment `## Human feedback`, starts the agent. Merge: squash, only with green `build`, `review`, `acceptance`, `image-scan` |
-| 10 | CI | Deploys `main` to production; `preview-cleanup.yml` removes the preview on close | Push to `main` |
+| 10 | CI | Deploys `main` to production; `preview-cleanup.yml` removes the preview on close; `infra.yml` keeps the infrastructure as it should be | Push to `main` |
 
 Paths off the main line:
 
@@ -79,7 +79,21 @@ The workflow `image-scan-nightly.yml` scans the pinned base image every night an
 `build` also lints (`check`): ESLint (`frontend/eslint.config.js`: recommended rules of ESLint and typescript-eslint, plus the two classic React hooks rules) and knip (`frontend/knip.json`: unused files, exports and dependencies) for the frontend, and Error Prone for the Java code. Error Prone findings in `src/main` fail the build (`-Werror`); in `src/test` they only warn, because the acceptance tests, stages and fakes must not change in phase 2. typescript-eslint and knip need the TypeScript 6 API, so `typescript` in `frontend/package.json` is an alias of `@typescript/typescript6` and `typescript7` brings the compiler `tsc` (TypeScript 7) used by the build. `pnpm run lint` runs ESLint and knip alone.
 
 Branch protection on `main`: pull request, the required checks (`build`, `review`, `acceptance`, `secret-scan`, `image-scan`, `smells`), admins exempt. The merge
-button repeats the check on the exact commit, squash merge.
+button repeats the check on the exact commit, squash merge. The list of required checks is set by `infra/github.sh` (run by `infra.yml`), so a new check is added there, in the commit that introduces it, not by hand in the settings.
+
+## Infrastructure
+
+Nothing is set up by hand except the inputs a human gives once (secrets and the variable `FLY_ORG`, listed in the README). `infra.yml` runs on a push to `main` that changes `infra/`, `fly.toml` or the workflow, every night, every Monday night with the restore check, and on request. It only runs code of `main`, in the concurrency group of the deploy, and does in this order:
+
+| Script | What it ensures |
+|--------|-----------------|
+| `infra/reconcile.sh` | The Fly app, the unmanaged Postgres (one machine, 1 GB volume, 512 MB RAM, snapshots kept 30 days), `DATABASE_URL`, the secrets of the app (from the GitHub secrets `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD`, `APP_GITHUB_TOKEN`, staged until the next deploy), the DNS record and the certificate of `notes.fourteen-it.de`, exactly one app machine |
+| `infra/dns.sh` | `notes` is a `CNAME` to `notes-fourteen-it.fly.dev` at IONOS; every other record is left alone, and a record of another type on that name stops the run |
+| `infra/sweep.sh` | Preview apps and preview databases without an open pull request are removed |
+| `infra/github.sh` | Required checks of `main` and Dependabot security updates |
+| `infra/restore-check.sh` | Monday night and on request: restores the latest snapshot of the database volume into a scratch Postgres, counts the notes, destroys it; fails if it does not work or there are no notes |
+
+Every change a run makes, and a failed run, is written to the issue "Infrastructure drift" (opened or updated); a run that finds nothing to do closes it. `preview-up.sh`, `preview-down.sh` and `preview-name.sh` are the preview steps of `ci.yml` and `preview-cleanup.yml`; "does not exist" is the only error they ignore.
 
 ## Round limits
 
@@ -112,8 +126,9 @@ Names only. The GitHub token is the job's `github.token` with the permissions li
 | refine | `CLAUDE_CODE_OAUTH_TOKEN` | contents: read, issues: write | no |
 | `dependency-updates` | none | contents, pull-requests, actions: write | no (`pull_request_target`, only pull requests of Dependabot in this repository; it merges, and starts `ci.yml` and `agent.yml`) |
 | `deploy` | `FLY_API_TOKEN` | default | only the built jar |
-| `preview` | `FLY_ORG_TOKEN`, `PREVIEW_LOGIN_NAME`, `PREVIEW_LOGIN_PASSWORD`, `PREVIEW_GITHUB_TOKEN` | pull-requests: write | only the built jar |
-| preview cleanup | `FLY_ORG_TOKEN` | default | no |
+| `infra` | `FLY_ORG_TOKEN`, `APP_LOGIN_NAME`, `APP_LOGIN_PASSWORD`, `APP_GITHUB_TOKEN`, `IONOS_API_KEY`, `INFRA_GITHUB_TOKEN` (administration: write, only in the step of `github.sh`) | contents: read, issues: write | no (only `main`) |
+| `preview` | `FLY_ORG_TOKEN`, `PREVIEW_LOGIN_NAME`, `PREVIEW_LOGIN_PASSWORD`, `PREVIEW_GITHUB_TOKEN` | pull-requests: write | only the built jar, and the scripts in `infra/` of the pull request (as the inline shell in the workflow before) |
+| preview cleanup | `FLY_ORG_TOKEN` | contents: read | no (checks out the default branch for the scripts) |
 
 The app itself holds one fine-grained GitHub token (`GITHUB_TOKEN` env), for ideas, the idea chat,
 feedback and merge. Production and previews hold different tokens and logins, because a preview

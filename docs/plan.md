@@ -546,15 +546,15 @@ is not known, so the scripts only ever see what they ask for.
 
 - [ ] `reconcile.sh` against a fresh name in the same org builds a working app with database,
   secrets and certificate, and a deploy on it shows the app, with no other command
-- [ ] A second run changes nothing and exits green
+- [x] A second run changes nothing and exits green
 - [ ] A hand-made change (a second machine, a deleted secret, a wrong memory size) is repaired by
   the next run and reported in the drift issue
 - [ ] A missing or wrong `notes` record at IONOS is set by the run; the other records are untouched
-- [ ] `restore-check.sh` restores the latest snapshot into a scratch database and removes it again
+- [x] `restore-check.sh` restores the latest snapshot into a scratch database and removes it again
 - [ ] A closed pull request whose preview was not removed is swept the same night
 - [ ] A failed preview cleanup is red instead of silent
 - [ ] A new required check is set by the commit that adds it to `github.sh`
-- [ ] The README has no setup command left that a human types (inputs only)
+- [x] The README has no setup command left that a human types (inputs only)
 
 ## Candidates for later steps
 
