@@ -124,6 +124,11 @@ branch of this repository, and it checks out the commit the pull request had at 
 Push protection of GitHub, the hook `.githooks/pre-commit` and `secret-scan` guard the
 repository, which is public.
 
+Parallel local sessions each work in their own git worktree (`claude -w <name>`, directory
+`.claude/worktrees/`, ignored by git) and deliver with `git fetch && git rebase origin/main`,
+`./gradlew build` and `git push origin HEAD:main`. The hook `.githooks/pre-commit` also refuses a
+commit on `main` in the main checkout while another worktree exists.
+
 The hook `.githooks/pre-push` refuses a push while `origin` has commits of the branch that you do
 not have; `git pull` rebases (set up by `.devcontainer/post-create.sh`).
 

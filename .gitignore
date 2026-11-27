@@ -13,3 +13,4 @@ frontend/dist/
 *.tsbuildinfo
 .vscode/
 /bin/
+.claude/worktrees/

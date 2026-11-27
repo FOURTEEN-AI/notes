@@ -28,6 +28,13 @@ is in [docs/process.md](docs/process.md): update it at the end of every step.
 - Coding agent on a pull request, two phases: first only the acceptance tests, stages, fakes and
   compiling stubs; after a green `acceptance` the production code, with those files unchanged. A
   commit that must change them ends its message with the line `Phase: 1`.
+- Parallel local sessions: each session works in its own git worktree (`claude -w <name>`, in
+  `.claude/worktrees/<name>`), never in the main checkout. Stage only your own files
+  (`git add <paths>`, no `git add -A`). To deliver: `git fetch && git rebase origin/main`,
+  `./gradlew build`, `git push origin HEAD:main` (a push that is not a fast-forward is refused:
+  rebase again). `.githooks/pre-commit` refuses commits on `main` in the main checkout while
+  another worktree exists. Run the app (`bootTestRun`, `pnpm dev`) in one session at a time
+  (ports 8080 and 5173).
 - GitHub org FOURTEEN-AI: use `GH_TOKEN="$GH_TOKEN_FOURTEEN_AI" gh …`. Never print the token.
 
 ## Demo tour
